@@ -1,0 +1,193 @@
+<script>
+  let currentSort = { key: "DataCadastro", dir: "desc" };
+  let lastQuery = null;
+
+  window.onload = function() {
+    wireEvents();
+    loadFilterOptions();
+  };
+
+  function wireEvents() {
+    document.getElementById("btnLimparFiltros").addEventListener("click", () => {
+      document.getElementById("searchForm").reset();
+      renderMessage("");
+      clearTable();
+      document.getElementById("resultsMeta").textContent = "";
+    });
+
+    document.getElementById("searchForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      pesquisar();
+    });
+  }
+
+  function loadFilterOptions() {
+    google.script.run
+      .withSuccessHandler((config) => {
+        fillSelect("fCurso", config.CURSOS);
+        fillSelect("fTurma", config.TURMAS);
+        fillSelect("fStatus", config.STATUS);
+        fillSelect("fSala", config.SALAS);
+        fillSelect("fResponsavel", config.RESPONSAVEIS);
+        fillSelect("fOferta", config.OFERTAS);
+      })
+      .withFailureHandler((err) => {
+        renderMessage(`Erro ao carregar filtros: ${err}`, "danger");
+      })
+      .getFormConfiguration();
+  }
+
+  function fillSelect(id, items) {
+    const el = document.getElementById(id);
+    el.innerHTML = "";
+    el.appendChild(new Option("Todos", ""));
+    (items || []).forEach((item) => el.appendChild(new Option(item, item)));
+  }
+
+  function getFilters() {
+    return {
+      curso: document.getElementById("fCurso").value || "",
+      turma: document.getElementById("fTurma").value || "",
+      status: document.getElementById("fStatus").value || "",
+      sala: document.getElementById("fSala").value || "",
+      responsavel: document.getElementById("fResponsavel").value || "",
+      oferta: document.getElementById("fOferta").value || "",
+      inicioDe: document.getElementById("fInicioDe").value || "",
+      inicioAte: document.getElementById("fInicioAte").value || ""
+    };
+  }
+
+  function pesquisar() {
+    const filtros = getFilters();
+    lastQuery = { filtros, sort: currentSort, page: { offset: 0, limit: 200 } };
+
+    setSearching(true);
+    renderMessage("Pesquisando...", "info");
+
+    google.script.run
+      .withSuccessHandler((resp) => {
+        setSearching(false);
+        if (!resp || !resp.columns) {
+          renderMessage("Resposta inválida do servidor.", "danger");
+          return;
+        }
+        renderMessage("");
+        renderResults(resp);
+      })
+      .withFailureHandler((err) => {
+        setSearching(false);
+        renderMessage(`Erro na pesquisa: ${err}`, "danger");
+      })
+      .pesquisarChamados(lastQuery.filtros, lastQuery.sort, lastQuery.page);
+  }
+
+  function setSearching(isSearching) {
+    const btn = document.getElementById("btnPesquisar");
+    btn.disabled = isSearching;
+    btn.textContent = isSearching ? "Pesquisando..." : "Pesquisar";
+  }
+
+  function renderMessage(text, type) {
+    const el = document.getElementById("msg");
+    if (!text) {
+      el.innerHTML = "";
+      return;
+    }
+    const cls = type === "danger" ? "is-danger"
+      : type === "info" ? "is-info"
+      : "is-success";
+    el.innerHTML = `<div class="notification ${cls} is-light">${escapeHtml(text)}</div>`;
+  }
+
+  function escapeHtml(str) {
+    return String(str)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function clearTable() {
+    document.getElementById("resultsHead").innerHTML = "";
+    document.getElementById("resultsBody").innerHTML = "";
+  }
+
+  function renderResults(resp) {
+    const columns = resp.columns || [];
+    const rows = resp.rows || [];
+
+    renderHeader(columns);
+    renderBody(columns, rows);
+
+    const meta = document.getElementById("resultsMeta");
+    meta.textContent = `Registros: ${resp.total || rows.length}${resp.truncated ? " (limitado)" : ""}`;
+  }
+
+  function renderHeader(columns) {
+    const thead = document.getElementById("resultsHead");
+    thead.innerHTML = "";
+    const tr = document.createElement("tr");
+
+    columns.forEach((col) => {
+      const th = document.createElement("th");
+      th.classList.add("sortable");
+      th.textContent = col.label || col.key;
+
+      const icon = document.createElement("span");
+      icon.className = "sort-icon";
+      icon.textContent = getSortIcon(col.key);
+      th.appendChild(icon);
+
+      th.addEventListener("click", () => toggleSort(col.key));
+      tr.appendChild(th);
+    });
+
+    thead.appendChild(tr);
+  }
+
+  function getSortIcon(key) {
+    if (!currentSort || currentSort.key !== key) return "⇅";
+    return currentSort.dir === "asc" ? "▲" : "▼";
+  }
+
+  function toggleSort(key) {
+    if (currentSort.key === key) {
+      currentSort = { key, dir: currentSort.dir === "asc" ? "desc" : "asc" };
+    } else {
+      currentSort = { key, dir: "asc" };
+    }
+    if (lastQuery) pesquisar();
+  }
+
+  function renderBody(columns, rows) {
+    const tbody = document.getElementById("resultsBody");
+    tbody.innerHTML = "";
+
+    if (!rows.length) {
+      const tr = document.createElement("tr");
+      const td = document.createElement("td");
+      td.colSpan = Math.max(1, columns.length);
+      td.className = "has-text-centered muted";
+      td.style.padding = "18px";
+      td.textContent = "Nenhum registro encontrado.";
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+      return;
+    }
+
+    rows.forEach((row) => {
+      const tr = document.createElement("tr");
+      columns.forEach((col, idx) => {
+        const td = document.createElement("td");
+        const v = row[idx];
+        const text = (v === null || v === undefined) ? "" : String(v);
+        td.textContent = text;
+        td.title = text;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+</script>
+

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <style>
+      body {
+        background: linear-gradient(135deg, #e0f2f1 0%, #f1f8e9 100%);
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 40px 20px;
+        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      
+      .form-container { 
+        max-width: 1100px; 
+        width: 100%;
+        background-color: rgba(255, 255, 255, 0.98);
+        border-radius: 12px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        overflow: hidden;
+      }
+
+      .header-banner {
+        background-color: #f8fcfb;
+        border-bottom: 3px solid #00bfa5;
+        padding: 25px 40px;
+        display: flex;
+        align-items: center;
+        gap: 30px;
+      }
+
+      .logo-group {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+      }
+
+      .logo-img {
+        max-height: 80px;
+        width: auto;
+      }
+
+      .form-content { padding: 40px; }
+
+      .title.is-4 { 
+        font-size: 1.75rem; 
+        color: #2d4a46; 
+        font-weight: 600; 
+      }
+      
+      .label { 
+        font-size: 0.95rem; 
+        color: #334441; 
+        font-weight: 600; 
+        margin-bottom: 0.4rem; 
+      }
+
+      .section-title { 
+        border-left: 6px solid #00bfa5;
+        padding: 10px 15px;
+        margin: 35px 0 20px 0; 
+        color: #1b3330;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        background: rgba(0, 191, 165, 0.07);
+        font-size: 1.1rem;
+      }
+
+      .input, .select select { 
+        font-size: 0.95rem !important; 
+        height: 2.7em;
+        border-color: #b0c9c5;
+        color: #2d3e3b; /* Cor normal para os valores selecionados */
+        font-weight: 500;
+      }
+
+      /* Estilo apenas para o estado inicial (vazio) */
+      .is-placeholder {
+        color: #a0b1af !important;
+        font-weight: 400 !important;
+      }
+
+      /* Garante que as opções DENTRO do select sejam sempre escuras */
+      .select select option {
+        color: #2d3e3b;
+        font-weight: 500;
+      }
+
+      /* Placeholder de data discreto */
+      input[type="date"].is-placeholder::-webkit-datetime-edit {
+        color: #a0b1af;
+      }
+
+      .input:focus, .select select:focus {
+        border-color: #00bfa5;
+        box-shadow: 0 0 0 0.125em rgba(0, 191, 165, 0.2);
+      }
+
+      .buttons-row {
+        display: flex;
+        justify-content: flex-end;
+        gap: 15px;
+        margin-top: 50px;
+        padding-top: 25px;
+        border-top: 1px solid #eee;
+      }
+
+      .btn-custom {
+        background-color: #00bfa5;
+        color: #ffffff;
+        border: none;
+        padding: 0 35px;
+        font-weight: 600;
+        font-size: 1rem;
+        height: 2.8em;
+        border-radius: 4px;
+        cursor: pointer;
+        transition: opacity 0.3s;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        text-decoration: none;
+      }
+      
+      .btn-custom:hover { opacity: 0.9; color: #ffffff; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <header class="header-banner">
+        <div class="logo-group">
+          <img src="https://drive.google.com/thumbnail?id=1TWGRP7iBTSYikx8kAFo24iSeLNTDYWy5&sz=w300" alt="Logo Unicamp" class="logo-img">
+          <img src="https://drive.google.com/thumbnail?id=1MPuonnO0E_mM8uIc5t1SXlMxVfEw6hDP&sz=w300" alt="Logo Educorp" class="logo-img">
+        </div>
+        <div style="margin-left: auto; text-align: right;">
+          <h1 class="title is-4 mb-0">Gestão de Cursos</h1>
+          <p class="is-size-6" style="color: #4a6661;">Controle e Registro de Atividades</p>
+        </div>
+      </header>
+
+      <div class="form-content">
+        <div style="display:flex; justify-content:flex-end; margin-bottom: 10px;">
+          <a class="btn-custom" href="<?= getWebAppUrl('consulta') ?>" target="_top" rel="noopener">Voltar para Consulta</a>
+        </div>
+        <form id="ticketForm">
+          <h2 class="section-title">1. Identificação do Curso</h2>
+          <div class="columns is-multiline">
+            <div class="column is-6">
+              <label class="label">Curso</label>
+              <div class="select is-fullwidth"><select id="curso" class="is-placeholder" required onchange="updateStyle(this)"></select></div>
+            </div>
+            <div class="column is-2">
+              <label class="label">Turma</label>
+              <div class="select is-fullwidth"><select id="turma" class="is-placeholder" required onchange="updateStyle(this)"></select></div>
+            </div>
+            <div class="column is-2">
+              <label class="label">Data de Início</label>
+              <input class="input is-placeholder" type="date" id="inicio" required oninput="updateStyle(this)">
+            </div>
+            <div class="column is-2">
+              <label class="label">Data de Fim</label>
+              <input class="input is-placeholder" type="date" id="fim" required oninput="updateStyle(this)">
+            </div>
+          </div>
+
+          <h2 class="section-title">2. Logística e Operação</h2>
+          <div class="columns is-multiline">
+            <div class="column is-4"><label class="label">Sala</label><div class="select is-fullwidth"><select id="sala" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+            <div class="column is-4"><label class="label">Oferta</label><div class="select is-fullwidth"><select id="oferta" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+            <div class="column is-4"><label class="label">Responsável</label><div class="select is-fullwidth"><select id="responsavel" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+            <div class="column is-4"><label class="label">Prioridade</label><div class="select is-fullwidth"><select id="prioridade" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+            <div class="column is-4"><label class="label">Fim das Inscrições</label><input class="input is-placeholder" type="date" id="fimInscricoes" required oninput="updateStyle(this)"></div>
+            <div class="column is-4"><label class="label">Status</label><div class="select is-fullwidth"><select id="status" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+          </div>
+
+          <h2 class="section-title">3. Checklist de Processos</h2>
+          <div class="columns is-multiline">
+             <div class="column is-3"><label class="label">TR</label><div class="select is-fullwidth"><select id="tr" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+             <div class="column is-3"><label class="label">Termo Comp.</label><div class="select is-fullwidth"><select id="termo" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+             <div class="column is-3"><label class="label">Plataformas</label><div class="select is-fullwidth"><select id="plataformas" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+             <div class="column is-3"><label class="label">Coffee Break</label><div class="select is-fullwidth"><select id="coffee" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+             <div class="column is-3"><label class="label">Agendar Sala</label><div class="select is-fullwidth"><select id="agendarSala" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+             <div class="column is-3"><label class="label">Prep. Divulg.</label><div class="select is-fullwidth"><select id="prepDivulgacao" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+             <div class="column is-3"><label class="label">Divulgação</label><div class="select is-fullwidth"><select id="divulgacao" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+          </div>
+
+          <h2 class="section-title">4. Documentação e Links</h2>
+          <div class="columns is-multiline">
+            <div class="column is-6"><label class="label">Link FSA</label><input class="input" type="url" id="linkFSA" placeholder="https://..."></div>
+            <div class="column is-6"><label class="label">Link Página</label><input class="input" type="url" id="linkPagina" placeholder="https://..."></div>
+            <div class="column is-6"><label class="label">QR Code Inscrição</label><input class="input" type="url" id="qrInscricao" placeholder="https://..."></div>
+            <div class="column is-6"><label class="label">Link Inscrição</label><input class="input" type="url" id="linkInscricao" placeholder="https://..."></div>
+            <div class="column is-6"><label class="label">QR Code Frequência</label><input class="input" type="url" id="qrFrequencia" placeholder="https://..."></div>
+            <div class="column is-6"><label class="label">Frequência</label><input class="input" type="url" id="frequencia" placeholder="https://..."></div>
+            <div class="column is-6"><label class="label">QR Code Avaliação</label><input class="input" type="url" id="qrAvaliacao" placeholder="https://..."></div>
+            <div class="column is-6"><label class="label">Avaliação Reação</label><input class="input" type="url" id="avaliacaoReacao" placeholder="https://..."></div>
+            <div class="column is-6"><label class="label">Cód. Verificação</label><input class="input" type="url" id="codVerificacao" placeholder="https://..."></div>
+          </div>
+
+          <div class="buttons-row">
+            <button type="button" class="btn-custom" id="btnLimpar">Limpar Tudo</button>
+            <button type="submit" class="btn-custom" id="btnEnviar">Enviar Registro</button>
+          </div>
+        </form>
+        <div id="msg" class="mt-5"></div>
+      </div>
+    </div>
+
+    <script>
+      function updateStyle(el) {
+        if (el.value && el.value !== "") {
+          el.classList.remove('is-placeholder');
+        } else {
+          el.classList.add('is-placeholder');
+        }
+      }
+    </script>
+    <?!= HtmlService.createHtmlOutputFromFile('JavaScript').getContent(); ?>
+  </body>
+</html>

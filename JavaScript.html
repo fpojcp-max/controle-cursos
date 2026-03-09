@@ -1,0 +1,107 @@
+<script>
+  window.onload = function() {
+    google.script.run
+      .withSuccessHandler(function(config) {
+        popularCampos(config);
+      })
+      .getFormConfiguration();
+  };
+
+  function popularCampos(config) {
+    const idsMapeados = {
+      'curso': config.CURSOS, 'turma': config.TURMAS, 'sala': config.SALAS,
+      'oferta': config.OFERTAS, 'responsavel': config.RESPONSAVEIS,
+      'prioridade': config.PRIORIDADES, 'status': config.STATUS,
+      'tr': config.BOOLEANOS, 'termo': config.BOOLEANOS, 'plataformas': config.BOOLEANOS,
+      'coffee': config.BOOLEANOS, 'agendarSala': config.BOOLEANOS,
+      'prepDivulgacao': config.BOOLEANOS, 'divulgacao': config.BOOLEANOS
+    };
+
+    for (let id in idsMapeados) {
+      const el = document.getElementById(id);
+      if (!el) continue;
+      
+      el.innerHTML = ''; 
+      el.classList.add('is-placeholder');
+      
+      const placeholder = new Option("selecione", "");
+      placeholder.disabled = true;
+      placeholder.selected = true;
+      el.options.add(placeholder);
+
+      idsMapeados[id].forEach(item => {
+        el.options.add(new Option(item, item));
+      });
+    }
+  }
+
+  function resetVisualStyles() {
+    const fields = document.querySelectorAll('select, input[type="date"]');
+    fields.forEach(f => f.classList.add('is-placeholder'));
+  }
+
+  document.getElementById('btnLimpar').onclick = function() {
+    if(confirm("Deseja limpar todos os dados do formulário?")) {
+      document.getElementById('ticketForm').reset();
+      document.getElementById('msg').innerHTML = '';
+      resetVisualStyles();
+      google.script.run.withSuccessHandler(c => popularCampos(c)).getFormConfiguration();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  document.getElementById('ticketForm').onsubmit = function(e) {
+    e.preventDefault();
+    const btn = document.getElementById('btnEnviar');
+    const msg = document.getElementById('msg');
+    
+    btn.innerHTML = "Enviando...";
+    btn.disabled = true;
+    
+    const dados = {
+      curso: document.getElementById('curso').value,
+      turma: document.getElementById('turma').value,
+      inicio: document.getElementById('inicio').value,
+      fim: document.getElementById('fim').value,
+      sala: document.getElementById('sala').value,
+      oferta: document.getElementById('oferta').value,
+      responsavel: document.getElementById('responsavel').value,
+      prioridade: document.getElementById('prioridade').value,
+      fimInscricoes: document.getElementById('fimInscricoes').value,
+      status: document.getElementById('status').value,
+      linkFSA: document.getElementById('linkFSA').value,
+      tr: document.getElementById('tr').value,
+      termo: document.getElementById('termo').value,
+      plataformas: document.getElementById('plataformas').value,
+      coffee: document.getElementById('coffee').value,
+      agendarSala: document.getElementById('agendarSala').value,
+      qrInscricao: document.getElementById('qrInscricao').value,
+      linkInscricao: document.getElementById('linkInscricao').value,
+      qrFrequencia: document.getElementById('qrFrequencia').value,
+      frequencia: document.getElementById('frequencia').value,
+      codVerificacao: document.getElementById('codVerificacao').value,
+      qrAvaliacao: document.getElementById('qrAvaliacao').value,
+      avaliacaoReacao: document.getElementById('avaliacaoReacao').value,
+      prepDivulgacao: document.getElementById('prepDivulgacao').value,
+      divulgacao: document.getElementById('divulgacao').value,
+      linkPagina: document.getElementById('linkPagina').value
+    };
+
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        msg.innerHTML = `<div class="notification is-success is-light has-text-centered"><b>Sucesso!</b> ${resp}</div>`;
+        btn.innerHTML = "Enviar Registro";
+        btn.disabled = false;
+        document.getElementById('ticketForm').reset();
+        resetVisualStyles();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        google.script.run.withSuccessHandler(c => popularCampos(c)).getFormConfiguration();
+      })
+      .withFailureHandler(function(err) {
+        msg.innerHTML = `<div class="notification is-danger is-light">Erro: ${err}</div>`;
+        btn.innerHTML = "Enviar Registro";
+        btn.disabled = false;
+      })
+      .salvarChamado(dados);
+  };
+</script>
