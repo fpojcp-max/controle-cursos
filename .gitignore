@@ -1,0 +1,22 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Sistema
+.DS_Store
+Thumbs.db
+
+# Cursor / VSCode
+.vscode/
+.cursor/
+
+# Logs
+*.log
+
+# Arquivos temporários
+*.tmp
+*.temp
+
+# credenciais locais (se usar no futuro)
+.env
+.env.local
