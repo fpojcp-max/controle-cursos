@@ -110,7 +110,6 @@
       table {
         width: 100%;
         border-collapse: collapse;
-        table-layout: fixed;
       }
       thead th {
         position: sticky;
@@ -123,7 +122,12 @@
         cursor: pointer;
         user-select: none;
       }
-      th, td {
+      th {
+        padding: 0.6rem 0.9rem;
+        border: 1px solid #edf2f1;
+        white-space: nowrap;
+      }
+      td {
         padding: 0.6rem 0.9rem;
         border: 1px solid #edf2f1;
         white-space: nowrap;
