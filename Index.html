@@ -127,6 +127,7 @@
       }
       
       .btn-custom:hover { opacity: 0.9; color: #ffffff; text-decoration: none; }
+      .btn-custom:disabled { opacity: 0.6; cursor: not-allowed; }
 
       /* Formulário bloqueado após salvar (edição): campos somente leitura, texto mais claro */
       .formulario-bloqueado .input,
@@ -166,12 +167,13 @@
           <img src="https://drive.google.com/thumbnail?id=1MPuonnO0E_mM8uIc5t1SXlMxVfEw6hDP&sz=w300" alt="Logo Educorp" class="logo-img">
         </div>
         <div style="margin-left: auto; text-align: right;">
-          <h1 class="title is-4 mb-0">Gestão de Cursos</h1>
-          <p class="is-size-6" style="color: #4a6661;">Controle e Registro de Atividades</p>
+          <h1 class="title is-4 mb-0">Gestão de Cursos e Turmas</h1>
+          <!--<p class="is-size-6" style="color: #4a6661;">Controle e Registro de Atividades</p>-->
         </div>
       </header>
 
       <div class="form-content">
+        <div id="msg" class="mb-3"></div>
         <div class="actions-row">
           <div class="is-size-6 muted">
             Tela: <span class="pill"><?= typeof id !== 'undefined' && id ? 'Edição' : 'Cadastro' ?></span>
@@ -210,7 +212,7 @@
             <div class="column is-4"><label class="label">Status</label><div class="select is-fullwidth"><select id="status" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
           </div>
 
-          <h2 class="section-title">3. Checklist de Processos</h2>
+          <h2 class="section-title">3. Checklist de Fluxo</h2>
           <div class="columns is-multiline">
              <div class="column is-3"><label class="label">TR</label><div class="select is-fullwidth"><select id="tr" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
              <div class="column is-3"><label class="label">Termo Comp.</label><div class="select is-fullwidth"><select id="termo" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
@@ -235,11 +237,10 @@
           </div>
 
           <div class="buttons-row">
-            <button type="button" class="btn-custom" id="btnLimpar">Limpar Tudo</button>
+            <button type="button" class="btn-custom" id="btnLimpar" <?= typeof id !== 'undefined' && id ? 'disabled' : '' ?>>Limpar Tudo</button>
             <button type="submit" class="btn-custom" id="btnEnviar">Salvar</button>
           </div>
         </form>
-        <div id="msg" class="mt-5"></div>
       </div>
     </div>
 
