@@ -226,7 +226,7 @@ function cadastrarRegistro(dados) {
   const metadados = { dataCadastro: dataAtual, emailUsuario: emailUsuario, id: id };
   const linha = dadosParaLinha(dados, metadados);
   inserirLinha(linha);
-  return "Sucesso! Registro salvo.";
+  return "Registro salvo.";
 }
 
 /**
@@ -263,7 +263,7 @@ function atualizarRegistroPorId(id, dados) {
   linhaAtual[24] = dados.divulgacao;
   linhaAtual[25] = dados.linkPagina;
   atualizarLinha(indice, linhaAtual);
-  return "Sucesso! Registro atualizado.";
+  return "Registro atualizado.";
 }
 
 /**
