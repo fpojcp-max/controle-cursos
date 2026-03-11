@@ -139,6 +139,23 @@
       .formulario-bloqueado select:disabled {
         pointer-events: none;
       }
+      .actions-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 15px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        background: rgba(0,191,165,0.1);
+        color: #1b3330;
+        font-weight: 600;
+        font-size: 0.9rem;
+      }
+      .muted { color: #6b8b86; }
     </style>
   </head>
   <body>
@@ -155,7 +172,10 @@
       </header>
 
       <div class="form-content">
-        <div style="display:flex; justify-content:flex-end; margin-bottom: 10px;">
+        <div class="actions-row">
+          <div class="is-size-6 muted">
+            Tela: <span class="pill"><?= typeof id !== 'undefined' && id ? 'Edição' : 'Cadastro' ?></span>
+          </div>
           <a class="btn-custom" href="<?= obterUrlWebApp('consulta') ?>" target="_top" rel="noopener">Voltar para Consulta</a>
         </div>
         <form id="ticketForm">
