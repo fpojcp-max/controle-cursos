@@ -1,24 +1,60 @@
 <script>
   let currentSort = { key: "DataCadastro", dir: "desc" };
   let lastQuery = null;
+  let selectedRowElement = null;
+  let selectedRowId = null;
+  let idColumnIndex = -1;
 
   window.onload = function() {
     wireEvents();
     loadFilterOptions();
   };
 
-  function wireEvents() {
-    document.getElementById("btnLimparFiltros").addEventListener("click", () => {
-      document.getElementById("searchForm").reset();
-      renderMessage("");
-      clearTable();
-      document.getElementById("resultsMeta").textContent = "";
-    });
+  function wireEvents() { 
+	  document.getElementById("btnLimparFiltros").addEventListener("click", () => { 
+		document.getElementById("searchForm").reset(); 
+		renderMessage(""); 
+		clearTable(); 
+		document.getElementById("resultsMeta").textContent = ""; 
+		esconderBotaoEditar(); }); 
 
     document.getElementById("searchForm").addEventListener("submit", (e) => {
       e.preventDefault();
       pesquisar();
     });
+
+    document.getElementById("btnEditar").addEventListener("click", () => {
+      if (!selectedRowId) return;
+      google.script.run
+        .withSuccessHandler(function(baseUrl) {
+          var url = baseUrl + "&id=" + encodeURIComponent(selectedRowId);
+          try { window.top.location.href = url; } catch (_) { window.location.href = url; }
+        })
+        .obterUrlWebApp("cadastro");
+    });
+  }
+
+  function esconderBotaoEditar() {
+    const wrap = document.getElementById("wrapBtnEditar");
+    wrap.classList.remove("visivel");
+    wrap.style.display = "none";
+  }
+
+  function mostrarBotaoEditar(habilitado) {
+    const wrap = document.getElementById("wrapBtnEditar");
+    wrap.classList.add("visivel");
+    wrap.style.display = "flex";
+    document.getElementById("btnEditar").disabled = !habilitado;
+  }
+
+  function indiceColunaId(columns) {
+    if (!columns || !columns.length) return -1;
+    const k = "id";
+    for (let i = 0; i < columns.length; i++) {
+      const label = (columns[i].label || columns[i].key || "").toString().trim().toLowerCase();
+      if (label === "id") return i;
+    }
+    return columns.length - 1;
   }
 
   function loadFilterOptions() {
@@ -34,7 +70,7 @@
       .withFailureHandler((err) => {
         renderMessage(`Erro ao carregar filtros: ${err}`, "danger");
       })
-      .getFormConfiguration();
+      .obterConfiguracaoFormulario();
   }
 
   function fillSelect(id, items) {
@@ -78,7 +114,7 @@
         setSearching(false);
         renderMessage(`Erro na pesquisa: ${err}`, "danger");
       })
-      .pesquisarChamados(lastQuery.filtros, lastQuery.sort, lastQuery.page);
+      .pesquisarRegistros(lastQuery.filtros, lastQuery.sort, lastQuery.page);
   }
 
   function setSearching(isSearching) {
@@ -117,11 +153,21 @@
     const columns = resp.columns || [];
     const rows = resp.rows || [];
 
+    idColumnIndex = indiceColunaId(columns);
+    selectedRowElement = null;
+    selectedRowId = null;
+
     renderHeader(columns);
     renderBody(columns, rows);
 
     const meta = document.getElementById("resultsMeta");
     meta.textContent = `Registros: ${resp.total || rows.length}${resp.truncated ? " (limitado)" : ""}`;
+
+    if (rows.length >= 1) {
+      mostrarBotaoEditar(false);
+    } else {
+      esconderBotaoEditar();
+    }
   }
 
   function renderHeader(columns) {
@@ -184,6 +230,13 @@
         const text = (v === null || v === undefined) ? "" : String(v);
         td.textContent = text;
         td.title = text;
+        td.addEventListener("click", () => {
+          if (selectedRowElement && selectedRowElement !== tr) selectedRowElement.classList.remove("row-selected");
+          selectedRowElement = tr;
+          tr.classList.add("row-selected");
+          selectedRowId = (idColumnIndex >= 0 && row[idColumnIndex] != null) ? String(row[idColumnIndex]) : null;
+          document.getElementById("btnEditar").disabled = !selectedRowId;
+        });
         tr.appendChild(td);
       });
       tbody.appendChild(tr);

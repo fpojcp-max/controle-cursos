@@ -127,6 +127,18 @@
       }
       
       .btn-custom:hover { opacity: 0.9; color: #ffffff; text-decoration: none; }
+
+      /* Formulário bloqueado após salvar (edição): campos somente leitura, texto mais claro */
+      .formulario-bloqueado .input,
+      .formulario-bloqueado .select select {
+        background-color: #f5f9f8 !important;
+        color: #7a8d89 !important;
+        cursor: not-allowed;
+      }
+      .formulario-bloqueado input[readonly],
+      .formulario-bloqueado select:disabled {
+        pointer-events: none;
+      }
     </style>
   </head>
   <body>
@@ -144,9 +156,10 @@
 
       <div class="form-content">
         <div style="display:flex; justify-content:flex-end; margin-bottom: 10px;">
-          <a class="btn-custom" href="<?= getWebAppUrl('consulta') ?>" target="_top" rel="noopener">Voltar para Consulta</a>
+          <a class="btn-custom" href="<?= obterUrlWebApp('consulta') ?>" target="_top" rel="noopener">Voltar para Consulta</a>
         </div>
         <form id="ticketForm">
+          <input type="hidden" id="registroId" value="<?= typeof id !== 'undefined' && id ? String(id).replace(/&/g,'&amp;').replace(/"/g,'&quot;') : '' ?>">
           <h2 class="section-title">1. Identificação do Curso</h2>
           <div class="columns is-multiline">
             <div class="column is-6">
@@ -203,7 +216,7 @@
 
           <div class="buttons-row">
             <button type="button" class="btn-custom" id="btnLimpar">Limpar Tudo</button>
-            <button type="submit" class="btn-custom" id="btnEnviar">Enviar Registro</button>
+            <button type="submit" class="btn-custom" id="btnEnviar">Salvar</button>
           </div>
         </form>
         <div id="msg" class="mt-5"></div>

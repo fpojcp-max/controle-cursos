@@ -1,11 +1,57 @@
 <script>
+  const CAMPOS_FORM = [
+    "curso", "turma", "inicio", "fim", "sala", "oferta", "responsavel", "prioridade",
+    "fimInscricoes", "status", "linkFSA", "tr", "termo", "plataformas", "coffee",
+    "agendarSala", "qrInscricao", "linkInscricao", "qrFrequencia", "frequencia",
+    "codVerificacao", "qrAvaliacao", "avaliacaoReacao", "prepDivulgacao", "divulgacao", "linkPagina"
+  ];
+
   window.onload = function() {
     google.script.run
       .withSuccessHandler(function(config) {
         popularCampos(config);
+        inicializarEdicaoSeNecessario();
       })
-      .getFormConfiguration();
+      .obterConfiguracaoFormulario();
   };
+
+  function inicializarEdicaoSeNecessario() {
+    const elId = document.getElementById("registroId");
+    const id = (elId && elId.value ? elId.value : "").trim();
+    if (!id) return;
+    const form = document.getElementById("ticketForm");
+    if (form.classList.contains("formulario-bloqueado")) return;
+    document.getElementById("btnEnviar").textContent = "Salvar";
+    google.script.run
+      .withSuccessHandler(function(dados) {
+        if (dados) {
+          preencherFormularioEdicao(dados);
+        } else {
+          var msg = document.getElementById("msg");
+          if (msg) msg.innerHTML = '<div class="notification is-warning is-light">Registro não encontrado.</div>';
+        }
+      })
+      .withFailureHandler(function(err) {
+        var msg = document.getElementById("msg");
+        if (msg) msg.innerHTML = '<div class="notification is-danger is-light">Erro ao carregar registro: ' + (err && err.message ? err.message : String(err)) + '</div>';
+      })
+      .obterRegistroPorId(id);
+  }
+
+  function preencherFormularioEdicao(dados) {
+    CAMPOS_FORM.forEach(function(key) {
+      const el = document.getElementById(key);
+      if (!el) return;
+      const v = dados[key];
+      el.value = (v === null || v === undefined) ? "" : String(v).trim();
+      el.classList.remove("is-placeholder");
+      if (el.tagName === "SELECT" && el.options.length) {
+        try {
+          if (el.value) el.classList.remove("is-placeholder");
+        } catch (_) {}
+      }
+    });
+  }
 
   function popularCampos(config) {
     const idsMapeados = {
@@ -41,67 +87,86 @@
   }
 
   document.getElementById('btnLimpar').onclick = function() {
+    if (document.getElementById("ticketForm").classList.contains("formulario-bloqueado")) return;
     if(confirm("Deseja limpar todos os dados do formulário?")) {
       document.getElementById('ticketForm').reset();
+      document.getElementById('registroId').value = '';
       document.getElementById('msg').innerHTML = '';
       resetVisualStyles();
-      google.script.run.withSuccessHandler(c => popularCampos(c)).getFormConfiguration();
+      google.script.run.withSuccessHandler(c => popularCampos(c)).obterConfiguracaoFormulario();
+      document.getElementById('btnEnviar').textContent = 'Salvar';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
+
+  function coletarDadosFormulario() {
+    const o = {};
+    CAMPOS_FORM.forEach(function(key) {
+      const el = document.getElementById(key);
+      o[key] = el ? el.value : "";
+    });
+    return o;
+  }
+
+  function bloquearFormularioAposEdicao() {
+    const form = document.getElementById("ticketForm");
+    form.classList.add("formulario-bloqueado");
+    CAMPOS_FORM.forEach(function(key) {
+      const el = document.getElementById(key);
+      if (!el) return;
+      if (el.tagName === "SELECT") el.disabled = true;
+      else el.readOnly = true;
+    });
+    document.getElementById("btnEnviar").disabled = true;
+    document.getElementById("btnLimpar").disabled = true;
+  }
 
   document.getElementById('ticketForm').onsubmit = function(e) {
     e.preventDefault();
     const btn = document.getElementById('btnEnviar');
     const msg = document.getElementById('msg');
+    const registroId = (document.getElementById('registroId').value || '').trim();
     
-    btn.innerHTML = "Enviando...";
+    btn.textContent = "Enviando...";
     btn.disabled = true;
     
-    const dados = {
-      curso: document.getElementById('curso').value,
-      turma: document.getElementById('turma').value,
-      inicio: document.getElementById('inicio').value,
-      fim: document.getElementById('fim').value,
-      sala: document.getElementById('sala').value,
-      oferta: document.getElementById('oferta').value,
-      responsavel: document.getElementById('responsavel').value,
-      prioridade: document.getElementById('prioridade').value,
-      fimInscricoes: document.getElementById('fimInscricoes').value,
-      status: document.getElementById('status').value,
-      linkFSA: document.getElementById('linkFSA').value,
-      tr: document.getElementById('tr').value,
-      termo: document.getElementById('termo').value,
-      plataformas: document.getElementById('plataformas').value,
-      coffee: document.getElementById('coffee').value,
-      agendarSala: document.getElementById('agendarSala').value,
-      qrInscricao: document.getElementById('qrInscricao').value,
-      linkInscricao: document.getElementById('linkInscricao').value,
-      qrFrequencia: document.getElementById('qrFrequencia').value,
-      frequencia: document.getElementById('frequencia').value,
-      codVerificacao: document.getElementById('codVerificacao').value,
-      qrAvaliacao: document.getElementById('qrAvaliacao').value,
-      avaliacaoReacao: document.getElementById('avaliacaoReacao').value,
-      prepDivulgacao: document.getElementById('prepDivulgacao').value,
-      divulgacao: document.getElementById('divulgacao').value,
-      linkPagina: document.getElementById('linkPagina').value
-    };
+    const dados = coletarDadosFormulario();
 
-    google.script.run
-      .withSuccessHandler(function(resp) {
-        msg.innerHTML = `<div class="notification is-success is-light has-text-centered"><b>Sucesso!</b> ${resp}</div>`;
-        btn.innerHTML = "Enviar Registro";
-        btn.disabled = false;
-        document.getElementById('ticketForm').reset();
-        resetVisualStyles();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        google.script.run.withSuccessHandler(c => popularCampos(c)).getFormConfiguration();
-      })
-      .withFailureHandler(function(err) {
-        msg.innerHTML = `<div class="notification is-danger is-light">Erro: ${err}</div>`;
-        btn.innerHTML = "Enviar Registro";
-        btn.disabled = false;
-      })
-      .salvarChamado(dados);
+    function sucessoCadastro(resp) {
+      msg.innerHTML = `<div class="notification is-success is-light has-text-centered"><b>Sucesso!</b> ${resp}</div>`;
+      btn.textContent = "Salvar";
+      btn.disabled = false;
+      document.getElementById('ticketForm').reset();
+      document.getElementById('registroId').value = '';
+      resetVisualStyles();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      google.script.run.withSuccessHandler(c => popularCampos(c)).obterConfiguracaoFormulario();
+    }
+
+    function sucessoEdicao(resp) {
+      msg.innerHTML = `<div class="notification is-success is-light has-text-centered"><b>Sucesso!</b> ${resp}</div>`;
+      btn.textContent = "Salvar";
+      btn.disabled = false;
+      bloquearFormularioAposEdicao();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function falha(err) {
+      msg.innerHTML = `<div class="notification is-danger is-light">Erro: ${err}</div>`;
+      btn.textContent = "Salvar";
+      btn.disabled = false;
+    }
+
+    if (registroId) {
+      google.script.run
+        .withSuccessHandler(sucessoEdicao)
+        .withFailureHandler(falha)
+        .atualizarRegistro(registroId, dados);
+    } else {
+      google.script.run
+        .withSuccessHandler(sucessoCadastro)
+        .withFailureHandler(falha)
+        .salvarRegistro(dados);
+    }
   };
 </script>

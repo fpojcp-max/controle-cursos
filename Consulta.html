@@ -150,6 +150,10 @@
         font-weight: 600;
         font-size: 0.9rem;
       }
+      .row-selected { background-color: #e3f5f2 !important; }
+      #wrapBtnEditar { display: none; justify-content: flex-end; margin-top: 12px; }
+      #wrapBtnEditar.visivel { display: flex; }
+      #btnEditar:disabled { opacity: 0.6; cursor: not-allowed; }
     </style>
   </head>
   <body>
@@ -172,7 +176,7 @@
           </div>
           <div style="display:flex; gap: 10px; align-items:center;">
             <button type="button" class="btn-custom btn-secondary" id="btnLimparFiltros">Limpar filtros</button>
-            <a class="btn-custom" href="<?= getWebAppUrl('cadastro') ?>" target="_top" rel="noopener">Cadastrar</a>
+            <a class="btn-custom" href="<?= obterUrlWebApp('cadastro') ?>" target="_top" rel="noopener">Cadastrar</a>
           </div>
         </div>
 
@@ -228,10 +232,12 @@
           </table>
         </div>
         <div class="mt-3 is-size-7 muted" id="resultsMeta"></div>
+        <div id="wrapBtnEditar" class="wrapBtnEditar">
+          <button type="button" class="btn-custom" id="btnEditar" disabled>Editar</button>
+        </div>
       </div>
     </div>
-
-    <?!= HtmlService.createHtmlOutputFromFile('ConsultaJavaScript').getContent(); ?>
+   <?!= HtmlService.createHtmlOutputFromFile('ConsultaJavaScript').getContent(); ?>
   </body>
 </html>
 
