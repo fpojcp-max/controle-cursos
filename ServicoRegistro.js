@@ -281,8 +281,15 @@ function obterRegistroPorIdServico(id) {
 function obterRegistroPorIdServico(id) {
   const linha = buscarLinhaPorId(id);
   if (!linha) return null;
+  return linhaParaDados(linha);
+}
 
-  const dados = linhaParaDados(linha);
-  Logger.log(dados);
-  return dados;
+/**
+ * Exclui um registro por ID (exclusão física na planilha).
+ */
+function excluirRegistroPorId(id) {
+  const indice = buscarIndiceLinhaPorId(id);
+  if (indice === -1) throw new Error("Registro não encontrado para exclusão.");
+  removerLinha(indice);
+  return "Registro excluído.";
 }

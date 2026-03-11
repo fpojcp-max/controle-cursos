@@ -58,6 +58,19 @@ function obterRegistroPorId(id) {
 }
 
 /**
+ * Exclui um registro por ID (exclusão física).
+ * @param {string} id - UUID do registro.
+ * @returns {string} Mensagem de sucesso ou erro.
+ */
+function excluirRegistro(id) {
+  try {
+    return excluirRegistroPorId(id);
+  } catch (e) {
+    return "Erro ao excluir: " + e.toString();
+  }
+}
+
+/**
  * Executa a migração que preenche a coluna ID nos registros antigos.
  * @returns {{ ok: boolean, message: string }}
  */

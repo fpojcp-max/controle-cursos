@@ -124,6 +124,15 @@ function atualizarLinha(indiceLinha, valores) {
 }
 
 /**
+ * Remove uma linha da planilha pelo índice 1-based (exclusão física).
+ * @param {number} indiceLinha - Número da linha (1-based).
+ */
+function removerLinha(indiceLinha) {
+  const aba = _obterAba_();
+  aba.deleteRow(indiceLinha);
+}
+
+/**
  * Retorna o schema padrão de colunas (quando não há cabeçalho na planilha).
  * @returns {{ key: string, label: string }[]}
  */

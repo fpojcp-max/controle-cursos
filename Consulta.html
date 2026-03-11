@@ -152,9 +152,9 @@
         font-size: 0.9rem;
       }
       .row-selected { background-color: #e3f5f2 !important; }
-      #wrapBtnEditar { display: none; justify-content: flex-end; margin-top: 12px; }
+      #wrapBtnEditar { display: none; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 12px; }
       #wrapBtnEditar.visivel { display: flex; }
-      #btnEditar:disabled { opacity: 0.6; cursor: not-allowed; }
+      #btnEditar:disabled, #btnExcluir:disabled { opacity: 0.6; cursor: not-allowed; }
       .pagination-bar {
         display: flex;
         flex-wrap: wrap;
@@ -182,6 +182,15 @@
       }
       .pagination-bar button:hover:not(:disabled) { opacity: 0.9; }
       .pagination-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+      #modalConfirmarExclusao { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; }
+      #modalConfirmarExclusao.visivel { display: flex; }
+      .modal-panel { background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-width: 420px; width: 90%; padding: 28px 32px; }
+      .modal-mensagem { font-size: 1.15rem; font-weight: 600; color: #1b3330; line-height: 1.5; margin-bottom: 24px; text-align: center; }
+      .modal-botoes { display: flex; justify-content: center; gap: 14px; }
+      .modal-botoes .btn-custom { min-width: 100px; }
+      .modal-botoes .btn-modal-nao { background: #f0f4f3; color: #2d4a46; border: 1px solid #b0c9c5; }
+      .modal-botoes .btn-modal-nao:hover { background: #e0ebe9; color: #2d4a46; }
     </style>
   </head>
   <body>
@@ -268,7 +277,18 @@
           </div>
         </div>
         <div id="wrapBtnEditar" class="wrapBtnEditar">
+          <button type="button" class="btn-custom" id="btnExcluir" disabled>Excluir</button>
           <button type="button" class="btn-custom" id="btnEditar" disabled>Editar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="modalConfirmarExclusao" aria-hidden="true">
+      <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalConfirmarExclusaoMensagem">
+        <p id="modalConfirmarExclusaoMensagem" class="modal-mensagem">A exclusão não poderá ser revertida. Confirma a exclusão do registro?</p>
+        <div class="modal-botoes">
+          <button type="button" class="btn-custom" id="modalBtnSim">Sim</button>
+          <button type="button" class="btn-custom btn-modal-nao" id="modalBtnNao">Não</button>
         </div>
       </div>
     </div>

@@ -44,6 +44,36 @@
       pesquisar();
     });
 
+    document.getElementById("btnExcluir").addEventListener("click", () => {
+      if (!selectedRowId) return;
+      mostrarModalConfirmarExclusao();
+    });
+
+    document.getElementById("modalBtnSim").addEventListener("click", () => {
+      esconderModalConfirmarExclusao();
+      if (!selectedRowId) return;
+      renderMessage("Excluindo...", "info");
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (resp && String(resp).indexOf("Erro ao") === 0) {
+            renderMessage(resp, "danger");
+          } else {
+            renderMessage(resp || "Registro excluído.", "success");
+            pesquisar();
+          }
+        })
+        .withFailureHandler(function(err) {
+          renderMessage("Erro ao excluir: " + err, "danger");
+        })
+        .excluirRegistro(selectedRowId);
+    });
+
+    document.getElementById("modalBtnNao").addEventListener("click", esconderModalConfirmarExclusao);
+
+    document.getElementById("modalConfirmarExclusao").addEventListener("click", function(e) {
+      if (e.target === this) esconderModalConfirmarExclusao();
+    });
+
     document.getElementById("btnEditar").addEventListener("click", () => {
       if (!selectedRowId) return;
       google.script.run
@@ -61,11 +91,22 @@
     wrap.style.display = "none";
   }
 
+  function mostrarModalConfirmarExclusao() {
+    document.getElementById("modalConfirmarExclusao").classList.add("visivel");
+    document.getElementById("modalConfirmarExclusao").setAttribute("aria-hidden", "false");
+  }
+
+  function esconderModalConfirmarExclusao() {
+    document.getElementById("modalConfirmarExclusao").classList.remove("visivel");
+    document.getElementById("modalConfirmarExclusao").setAttribute("aria-hidden", "true");
+  }
+
   function mostrarBotaoEditar(habilitado) {
     const wrap = document.getElementById("wrapBtnEditar");
     wrap.classList.add("visivel");
     wrap.style.display = "flex";
     document.getElementById("btnEditar").disabled = !habilitado;
+    document.getElementById("btnExcluir").disabled = !habilitado;
   }
 
   function indiceColunaId(columns) {
@@ -285,6 +326,7 @@
           tr.classList.add("row-selected");
           selectedRowId = (idColumnIndex >= 0 && row[idColumnIndex] != null) ? String(row[idColumnIndex]) : null;
           document.getElementById("btnEditar").disabled = !selectedRowId;
+          document.getElementById("btnExcluir").disabled = !selectedRowId;
         });
         tr.appendChild(td);
       });
