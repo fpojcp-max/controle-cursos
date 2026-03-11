@@ -103,8 +103,9 @@
       .table-wrap {
         border: 1px solid #dde5e3;
         border-radius: 10px;
-        overflow: auto;
-        max-height: 520px;
+        overflow-y: auto;
+        overflow-x: auto;
+        max-height: 600px;
         background: white;
       }
       table {
@@ -154,6 +155,33 @@
       #wrapBtnEditar { display: none; justify-content: flex-end; margin-top: 12px; }
       #wrapBtnEditar.visivel { display: flex; }
       #btnEditar:disabled { opacity: 0.6; cursor: not-allowed; }
+      .pagination-bar {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 16px;
+        margin-top: 12px;
+        margin-bottom: 8px;
+      }
+      .pagination-bar .pagination-info { font-size: 0.9rem; color: #4a6661; }
+      .pagination-bar .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      .pagination-bar button {
+        padding: 0 16px;
+        height: 2.4em;
+        font-size: 0.9rem;
+        border-radius: 4px;
+        cursor: pointer;
+        background: #00bfa5;
+        color: #fff;
+        border: none;
+        font-weight: 600;
+      }
+      .pagination-bar button:hover:not(:disabled) { opacity: 0.9; }
+      .pagination-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
   </head>
   <body>
@@ -231,7 +259,14 @@
             <tbody id="resultsBody"></tbody>
           </table>
         </div>
-        <div class="mt-3 is-size-7 muted" id="resultsMeta"></div>
+        <div id="paginationBar" class="pagination-bar" style="display: none;">
+          <span class="pagination-info muted is-size-7" id="resultsMeta"></span>
+          <div class="pagination-controls">
+            <button type="button" id="btnPaginaAnterior">Anterior</button>
+            <span class="pagination-info muted is-size-7" id="paginationLabel"></span>
+            <button type="button" id="btnPaginaProxima">Próxima</button>
+          </div>
+        </div>
         <div id="wrapBtnEditar" class="wrapBtnEditar">
           <button type="button" class="btn-custom" id="btnEditar" disabled>Editar</button>
         </div>

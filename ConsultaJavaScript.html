@@ -1,6 +1,9 @@
 <script>
+  const PAGE_SIZE = 50;
   let currentSort = { key: "DataCadastro", dir: "desc" };
   let lastQuery = null;
+  let currentPage = 1;
+  let totalRecords = 0;
   let selectedRowElement = null;
   let selectedRowId = null;
   let idColumnIndex = -1;
@@ -10,16 +13,34 @@
     loadFilterOptions();
   };
 
-  function wireEvents() { 
-	  document.getElementById("btnLimparFiltros").addEventListener("click", () => { 
-		document.getElementById("searchForm").reset(); 
-		renderMessage(""); 
-		clearTable(); 
-		document.getElementById("resultsMeta").textContent = ""; 
-		esconderBotaoEditar(); }); 
+  function wireEvents() {
+    document.getElementById("btnLimparFiltros").addEventListener("click", () => {
+      document.getElementById("searchForm").reset();
+      renderMessage("");
+      clearTable();
+      document.getElementById("resultsMeta").textContent = "";
+      document.getElementById("paginationBar").style.display = "none";
+      currentPage = 1;
+      totalRecords = 0;
+      esconderBotaoEditar();
+    });
 
     document.getElementById("searchForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      currentPage = 1;
+      pesquisar();
+    });
+
+    document.getElementById("btnPaginaAnterior").addEventListener("click", () => {
+      if (currentPage <= 1) return;
+      currentPage--;
+      pesquisar();
+    });
+
+    document.getElementById("btnPaginaProxima").addEventListener("click", () => {
+      var totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+      if (currentPage >= totalPages) return;
+      currentPage++;
       pesquisar();
     });
 
@@ -94,27 +115,57 @@
   }
 
   function pesquisar() {
-    const filtros = getFilters();
-    lastQuery = { filtros, sort: currentSort, page: { offset: 0, limit: 200 } };
+    var filtros = getFilters();
+    var offset = (currentPage - 1) * PAGE_SIZE;
+    lastQuery = { filtros: filtros, sort: currentSort, page: { offset: offset, limit: PAGE_SIZE } };
 
     setSearching(true);
     renderMessage("Pesquisando...", "info");
 
     google.script.run
-      .withSuccessHandler((resp) => {
+      .withSuccessHandler(function(resp) {
         setSearching(false);
         if (!resp || !resp.columns) {
           renderMessage("Resposta inválida do servidor.", "danger");
           return;
         }
         renderMessage("");
+        totalRecords = resp.total || 0;
         renderResults(resp);
+        updatePaginationUI(resp);
       })
-      .withFailureHandler((err) => {
+      .withFailureHandler(function(err) {
         setSearching(false);
-        renderMessage(`Erro na pesquisa: ${err}`, "danger");
+        renderMessage("Erro na pesquisa: " + err, "danger");
       })
       .pesquisarRegistros(lastQuery.filtros, lastQuery.sort, lastQuery.page);
+  }
+
+  function updatePaginationUI(resp) {
+    var total = resp.total || 0;
+    var rows = resp.rows || [];
+    var bar = document.getElementById("paginationBar");
+    var meta = document.getElementById("resultsMeta");
+    var label = document.getElementById("paginationLabel");
+    var btnPrev = document.getElementById("btnPaginaAnterior");
+    var btnNext = document.getElementById("btnPaginaProxima");
+
+    if (total === 0 && rows.length === 0) {
+      bar.style.display = "none";
+      meta.textContent = "";
+      return;
+    }
+
+    bar.style.display = "flex";
+    var from = (currentPage - 1) * PAGE_SIZE + 1;
+    var to = (currentPage - 1) * PAGE_SIZE + rows.length;
+    meta.textContent = "Registros " + from + " a " + to + " de " + total;
+
+    var totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
+    label.textContent = "Página " + currentPage + " de " + totalPages;
+
+    btnPrev.disabled = currentPage <= 1;
+    btnNext.disabled = currentPage >= totalPages;
   }
 
   function setSearching(isSearching) {
@@ -160,9 +211,6 @@
     renderHeader(columns);
     renderBody(columns, rows);
 
-    const meta = document.getElementById("resultsMeta");
-    meta.textContent = `Registros: ${resp.total || rows.length}${resp.truncated ? " (limitado)" : ""}`;
-
     if (rows.length >= 1) {
       mostrarBotaoEditar(false);
     } else {
@@ -203,6 +251,7 @@
     } else {
       currentSort = { key, dir: "asc" };
     }
+    currentPage = 1;
     if (lastQuery) pesquisar();
   }
 

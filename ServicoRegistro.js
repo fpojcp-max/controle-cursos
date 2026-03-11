@@ -206,7 +206,7 @@ function buscarRegistrosComFiltros(filtros, ordenacao, paginacao) {
   const filtradas = aplicarFiltros(linhas, colunas, filtros || {});
   const ordenadas = aplicarOrdenacao(filtradas, colunas, ordenacao || { key: "", dir: "asc" });
   const offset = Math.max(0, Number(paginacao && paginacao.offset) || 0);
-  const limit = Math.min(500, Math.max(1, Number(paginacao && paginacao.limit) || 200));
+  const limit = Math.min(100, Math.max(1, Number(paginacao && paginacao.limit) || 50));
   const paginadas = ordenadas.slice(offset, offset + limit);
   return {
     columns: colunas,
