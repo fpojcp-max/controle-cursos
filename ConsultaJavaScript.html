@@ -22,8 +22,11 @@
       document.getElementById("paginationBar").style.display = "none";
       currentPage = 1;
       totalRecords = 0;
+      document.getElementById("btnExportarCsv").disabled = true;
       esconderBotaoEditar();
     });
+
+    document.getElementById("btnExportarCsv").addEventListener("click", exportarCsv);
 
     document.getElementById("searchForm").addEventListener("submit", (e) => {
       e.preventDefault();
@@ -191,6 +194,8 @@
     var btnPrev = document.getElementById("btnPaginaAnterior");
     var btnNext = document.getElementById("btnPaginaProxima");
 
+    document.getElementById("btnExportarCsv").disabled = total === 0;
+
     if (total === 0 && rows.length === 0) {
       bar.style.display = "none";
       meta.textContent = "";
@@ -234,6 +239,55 @@
       .replaceAll(">", "&gt;")
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#039;");
+  }
+
+  function escapeCsvCell(val) {
+    var s = (val === null || val === undefined) ? "" : String(val);
+    if (/[",\r\n]/.test(s)) {
+      return '"' + s.replace(/"/g, '""') + '"';
+    }
+    return s;
+  }
+
+  function exportarCsv() {
+    if (!lastQuery || totalRecords === 0) return;
+    var btn = document.getElementById("btnExportarCsv");
+    btn.disabled = true;
+    renderMessage("Preparando exportação...", "info");
+    google.script.run
+      .withSuccessHandler(function(data) {
+        btn.disabled = totalRecords === 0;
+        renderMessage("");
+        if (!data || !data.columns) {
+          renderMessage("Nenhum dado para exportar.", "danger");
+          return;
+        }
+        var columns = data.columns || [];
+        var rows = data.rows || [];
+        var BOM = "\uFEFF";
+        var header = columns.map(function(c) { return escapeCsvCell(c.label || c.key); }).join(";");
+        var body = rows.map(function(row) {
+          return row.map(function(cell) { return escapeCsvCell(cell); }).join(";");
+        }).join("\r\n");
+        var csv = BOM + header + "\r\n" + body;
+        var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+        var url = URL.createObjectURL(blob);
+        var a = document.createElement("a");
+        a.href = url;
+        var now = new Date();
+        var ds = now.getFullYear() + "-" + String(now.getMonth() + 1).padStart(2, "0") + "-" + String(now.getDate()).padStart(2, "0");
+        var ts = String(now.getHours()).padStart(2, "0") + "-" + String(now.getMinutes()).padStart(2, "0");
+        a.download = "exportacao_" + ds + "_" + ts + ".csv";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      })
+      .withFailureHandler(function(err) {
+        btn.disabled = false;
+        renderMessage("Erro ao exportar: " + err, "danger");
+      })
+      .obterRegistrosParaExportar(lastQuery.filtros, lastQuery.sort);
   }
 
   function clearTable() {

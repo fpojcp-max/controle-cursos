@@ -216,6 +216,26 @@ function buscarRegistrosComFiltros(filtros, ordenacao, paginacao) {
   };
 }
 
+/** Limite máximo de linhas para exportação (todas as páginas). */
+const LIMITE_EXPORTACAO = 10000;
+
+/**
+ * Busca todos os registros que passam nos filtros e ordenação (para exportação CSV).
+ * @returns {{ columns: any[], rows: any[][] }}
+ */
+function buscarRegistrosParaExportar(filtros, ordenacao) {
+  const { valores, temCabecalho } = lerDadosPlanilha();
+  if (!valores.length) {
+    return { columns: obterColunasPadrao(), rows: [] };
+  }
+  const colunas = temCabecalho ? normalizarColunasDoCabecalho(valores[0]) : obterColunasPadrao();
+  const linhas = valores.slice(temCabecalho ? 1 : 0);
+  const filtradas = aplicarFiltros(linhas, colunas, filtros || {});
+  const ordenadas = aplicarOrdenacao(filtradas, colunas, ordenacao || { key: "", dir: "asc" });
+  const todas = ordenadas.slice(0, LIMITE_EXPORTACAO);
+  return { columns: colunas, rows: todas };
+}
+
 /**
  * Cadastra um novo registro (insere linha).
  */

@@ -191,6 +191,37 @@
       .modal-botoes .btn-custom { min-width: 100px; }
       .modal-botoes .btn-modal-nao { background: #f0f4f3; color: #2d4a46; border: 1px solid #b0c9c5; }
       .modal-botoes .btn-modal-nao:hover { background: #e0ebe9; color: #2d4a46; }
+ 
+      .resultados-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 25px 0 15px 0;
+        gap: 10px;
+      }
+
+      .section-title {
+        flex-grow: 1;
+        margin: 0;
+      }
+
+      #btnExportarCsv {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 0 14px;
+        height: 2.4em;
+        font-size: 0.9rem;
+        font-weight: 600;
+        border-radius: 4px;
+        border: none;
+        cursor: pointer;
+        background: #00bfa5;
+        color: #fff;
+      }
+      #btnExportarCsv:hover:not(:disabled) { opacity: 0.9; }
+      #btnExportarCsv:disabled { opacity: 0.5; cursor: not-allowed; }
     </style>
   </head>
   <body>
@@ -261,7 +292,13 @@
           </div>
         </form>
 
-        <h2 class="section-title">Resultados</h2>
+        <div class="resultados-header">
+          <h2 class="section-title">Resultados</h2>
+          <button type="button" id="btnExportarCsv" disabled title="Exportar tabela para CSV (todos os registros dos filtros)">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Exportar CSV
+          </button>
+        </div>
         <div class="table-wrap">
           <table class="table is-striped is-hoverable is-fullwidth" id="resultsTable">
             <thead id="resultsHead"></thead>

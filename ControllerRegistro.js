@@ -71,6 +71,16 @@ function excluirRegistro(id) {
 }
 
 /**
+ * Retorna todos os registros (filtros + ordenação) para exportação CSV.
+ * @param {Object} filtros
+ * @param {{ key: string, dir: string }} ordenacao
+ * @returns {{ columns: any[], rows: any[][] }}
+ */
+function obterRegistrosParaExportar(filtros, ordenacao) {
+  return buscarRegistrosParaExportar(filtros, ordenacao);
+}
+
+/**
  * Executa a migração que preenche a coluna ID nos registros antigos.
  * @returns {{ ok: boolean, message: string }}
  */
