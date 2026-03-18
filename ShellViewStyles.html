@@ -1,0 +1,56 @@
+<style>
+  .spa-content { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+  .form-content { padding: 30px 40px 40px 40px; }
+  .content-block { box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+  .main-placeholder { flex: 1; min-height: 120px; padding: 24px 40px; }
+  .title.is-4 { font-size: 1.75rem; color: #2d4a46; font-weight: 600; }
+  .label { font-size: 0.95rem; color: #334441; font-weight: 600; margin-bottom: 0.4rem; }
+  .section-title { border-left: 6px solid #00bfa5; padding: 10px 15px; margin: 25px 0 15px 0; color: #1b3330; font-weight: 700; letter-spacing: 0.5px; background: rgba(0, 191, 165, 0.07); font-size: 1.1rem; }
+  .section-title { flex-grow: 1; }
+  .resultados-header .section-title { margin: 0; }
+  .input, .select select { font-size: 0.95rem !important; height: 2.7em; border-color: #b0c9c5; color: #2d3e3b; font-weight: 500; }
+  .is-placeholder { color: #a0b1af !important; font-weight: 400 !important; }
+  .select select option { color: #2d3e3b; font-weight: 500; }
+  input[type="date"].is-placeholder::-webkit-datetime-edit { color: #a0b1af; }
+  .input:focus, .select select:focus { border-color: #00bfa5; box-shadow: 0 0 0 0.125em rgba(0, 191, 165, 0.2); }
+  .actions-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 15px; }
+  .buttons-row { display: flex; justify-content: flex-end; gap: 15px; margin-top: 50px; padding-top: 25px; border-top: 1px solid #eee; }
+  .btn-custom { background-color: #00bfa5; color: #fff; border: none; padding: 0 25px; font-weight: 600; font-size: 0.98rem; height: 2.8em; border-radius: 4px; cursor: pointer; transition: opacity 0.3s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; }
+  .btn-custom:hover { opacity: 0.9; color: #fff; text-decoration: none; }
+  .btn-custom:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-secondary { background-color: #00bfa5; color: #fff; border: none; }
+  .btn-secondary:hover { opacity: 0.9; color: #fff; }
+  .formulario-bloqueado .input, .formulario-bloqueado .select select { background-color: #f5f9f8 !important; color: #7a8d89 !important; cursor: not-allowed; }
+  .formulario-bloqueado input[readonly], .formulario-bloqueado select:disabled { pointer-events: none; }
+  .muted { color: #6b8b86; }
+  .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: rgba(0,191,165,0.1); color: #1b3330; font-weight: 600; font-size: 0.9rem; }
+  .table-wrap { border: 1px solid #dde5e3; border-radius: 10px; overflow-y: auto; overflow-x: auto; max-height: 600px; background: white; }
+  table { width: 100%; border-collapse: collapse; }
+  thead th { position: sticky; top: 0; background: #f8fcfb; z-index: 2; white-space: nowrap; }
+  th.sortable { cursor: pointer; user-select: none; }
+  th, td { padding: 0.6rem 0.9rem; border: 1px solid #edf2f1; white-space: nowrap; }
+  td { overflow: hidden; text-overflow: ellipsis; }
+  .sort-icon { display: inline-block; margin-left: 6px; font-size: 0.85em; color: #6b8b86; }
+  .row-selected { background-color: #e3f5f2 !important; }
+  #wrapBtnEditar { display: none; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 12px; }
+  #wrapBtnEditar.visivel { display: flex; }
+  #btnEditar:disabled, #btnExcluir:disabled { opacity: 0.6; cursor: not-allowed; }
+  .pagination-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; margin-top: 12px; margin-bottom: 8px; }
+  .pagination-bar .pagination-info { font-size: 0.9rem; color: #4a6661; }
+  .pagination-bar .pagination-controls { display: flex; align-items: center; gap: 10px; }
+  .pagination-bar button { padding: 0 16px; height: 2.4em; font-size: 0.9rem; border-radius: 4px; cursor: pointer; background: #00bfa5; color: #fff; border: none; font-weight: 600; }
+  .pagination-bar button:hover:not(:disabled) { opacity: 0.9; }
+  .pagination-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
+  #modalConfirmarExclusao { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; }
+  #modalConfirmarExclusao.visivel { display: flex; }
+  .modal-panel { background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-width: 420px; width: 90%; padding: 28px 32px; }
+  .modal-mensagem { font-size: 1.15rem; font-weight: 600; color: #1b3330; line-height: 1.5; margin-bottom: 24px; text-align: center; }
+  .modal-botoes { display: flex; justify-content: center; gap: 14px; }
+  .modal-botoes .btn-custom { min-width: 100px; }
+  .modal-botoes .btn-modal-nao { background: #f0f4f3; color: #2d4a46; border: 1px solid #b0c9c5; }
+  .modal-botoes .btn-modal-nao:hover { background: #e0ebe9; color: #2d4a46; }
+  .resultados-header { display: flex; align-items: center; justify-content: space-between; margin: 25px 0 15px 0; gap: 10px; }
+  #btnExportarCsv { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 0 14px; height: 2.4em; font-size: 0.9rem; font-weight: 600; border-radius: 4px; border: none; cursor: pointer; background: #00bfa5; color: #fff; }
+  #btnExportarCsv:hover:not(:disabled) { opacity: 0.9; }
+  #btnExportarCsv:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>

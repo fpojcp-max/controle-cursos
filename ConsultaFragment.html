@@ -1,0 +1,89 @@
+<div class="form-content">
+  <div id="msg" class="mb-3"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+    </div>
+    <div style="display:flex; gap: 10px; align-items:center;">
+      <button type="button" class="btn-custom btn-secondary" id="btnLimparFiltros">Limpar filtros</button>
+      <a href="#" data-view="cadastro" class="btn-custom">Cadastrar</a>
+    </div>
+  </div>
+
+  <h2 class="section-title">Filtros de busca</h2>
+  <form id="searchForm">
+    <div class="columns is-multiline">
+      <div class="column is-5">
+        <label class="label">Curso</label>
+        <div class="select is-fullwidth"><select id="fCurso"></select></div>
+      </div>
+      <div class="column is-2">
+        <label class="label">Turma</label>
+        <div class="select is-fullwidth"><select id="fTurma"></select></div>
+      </div>
+      <div class="column is-3">
+        <label class="label">Status</label>
+        <div class="select is-fullwidth"><select id="fStatus"></select></div>
+      </div>
+      <div class="column is-2">
+        <label class="label">Sala</label>
+        <div class="select is-fullwidth"><select id="fSala"></select></div>
+      </div>
+      <div class="column is-3">
+        <label class="label">Responsável</label>
+        <div class="select is-fullwidth"><select id="fResponsavel"></select></div>
+      </div>
+      <div class="column is-3">
+        <label class="label">Oferta</label>
+        <div class="select is-fullwidth"><select id="fOferta"></select></div>
+      </div>
+      <div class="column is-3">
+        <label class="label">Início (de)</label>
+        <input class="input" type="date" id="fInicioDe">
+      </div>
+      <div class="column is-3">
+        <label class="label">Início (até)</label>
+        <input class="input" type="date" id="fInicioAte">
+      </div>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap: 12px; margin-top: 10px;">
+      <button type="submit" class="btn-custom" id="btnPesquisar">Pesquisar</button>
+    </div>
+  </form>
+
+  <div class="resultados-header">
+    <h2 class="section-title">Resultados</h2>
+    <button type="button" id="btnExportarCsv" disabled title="Exportar tabela para CSV (todos os registros dos filtros)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Exportar CSV
+    </button>
+  </div>
+  <div class="table-wrap">
+    <table class="table is-striped is-hoverable is-fullwidth" id="resultsTable">
+      <thead id="resultsHead"></thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
+  <div id="paginationBar" class="pagination-bar" style="display: none;">
+    <span class="pagination-info muted is-size-7" id="resultsMeta"></span>
+    <div class="pagination-controls">
+      <button type="button" id="btnPaginaAnterior">Anterior</button>
+      <span class="pagination-info muted is-size-7" id="paginationLabel"></span>
+      <button type="button" id="btnPaginaProxima">Próxima</button>
+    </div>
+  </div>
+  <div id="wrapBtnEditar" class="wrapBtnEditar">
+    <button type="button" class="btn-custom" id="btnExcluir" disabled>Excluir</button>
+    <button type="button" class="btn-custom" id="btnEditar" disabled>Editar</button>
+  </div>
+</div>
+
+<div id="modalConfirmarExclusao" aria-hidden="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="modalConfirmarExclusaoMensagem">
+    <p id="modalConfirmarExclusaoMensagem" class="modal-mensagem">A exclusão não poderá ser revertida. Confirma a exclusão do registro?</p>
+    <div class="modal-botoes">
+      <button type="button" class="btn-custom" id="modalBtnSim">Sim</button>
+      <button type="button" class="btn-custom btn-modal-nao" id="modalBtnNao">Não</button>
+    </div>
+  </div>
+</div>

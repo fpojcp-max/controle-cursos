@@ -1,21 +1,20 @@
 /**
  * Ponto de entrada do Web App e URL.
+ * Camada Controller (entrada): SPA (uma única página Shell); deep link por view/id na URL.
  */
 
 /**
- * Entrada do Web App (GAS).
- * @param {Object} e - Objeto com e.parameter (ex.: view=consulta ou view=cadastro).
+ * Entrada do Web App (GAS). Sempre serve o Shell (SPA); view/id na URL para deep link.
+ * @param {Object} e - Objeto com e.parameter (view=, id=).
  * @returns {GoogleAppsScript.HTML.HtmlOutput}
  */
 function doGet(e) {
-  const view = (e && e.parameter && e.parameter.view) ? String(e.parameter.view) : "consulta";
-  const file = view === "cadastro" ? "Index" : "Consulta";
-  const template = HtmlService.createTemplateFromFile(file);
-  if (file === "Index" && e && e.parameter && e.parameter.id) {
-    template.id = String(e.parameter.id);
-  } else {
-    template.id = "";
-  }
+  const view = (e && e.parameter && e.parameter.view) ? String(e.parameter.view) : "home";
+  const id = (e && e.parameter && e.parameter.id) ? String(e.parameter.id) : "";
+  const template = HtmlService.createTemplateFromFile("Shell");
+  template.initialView = view;
+  template.initialId = id;
+  template.menuHtml = getMenuHtml(view, true);
   return template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -24,12 +23,65 @@ function doGet(e) {
 }
 
 /**
- * Retorna a URL do Web App com query view=...
- * @param {string} visualizacao - "consulta" ou "cadastro".
+ * Retorna o HTML do menu principal. Se spa=true, links usam data-view e href="#".
+ * @param {string} view - "home", "consulta" ou "cadastro".
+ * @param {boolean} spa - Se true, menu para SPA (navegação client-side).
+ * @returns {string}
+ */
+function getMenuHtml(view, spa) {
+  const t = HtmlService.createTemplateFromFile("Menu");
+  t.view = view || "";
+  t.urlConsulta = spa ? "#" : obterUrlWebApp("consulta");
+  t.spa = spa === true;
+  return t.evaluate().getContent();
+}
+
+/**
+ * Retorna conteúdo HTML e script de uma view para injeção no SPA (chamado pelo cliente).
+ * @param {string} view - "home", "consulta" ou "cadastro".
+ * @param {string} id - ID do registro (só para cadastro/edição).
+ * @returns {{ html: string, script: string }}
+ */
+function getPageContent(view, id) {
+  view = view || "home";
+  id = (id && String(id).trim()) ? String(id).trim() : "";
+  if (view === "home") {
+    const t = HtmlService.createTemplateFromFile("HomeFragment");
+    return { html: t.evaluate().getContent(), script: "" };
+  }
+  if (view === "consulta") {
+    const t = HtmlService.createTemplateFromFile("ConsultaFragment");
+    t.spa = true;
+    t.parentItem = "Turma";
+    t.subItem = "Consulta";
+    return {
+      html: t.evaluate().getContent(),
+      script: HtmlService.createHtmlOutputFromFile("ConsultaJavaScript").getContent()
+    };
+  }
+  if (view === "cadastro") {
+    const t = HtmlService.createTemplateFromFile("IndexFragment");
+    t.id = id;
+    t.spa = true;
+    t.parentItem = "Turma";
+    t.subItem = id ? "Edição" : "Cadastro";
+    const scriptCadastro = HtmlService.createHtmlOutputFromFile("JavaScript").getContent();
+    const scriptUpdateStyle = "<script>function updateStyle(el){if(el.value&&el.value!=='')el.classList.remove('is-placeholder');else el.classList.add('is-placeholder');}<\/script>";
+    return {
+      html: t.evaluate().getContent(),
+      script: scriptUpdateStyle + scriptCadastro
+    };
+  }
+  return { html: "", script: "" };
+}
+
+/**
+ * Retorna a URL do Web App com query view=... (ou base sem query para home).
+ * @param {string} visualizacao - "home", "consulta" ou "cadastro".
  * @returns {string}
  */
 function obterUrlWebApp(visualizacao) {
   const base = ScriptApp.getService().getUrl();
-  if (!visualizacao) return base;
+  if (!visualizacao || String(visualizacao) === "home") return base;
   return base + "?view=" + encodeURIComponent(String(visualizacao));
 }

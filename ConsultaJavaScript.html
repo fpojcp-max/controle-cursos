@@ -8,7 +8,7 @@
   let selectedRowId = null;
   let idColumnIndex = -1;
 
-  window.onload = function() {
+  window.ConsultaInit = function() {
     wireEvents();
     loadFilterOptions();
   };
@@ -79,6 +79,10 @@
 
     document.getElementById("btnEditar").addEventListener("click", () => {
       if (!selectedRowId) return;
+      if (typeof window.navigate === "function") {
+        window.navigate("cadastro", selectedRowId);
+        return;
+      }
       google.script.run
         .withSuccessHandler(function(baseUrl) {
           var url = baseUrl + "&id=" + encodeURIComponent(selectedRowId);

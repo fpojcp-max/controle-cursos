@@ -6,7 +6,7 @@
     "codVerificacao", "qrAvaliacao", "avaliacaoReacao", "prepDivulgacao", "divulgacao", "linkPagina"
   ];
 
-  window.onload = function() {
+  window.CadastroInit = function() {
     google.script.run
       .withSuccessHandler(function(config) {
         popularCampos(config);
@@ -109,6 +109,10 @@
     return o;
   }
 
+  function scrollParaTopo() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function bloquearFormularioAposEdicao() {
     const form = document.getElementById("ticketForm");
     form.classList.add("formulario-bloqueado");
@@ -140,7 +144,7 @@
       document.getElementById('ticketForm').reset();
       document.getElementById('registroId').value = '';
       resetVisualStyles();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollParaTopo();
       google.script.run.withSuccessHandler(c => popularCampos(c)).obterConfiguracaoFormulario();
     }
 
@@ -149,25 +153,29 @@
       btn.textContent = "Salvar";
       btn.disabled = false;
       bloquearFormularioAposEdicao();
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollParaTopo();
     }
 
     function falha(err) {
       msg.innerHTML = `<div class="notification is-danger is-light">Erro: ${err}</div>`;
       btn.textContent = "Salvar";
       btn.disabled = false;
+      scrollParaTopo();
+    }
+
+    function onResult(resp) {
+      if (!resp || resp.success === false) {
+        falha(resp ? resp.message : "Erro desconhecido.");
+        return;
+      }
+      if (registroId) sucessoEdicao(resp.message);
+      else sucessoCadastro(resp.message);
     }
 
     if (registroId) {
-      google.script.run
-        .withSuccessHandler(sucessoEdicao)
-        .withFailureHandler(falha)
-        .atualizarRegistro(registroId, dados);
+      google.script.run.withSuccessHandler(onResult).withFailureHandler(falha).atualizarRegistro(registroId, dados);
     } else {
-      google.script.run
-        .withSuccessHandler(sucessoCadastro)
-        .withFailureHandler(falha)
-        .salvarRegistro(dados);
+      google.script.run.withSuccessHandler(onResult).withFailureHandler(falha).salvarRegistro(dados);
     }
   };
 </script>

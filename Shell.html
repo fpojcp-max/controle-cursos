@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <?!= HtmlService.createHtmlOutputFromFile('LayoutGlobal').getContent(); ?>
+    <?!= HtmlService.createHtmlOutputFromFile('ShellViewStyles').getContent(); ?>
+  </head>
+  <body data-initial-view="<?= initialView ?>" data-initial-id="<?= initialId ? String(initialId).replace(/&/g,'&amp;').replace(/"/g,'&quot;') : '' ?>">
+    <div class="form-container">
+      <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
+
+      <main class="layout-block content-block">
+        <?!= menuHtml ?>
+        <div id="main-content" class="spa-content"></div>
+      </main>
+
+      <?!= HtmlService.createHtmlOutputFromFile('Footer').getContent(); ?>
+    </div>
+
+    <script>
+(function() {
+  var mainContent = document.getElementById("main-content");
+  if (!mainContent) return;
+
+  function runScript(scriptText) {
+    if (!scriptText || !scriptText.trim()) return;
+    var code = scriptText.replace(/<script[^>]*>([\s\S]*?)<\/script>/gi, "$1").trim();
+    if (!code) return;
+    var el = document.createElement("script");
+    el.textContent = code;
+    document.body.appendChild(el);
+    document.body.removeChild(el);
+  }
+
+  function closeMenuDropdowns() {
+    var menu = document.querySelector(".app-menu");
+    if (!menu) return;
+    menu.querySelectorAll(".app-menu-item-dropdown.is-open").forEach(function(li) { li.classList.remove("is-open"); });
+    menu.querySelectorAll(".app-menu-trigger[aria-expanded]").forEach(function(btn) { btn.setAttribute("aria-expanded", "false"); });
+  }
+
+  function setMenuActive(view) {
+    var menu = document.querySelector(".app-menu");
+    if (!menu) return;
+    menu.querySelectorAll(".app-menu-item-dropdown").forEach(function(li) { li.classList.remove("is-active"); });
+    menu.querySelectorAll(".app-menu-link").forEach(function(a) { a.classList.remove("is-active"); });
+    if (view === "consulta" || view === "cadastro") {
+      var dropdown = menu.querySelector(".app-menu-item-dropdown");
+      if (dropdown) dropdown.classList.add("is-active");
+    }
+    var link = menu.querySelector('.app-menu-link[data-view="' + view + '"]');
+    if (!link) link = menu.querySelector('.app-menu-link-spa[data-view="' + view + '"]');
+    if (link) link.classList.add("is-active");
+  }
+
+  function showError(msg) {
+    mainContent.innerHTML = "<div class=\"main-placeholder\" style=\"display:flex;align-items:center;justify-content:center;color:#b71c1c;padding:24px;\">" + String(msg).replace(/</g, "&lt;") + "</div>";
+  }
+
+  function navigate(view, id) {
+    view = view || "home";
+    id = (id && String(id).trim()) ? String(id).trim() : "";
+    mainContent.innerHTML = "<div class=\"main-placeholder\" style=\"display:flex;align-items:center;justify-content:center;color:#6b8b86;\">Carregando...</div>";
+    setMenuActive(view);
+    google.script.run
+      .withSuccessHandler(function(data) {
+        try {
+          if (!data || typeof data.html === "undefined") {
+            mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
+            return;
+          }
+          var html = data.html;
+          if (typeof html !== "string" || !html.trim()) {
+            showError("Resposta vazia do servidor.");
+            return;
+          }
+          mainContent.innerHTML = html;
+          if (data.script && data.script.trim()) runScript(data.script);
+          if (view === "consulta" && typeof window.ConsultaInit === "function") {
+            try { window.ConsultaInit(); } catch (err) { showError("Erro ao iniciar Consulta: " + (err && err.message ? err.message : String(err))); }
+          } else if (view === "cadastro" && typeof window.CadastroInit === "function") {
+            try { window.CadastroInit(); } catch (err) { showError("Erro ao iniciar Cadastro: " + (err && err.message ? err.message : String(err))); }
+          }
+        } catch (err) {
+          showError("Erro ao aplicar conteúdo: " + (err && err.message ? err.message : String(err)));
+        }
+      })
+      .withFailureHandler(function(err) {
+        showError("Erro ao carregar: " + String(err));
+      })
+      .getPageContent(view, id);
+  }
+
+  window.navigate = navigate;
+
+  document.body.addEventListener("click", function(e) {
+    var el = e.target.closest("[data-view]");
+    if (el && el.getAttribute("data-view")) {
+      e.preventDefault();
+      e.stopPropagation();
+      closeMenuDropdowns();
+      navigate(el.getAttribute("data-view"), el.getAttribute("data-id") || "");
+      return false;
+    }
+  }, true);
+
+  document.body.addEventListener("keydown", function(e) {
+    if (e.key !== "Enter" && e.key !== " ") return;
+    var el = e.target.closest("[data-view]");
+    if (el && el.getAttribute("data-view")) {
+      e.preventDefault();
+      closeMenuDropdowns();
+      navigate(el.getAttribute("data-view"), el.getAttribute("data-id") || "");
+    }
+  }, true);
+
+  var initialView = document.body.getAttribute("data-initial-view") || "home";
+  var initialId = document.body.getAttribute("data-initial-id") || "";
+  navigate(initialView, initialId);
+})();
+    </script>
+  </body>
+</html>

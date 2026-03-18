@@ -1,0 +1,62 @@
+<nav class="app-menu" role="navigation" aria-label="Menu principal">
+  <ul class="app-menu-list">
+    <li class="app-menu-item app-menu-item-dropdown <?= view === 'consulta' || view === 'cadastro' ? 'is-active' : '' ?>">
+      <button type="button" class="app-menu-trigger" aria-expanded="false" aria-controls="submenu-turma" id="menu-turma">
+        <span>Turma</span>
+        <span class="app-menu-chevron" aria-hidden="true"></span>
+      </button>
+      <ul class="app-menu-sub" id="submenu-turma" role="menu" aria-labelledby="menu-turma">
+        <li role="none">
+          <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= view === 'consulta' ? 'is-active' : '' ?>" data-view="consulta" role="menuitem" tabindex="0">Consulta</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= view === 'consulta' ? 'is-active' : '' ?>" href="<?= urlConsulta ?>" role="menuitem" target="_top" rel="noopener">Consulta</a>
+          <? } ?>
+        </li>
+      </ul>
+    </li>
+    <li class="app-menu-item app-menu-item-disabled">
+      <span class="app-menu-trigger" aria-disabled="true" title="Em breve">Agendamento</span>
+    </li>
+  </ul>
+</nav>
+<script>
+(function() {
+  var menuEl = document.querySelector('.app-menu');
+  var list = menuEl ? menuEl.querySelector('.app-menu-list') : null;
+  if (!list) return;
+
+  function closeAllDropdowns() {
+    list.querySelectorAll('.app-menu-item-dropdown.is-open').forEach(function(open) { open.classList.remove('is-open'); });
+    list.querySelectorAll('.app-menu-trigger[aria-expanded]').forEach(function(t) { t.setAttribute('aria-expanded', 'false'); });
+  }
+
+  function bindClickOutside() {
+    function onDocClick(e) {
+      if (menuEl && !menuEl.contains(e.target)) {
+        closeAllDropdowns();
+        document.removeEventListener('click', onDocClick);
+      }
+    }
+    setTimeout(function() { document.addEventListener('click', onDocClick); }, 0);
+  }
+
+  var triggers = list.querySelectorAll('.app-menu-trigger[aria-controls]');
+  triggers.forEach(function(btn) {
+    btn.addEventListener('click', function(ev) {
+      ev.stopPropagation();
+      if (btn.getAttribute('aria-disabled') === 'true') return;
+      var subId = btn.getAttribute('aria-controls');
+      var sub = subId ? document.getElementById(subId) : null;
+      var parent = btn.closest('.app-menu-item-dropdown');
+      var wasOpen = parent && parent.classList.contains('is-open');
+      closeAllDropdowns();
+      if (!wasOpen && parent && sub) {
+        parent.classList.add('is-open');
+        btn.setAttribute('aria-expanded', 'true');
+        bindClickOutside();
+      }
+    });
+  });
+})();
+</script>

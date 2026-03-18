@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <base target="_top">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <?!= HtmlService.createHtmlOutputFromFile('LayoutGlobal').getContent(); ?>
+    <style>
+      .content-block { box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
+      .main-placeholder { flex: 1; min-height: 120px; padding: 24px 40px; }
+    </style>
+  </head>
+  <body>
+    <div class="form-container">
+      <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
+
+      <main class="layout-block content-block">
+        <?!= menuHtml ?>
+        <div class="main-placeholder" aria-hidden="true"></div>
+      </main>
+
+      <?!= HtmlService.createHtmlOutputFromFile('Footer').getContent(); ?>
+    </div>
+  </body>
+</html>

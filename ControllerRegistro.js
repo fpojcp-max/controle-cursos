@@ -24,13 +24,14 @@ function pesquisarRegistros(filtros, ordenacao, paginacao) {
 /**
  * Salva um novo registro (cadastro).
  * @param {Object} dados - Objeto com campos do formulário.
- * @returns {string} Mensagem de sucesso ou erro.
+ * @returns {{ success: boolean, message: string }}
  */
 function salvarRegistro(dados) {
   try {
-    return RegistroService.cadastrarRegistro(dados);
+    const message = RegistroService.cadastrarRegistro(dados);
+    return { success: true, message: message };
   } catch (e) {
-    return "Erro ao salvar: " + e.toString();
+    return { success: false, message: (e && e.message) ? e.message : String(e) };
   }
 }
 
@@ -38,13 +39,14 @@ function salvarRegistro(dados) {
  * Atualiza um registro existente pelo ID.
  * @param {string} id - UUID do registro.
  * @param {Object} dados - Objeto com campos do formulário.
- * @returns {string} Mensagem de sucesso ou erro.
+ * @returns {{ success: boolean, message: string }}
  */
 function atualizarRegistro(id, dados) {
   try {
-    return RegistroService.atualizarRegistroPorId(id, dados);
+    const message = RegistroService.atualizarRegistroPorId(id, dados);
+    return { success: true, message: message };
   } catch (e) {
-    return "Erro ao atualizar: " + e.toString();
+    return { success: false, message: (e && e.message) ? e.message : String(e) };
   }
 }
 

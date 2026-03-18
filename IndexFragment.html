@@ -1,0 +1,66 @@
+<div class="form-content">
+  <div id="msg" class="mb-3"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+    </div>
+    <a href="#" data-view="consulta" class="btn-custom">Voltar para Consulta</a>
+  </div>
+  <form id="ticketForm">
+    <input type="hidden" id="registroId" value="<?= id ? String(id).replace(/&/g,'&amp;').replace(/"/g,'&quot;') : '' ?>">
+    <h2 class="section-title">1. Identificação do Curso</h2>
+    <div class="columns is-multiline">
+      <div class="column is-6">
+        <label class="label">Curso</label>
+        <div class="select is-fullwidth"><select id="curso" class="is-placeholder" required onchange="updateStyle(this)"></select></div>
+      </div>
+      <div class="column is-2">
+        <label class="label">Turma</label>
+        <div class="select is-fullwidth"><select id="turma" class="is-placeholder" required onchange="updateStyle(this)"></select></div>
+      </div>
+      <div class="column is-2">
+        <label class="label">Data de Início</label>
+        <input class="input is-placeholder" type="date" id="inicio" required oninput="updateStyle(this)">
+      </div>
+      <div class="column is-2">
+        <label class="label">Data de Fim</label>
+        <input class="input is-placeholder" type="date" id="fim" required oninput="updateStyle(this)">
+      </div>
+    </div>
+    <h2 class="section-title">2. Logística e Operação</h2>
+    <div class="columns is-multiline">
+      <div class="column is-4"><label class="label">Sala</label><div class="select is-fullwidth"><select id="sala" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-4"><label class="label">Oferta</label><div class="select is-fullwidth"><select id="oferta" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-4"><label class="label">Responsável</label><div class="select is-fullwidth"><select id="responsavel" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-4"><label class="label">Prioridade</label><div class="select is-fullwidth"><select id="prioridade" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-4"><label class="label">Fim das Inscrições</label><input class="input is-placeholder" type="date" id="fimInscricoes" required oninput="updateStyle(this)"></div>
+      <div class="column is-4"><label class="label">Status</label><div class="select is-fullwidth"><select id="status" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+    </div>
+    <h2 class="section-title">3. Checklist de Fluxo</h2>
+    <div class="columns is-multiline">
+      <div class="column is-3"><label class="label">TR</label><div class="select is-fullwidth"><select id="tr" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-3"><label class="label">Termo Comp.</label><div class="select is-fullwidth"><select id="termo" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-3"><label class="label">Plataformas</label><div class="select is-fullwidth"><select id="plataformas" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-3"><label class="label">Coffee Break</label><div class="select is-fullwidth"><select id="coffee" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-3"><label class="label">Agendar Sala</label><div class="select is-fullwidth"><select id="agendarSala" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-3"><label class="label">Prep. Divulg.</label><div class="select is-fullwidth"><select id="prepDivulgacao" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+      <div class="column is-3"><label class="label">Divulgação</label><div class="select is-fullwidth"><select id="divulgacao" class="is-placeholder" required onchange="updateStyle(this)"></select></div></div>
+    </div>
+    <h2 class="section-title">4. Documentação e Links</h2>
+    <div class="columns is-multiline">
+      <div class="column is-6"><label class="label">Link FSA</label><input class="input" type="url" id="linkFSA" placeholder="https://..."></div>
+      <div class="column is-6"><label class="label">Link Página</label><input class="input" type="url" id="linkPagina" placeholder="https://..."></div>
+      <div class="column is-6"><label class="label">QR Code Inscrição</label><input class="input" type="url" id="qrInscricao" placeholder="https://..."></div>
+      <div class="column is-6"><label class="label">Link Inscrição</label><input class="input" type="url" id="linkInscricao" placeholder="https://..."></div>
+      <div class="column is-6"><label class="label">QR Code Frequência</label><input class="input" type="url" id="qrFrequencia" placeholder="https://..."></div>
+      <div class="column is-6"><label class="label">Frequência</label><input class="input" type="url" id="frequencia" placeholder="https://..."></div>
+      <div class="column is-6"><label class="label">QR Code Avaliação</label><input class="input" type="url" id="qrAvaliacao" placeholder="https://..."></div>
+      <div class="column is-6"><label class="label">Avaliação Reação</label><input class="input" type="url" id="avaliacaoReacao" placeholder="https://..."></div>
+      <div class="column is-6"><label class="label">Cód. Verificação</label><input class="input" type="url" id="codVerificacao" placeholder="https://..."></div>
+    </div>
+    <div class="buttons-row">
+      <button type="button" class="btn-custom" id="btnLimpar" <?= id ? 'disabled' : '' ?>>Limpar Tudo</button>
+      <button type="submit" class="btn-custom" id="btnEnviar">Salvar</button>
+    </div>
+  </form>
+</div>

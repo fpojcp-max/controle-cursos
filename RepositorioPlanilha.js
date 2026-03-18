@@ -118,6 +118,35 @@ const RegistroRepo = (() => {
     ];
   }
 
+  function indiceColunaPorLabel_(cabecalho, label) {
+    if (!cabecalho || !cabecalho.length || !label) return -1;
+    const want = String(label).trim().toLowerCase();
+    for (let i = 0; i < cabecalho.length; i++) {
+      const h = (cabecalho[i] || "").toString().trim().toLowerCase();
+      if (h === want) return i;
+    }
+    return -1;
+  }
+
+  function existeTurmaParaCurso_(curso, turma, excluirId) {
+    const { valores, temCabecalho } = lerDadosPlanilha_();
+    if (!valores.length) return false;
+    const cabecalho = valores[0] || [];
+    const idxCurso = indiceColunaPorLabel_(cabecalho, "Curso");
+    const idxTurma = indiceColunaPorLabel_(cabecalho, "Turma");
+    const idxId = indiceColunaId_(cabecalho, cabecalho.length);
+    if (idxCurso < 0 || idxTurma < 0) return false;
+    const inicio = temCabecalho ? 1 : 0;
+    const cursoNorm = String(curso || "").trim();
+    const turmaNorm = String(turma || "").trim();
+    for (let i = inicio; i < valores.length; i++) {
+      const row = valores[i];
+      if (excluirId && String(row[idxId] || "").trim() === String(excluirId || "").trim()) continue;
+      if (String(row[idxCurso] || "").trim() === cursoNorm && String(row[idxTurma] || "").trim() === turmaNorm) return true;
+    }
+    return false;
+  }
+
   function buscarLinhaPorId_(id) {
     if (!id) return null;
     const { valores, temCabecalho } = lerDadosPlanilha_();
@@ -182,7 +211,8 @@ const RegistroRepo = (() => {
     atualizarLinha: atualizarLinha_,
     removerLinha: removerLinha_,
     preencherColunaId: preencherColunaId_,
-    indiceColunaId: indiceColunaId_
+    indiceColunaId: indiceColunaId_,
+    existeTurmaParaCurso: existeTurmaParaCurso_
   };
 })();
 
@@ -197,3 +227,4 @@ function atualizarLinha(indiceLinha, valores) { return RegistroRepo.atualizarLin
 function removerLinha(indiceLinha) { return RegistroRepo.removerLinha(indiceLinha); }
 function preencherColunaId() { return RegistroRepo.preencherColunaId(); }
 function indiceColunaId(cabecalho, ultimaColuna) { return RegistroRepo.indiceColunaId(cabecalho, ultimaColuna); }
+function existeTurmaParaCurso(curso, turma, excluirId) { return RegistroRepo.existeTurmaParaCurso(curso, turma, excluirId); }

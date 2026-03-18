@@ -184,6 +184,8 @@ const RegistroService = (() => {
 
   function cadastrarRegistro_(dados) {
     validarMinimo_(dados);
+    if (RegistroRepo.existeTurmaParaCurso(dados.curso, dados.turma, null))
+      throw new Error("Já existe a turma " + "'" + (dados.turma || "").trim() + "'" + " para o curso " + "'" + (dados.curso || "").trim() + "'" + ".");
     const emailUsuario = Session.getActiveUser().getEmail();
     const dataAtual = new Date();
     const id = Utilities.getUuid();
@@ -194,6 +196,8 @@ const RegistroService = (() => {
   function atualizarRegistroPorId_(id, dados) {
     if (!id) throw new Error("ID obrigatório para atualização.");
     validarMinimo_(dados);
+    if (RegistroRepo.existeTurmaParaCurso(dados.curso, dados.turma, id))
+      throw new Error("Já existe a turma " + "'" + (dados.turma || "").trim() + "'" + " para o curso " + "'" + (dados.curso || "").trim() + "'" + ".");
     const indice = RegistroRepo.buscarIndiceLinhaPorId(id);
     if (indice === -1) throw new Error("Registro não encontrado para atualização.");
     const linhaAtual = RegistroRepo.obterLinhaPorIndice(indice);

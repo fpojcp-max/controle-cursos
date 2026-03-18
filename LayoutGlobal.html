@@ -20,14 +20,28 @@
     padding: 40px 20px;
     font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   }
+  body > .form-container { align-self: stretch; }
 
-  /* Layout shell: 3 áreas físicas (header / main / footer) */
+  /* Layout shell: 3 áreas físicas (header / main / footer); main cresce para rodapé ficar no pé da tela; conteúdo centralizado */
   .form-container {
     width: 100%;
+    max-width: 1300px;
+    margin: 0 auto;
     display: flex;
     flex-direction: column;
     gap: 14px;
     background: transparent;
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
+  }
+
+  .form-container > main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: visible;
   }
 
   .layout-block {
@@ -94,6 +108,88 @@
     font-size: 0.9rem;
     font-weight: 600;
   }
+
+  /* Menu principal: barra um pouco menor; fundo mais destacado; subitens em retângulo flutuante */
+  .app-menu {
+    background: #e8f2f1;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    margin: 0;
+    overflow: visible;
+  }
+  .app-menu-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0; align-items: stretch; }
+  .app-menu-item {
+    margin: 0;
+    padding: 0;
+    border-right: 1px solid var(--border);
+  }
+  .app-menu-item:last-child { border-right: none; }
+  .app-menu-item-dropdown { position: relative; }
+  .app-menu-trigger {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 9px 16px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #000;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    text-align: left;
+    text-decoration: none;
+    font-family: inherit;
+    transition: background 0.2s, color 0.2s;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  .app-menu-item:not(.app-menu-item-disabled) .app-menu-trigger:hover { background: rgba(0, 191, 165, 0.12); color: #000; }
+  .app-menu-item-dropdown.is-active > .app-menu-trigger { color: var(--brand); border-bottom: 2px solid var(--brand); margin-bottom: -2px; }
+  .app-menu-chevron {
+    display: inline-block;
+    width: 0; height: 0;
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 5px solid currentColor;
+    margin-left: 2px;
+    transition: transform 0.2s;
+  }
+  .app-menu-item-dropdown.is-open .app-menu-chevron { transform: rotate(180deg); }
+  /* Submenu: retângulo flutuante, solto da barra */
+  .app-menu-sub {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 5px;
+    min-width: 168px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    z-index: 50;
+  }
+  .app-menu-item-dropdown.is-open .app-menu-sub { display: block; }
+  .app-menu-sub li { margin: 0; }
+  .app-menu-link {
+    display: block;
+    padding: 8px 14px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #000;
+    text-decoration: none;
+    transition: background 0.2s, color 0.2s;
+    border-bottom: 1px solid var(--border);
+  }
+  .app-menu-sub li:last-child .app-menu-link { border-bottom: none; }
+  .app-menu-link:hover { background: rgba(0, 191, 165, 0.1); color: #000; }
+  .app-menu-link.is-active { color: var(--brand); background: rgba(0, 191, 165, 0.08); }
+  .app-menu-item-disabled .app-menu-trigger { color: var(--muted); cursor: not-allowed; opacity: 0.7; }
+  .app-menu-item-disabled .app-menu-chevron { display: none; }
 
   /* Responsividade: título quebra e alinha bem */
   @media (max-width: 820px) {
