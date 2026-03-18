@@ -18,7 +18,7 @@ function obterConfiguracaoFormulario() {
  * @returns {{ columns: any[], rows: any[][], total: number, truncated: boolean }}
  */
 function pesquisarRegistros(filtros, ordenacao, paginacao) {
-  return buscarRegistrosComFiltros(filtros, ordenacao, paginacao);
+  return RegistroService.buscarRegistrosComFiltros(filtros, ordenacao, paginacao);
 }
 
 /**
@@ -28,7 +28,7 @@ function pesquisarRegistros(filtros, ordenacao, paginacao) {
  */
 function salvarRegistro(dados) {
   try {
-    return cadastrarRegistro(dados);
+    return RegistroService.cadastrarRegistro(dados);
   } catch (e) {
     return "Erro ao salvar: " + e.toString();
   }
@@ -42,7 +42,7 @@ function salvarRegistro(dados) {
  */
 function atualizarRegistro(id, dados) {
   try {
-    return atualizarRegistroPorId(id, dados);
+    return RegistroService.atualizarRegistroPorId(id, dados);
   } catch (e) {
     return "Erro ao atualizar: " + e.toString();
   }
@@ -54,7 +54,7 @@ function atualizarRegistro(id, dados) {
  * @returns {Object|null} Objeto com campos do registro ou null.
  */
 function obterRegistroPorId(id) {
-  return obterRegistroPorIdServico(id);
+  return RegistroService.obterRegistroPorIdServico(id);
 }
 
 /**
@@ -64,7 +64,7 @@ function obterRegistroPorId(id) {
  */
 function excluirRegistro(id) {
   try {
-    return excluirRegistroPorId(id);
+    return RegistroService.excluirRegistroPorId(id);
   } catch (e) {
     return "Erro ao excluir: " + e.toString();
   }
@@ -77,7 +77,7 @@ function excluirRegistro(id) {
  * @returns {{ columns: any[], rows: any[][] }}
  */
 function obterRegistrosParaExportar(filtros, ordenacao) {
-  return buscarRegistrosParaExportar(filtros, ordenacao);
+  return RegistroService.buscarRegistrosParaExportar(filtros, ordenacao);
 }
 
 /**
@@ -85,5 +85,5 @@ function obterRegistrosParaExportar(filtros, ordenacao) {
  * @returns {{ ok: boolean, message: string }}
  */
 function executarMigracaoIds() {
-  return preencherColunaId();
+  return RegistroRepo.preencherColunaId();
 }
