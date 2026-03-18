@@ -3,47 +3,15 @@
   <head>
     <base target="_top">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <?!= HtmlService.createHtmlOutputFromFile('LayoutGlobal').getContent(); ?>
     <style>
-      body {
-        background: linear-gradient(135deg, #e0f2f1 0%, #f1f8e9 100%);
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 40px 20px;
-        font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      }
-      
       .form-container { 
         max-width: 1100px; 
         width: 100%;
-        background-color: rgba(255, 255, 255, 0.98);
-        border-radius: 12px;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-        overflow: hidden;
-      }
-
-      .header-banner {
-        background-color: #f8fcfb;
-        border-bottom: 3px solid #00bfa5;
-        padding: 25px 40px;
-        display: flex;
-        align-items: center;
-        gap: 30px;
-      }
-
-      .logo-group {
-        display: flex;
-        align-items: center;
-        gap: 25px;
-      }
-
-      .logo-img {
-        max-height: 80px;
-        width: auto;
       }
 
       .form-content { padding: 40px; }
+      .content-block { box-shadow: 0 15px 35px rgba(0,0,0,0.1); }
 
       .title.is-4 { 
         font-size: 1.75rem; 
@@ -161,18 +129,10 @@
   </head>
   <body>
     <div class="form-container">
-      <header class="header-banner">
-        <div class="logo-group">
-          <img src="https://drive.google.com/thumbnail?id=1TWGRP7iBTSYikx8kAFo24iSeLNTDYWy5&sz=w300" alt="Logo Unicamp" class="logo-img">
-          <img src="https://drive.google.com/thumbnail?id=1MPuonnO0E_mM8uIc5t1SXlMxVfEw6hDP&sz=w300" alt="Logo Educorp" class="logo-img">
-        </div>
-        <div style="margin-left: auto; text-align: right;">
-          <h1 class="title is-4 mb-0">Gestão de Cursos e Turmas</h1>
-          <!--<p class="is-size-6" style="color: #4a6661;">Controle e Registro de Atividades</p>-->
-        </div>
-      </header>
+      <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
 
-      <div class="form-content">
+      <main class="layout-block content-block">
+        <div class="form-content">
         <div id="msg" class="mb-3"></div>
         <div class="actions-row">
           <div class="is-size-6 muted">
@@ -241,7 +201,10 @@
             <button type="submit" class="btn-custom" id="btnEnviar">Salvar</button>
           </div>
         </form>
-      </div>
+        </div>
+      </main>
+
+      <?!= HtmlService.createHtmlOutputFromFile('Footer').getContent(); ?>
     </div>
 
     <script>

@@ -52,10 +52,10 @@ function obterOpcoesFormulario() {
       "Espanhol Básico III", "Espanhol Intermediário I", "Espanhol Intermediário III", "Estratégias para Gestão", "Fluxo dos Processos de Compras da Unicamp",
       "Formação de Acolhedores", "Licitações Internacionais", "Semana da Inovação", "Seminários Educorp", "SIMTEC"
     ],
-    TURMAS: ["2601", "2602", "2603", "2604", "2605", "2606", "2607", "2608", "2609", "210", "2611", "2612", "213", "2614", "2615", "2616", "2617", "2618", "2619", "2620"],
+    TURMAS: ["2601", "2602", "2603", "2604", "2605", "2606", "2607", "2608", "2609", "2610", "2611", "2612", "2613", "2614", "2615", "2616", "2617", "2618", "2619", "2620"],
     SALAS: ["Auditório", "M1", "M2", "Idiomas", "Lab. 01", "Lab. 02", "Externo"],
     OFERTAS: ["Assíncrono", "Síncrono", "Híbrido", "Presencial"],
-    RESPONSAVEIS: ["Carlos", "Cirlene", "Edison", "Elson", "Kitaka", "Márcia", "Valéria"],
+    RESPONSAVEIS: ["Alexandre Fagiani", "Carlos", "Cecília", "Cirlene", "Denilson", "Elson", "Kitaka", "Márcia", "Raquel", "Valéria"],
     PRIORIDADES: ["Baixa", "Média", "Alta", "Urgente"],
     STATUS: ["Ativo", "Cancelado", "Suspenso"],
     BOOLEANOS: ["Sim", "Não"]
