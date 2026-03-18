@@ -4,7 +4,11 @@
 
 const Configuracoes = {
   NOME_ABA: "Página1",
-  NOME_COLUNA_ID: "ID"
+  NOME_COLUNA_ID: "ID",
+
+  // Usado para gravação da API de Agendamento em planilha externa (spreadsheetId).
+  // Se não existir, a repository faz fallback para a primeira aba.
+  NOME_ABA_AGENDAMENTO: "Página1"
 };
 
 /**

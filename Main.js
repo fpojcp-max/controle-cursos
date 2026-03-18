@@ -23,6 +23,35 @@ function doGet(e) {
 }
 
 /**
+ * Endpoint HTTP (OpenAPI) – Criação de eventos de agendamento.
+ * Camada Controller (entrada): recebe JSON e delega ao ControllerAgendamento.
+ *
+ * CONTRATO PARA O CLIENTE (obrigatório):
+ * - Do NOT use HTTP status codes.
+ * - Do NOT rely on response.ok.
+ * - ONLY use the JSON body to determine success or failure:
+ *   - Sucesso: body.status === "ok" → use body.eventos, body.total.
+ *   - Erro: body.status === "erro" → use body.code, body.message, body.details.
+ *
+ * @param {Object} e - e.postData.contents contém o JSON do request.
+ * @returns {GoogleAppsScript.Content.TextOutput}
+ */
+function doPost(e) {
+  let request = null;
+  const bodyText = (e && e.postData && e.postData.contents) ? String(e.postData.contents) : "";
+  try {
+    request = bodyText ? JSON.parse(bodyText) : {};
+  } catch (_) {
+    request = null;
+  }
+
+  const resp = criarEventosAgendamentoController(request);
+  return ContentService
+    .createTextOutput(JSON.stringify(resp))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+/**
  * Retorna o HTML do menu principal. Se spa=true, links usam data-view e href="#".
  * @param {string} view - "home", "consulta" ou "cadastro".
  * @param {boolean} spa - Se true, menu para SPA (navegação client-side).
