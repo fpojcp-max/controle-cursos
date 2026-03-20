@@ -3,12 +3,12 @@
  */
 
 const Configuracoes = {
-  NOME_ABA: "Página1",
+  NOME_ABA: "Turmas",
   NOME_COLUNA_ID: "ID",
 
   // API de Agendamento (payload com spreadsheetId): aba na planilha informada.
   // Se não existir, a repository faz fallback para a primeira aba.
-  NOME_ABA_AGENDAMENTO: "Página1",
+  NOME_ABA_AGENDAMENTO: "Turmas",
 
   /**
    * ID do arquivo no Google Sheets (trecho da URL entre /d/ e /edit).
@@ -46,15 +46,12 @@ const Configuracoes = {
    * Preencha `calendarId` com o e-mail do recurso no Google Calendar (ex.: sala@resource.calendar.google.com).
    */
   SALAS_RECURSOS_CALENDAR: [
-    { nome: "Auditório", calendarId: "c_188fsj4m0hnfii6qgjn69muavm51g@resource.calendar.google.com" },
-    { nome: "M1", calendarId: "c_188dal6k74eoij0mm2hqqq53bucps@resource.calendar.google.com" },
-    { nome: "M2", calendarId: "c_1886ke3al9bb8g4ditrf4340nflb4@resource.calendar.google.com" },
-    { nome: "Idiomas", calendarId: "c_188akjbiofvveiatinhe5dd2oclmi@resource.calendar.google.com" },
-    {
-      nome: "(EDUCORP)-Lab. 01",
-      calendarId: "c_188evr21m28u4h53guerh2v826efe@resource.calendar.google.com"
-    },
-    { nome: "Lab. 02", calendarId: "c_188djbpv265fqhjajsdtsmkagmgt4@resource.calendar.google.com" },
+    { nome: "(EDUCORP)-Auditório", calendarId: "c_188fsj4m0hnfii6qgjn69muavm51g@resource.calendar.google.com" },
+    { nome: "(EDUCORP)-Idiomas", calendarId: "c_188akjbiofvveiatinhe5dd2oclmi@resource.calendar.google.com" },
+    { nome: "(EDUCORP)-Lab. 01", calendarId: "c_188evr21m28u4h53guerh2v826efe@resource.calendar.google.com" },
+    { nome: "(EDUCORP)-Lab. 02", calendarId: "c_188djbpv265fqhjajsdtsmkagmgt4@resource.calendar.google.com" },
+    { nome: "(EDUCORP)-M1", calendarId: "c_188dal6k74eoij0mm2hqqq53bucps@resource.calendar.google.com" },
+    { nome: "(EDUCORP)-M2", calendarId: "c_1886ke3al9bb8g4ditrf4340nflb4@resource.calendar.google.com" },
     { nome: "Externo", calendarId: "c_188b5jvdenpk4igdlbv99lsd1i52k@resource.calendar.google.com" }
   ]
 };

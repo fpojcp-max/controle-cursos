@@ -4,10 +4,6 @@
     <div class="is-size-6 muted">
       Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
     </div>
-    <div style="display:flex; gap: 10px; align-items:center;">
-      <button type="button" class="btn-custom btn-secondary" id="btnLimparFiltros">Limpar filtros</button>
-      <a href="#" data-view="cadastro" class="btn-custom">Cadastrar</a>
-    </div>
   </div>
 
   <h2 class="section-title">Filtros de busca</h2>
@@ -46,14 +42,15 @@
         <input class="input" type="date" id="fInicioAte">
       </div>
     </div>
-    <div style="display:flex; justify-content:flex-end; gap: 12px; margin-top: 10px;">
+    <div class="consulta-form-actions">
+      <button type="button" class="btn-custom btn-secondary" id="btnLimparFiltros">Limpar filtros</button>
       <button type="submit" class="btn-custom" id="btnPesquisar">Pesquisar</button>
     </div>
   </form>
 
   <div class="resultados-header">
     <h2 class="section-title">Resultados</h2>
-    <button type="button" id="btnExportarCsv" disabled title="Exportar tabela para CSV (todos os registros dos filtros)">
+    <button type="button" class="btn-custom" id="btnExportarCsv" disabled title="Exportar tabela para CSV (todos os registros dos filtros)">
       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Exportar CSV
     </button>

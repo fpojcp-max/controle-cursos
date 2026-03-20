@@ -524,6 +524,7 @@ const AgendamentoService = (() => {
 
     const curso = String(payload.curso || "").trim();
     const turma = String(payload.turma || "").trim();
+    const turmaIdCliente = String(payload.turmaId || "").trim();
     if (!curso || !turma) {
       throw new Error("Selecione curso e turma.");
     }
@@ -532,6 +533,11 @@ const AgendamentoService = (() => {
     if (!idTurma) {
       throw new Error(
         "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+      );
+    }
+    if (turmaIdCliente && turmaIdCliente !== idTurma) {
+      throw new Error(
+        "Dados da turma não conferem com o registro selecionado. Recarregue a tela e tente novamente."
       );
     }
 

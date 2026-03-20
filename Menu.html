@@ -8,9 +8,16 @@
       <ul class="app-menu-sub" id="submenu-turma" role="menu" aria-labelledby="menu-turma">
         <li role="none">
           <? if (spa) { ?>
-          <span class="app-menu-link app-menu-link-spa <?= view === 'consulta' ? 'is-active' : '' ?>" data-view="consulta" role="menuitem" tabindex="0">Consulta</span>
+          <span class="app-menu-link app-menu-link-spa <?= menuConsultaAtiva ? 'is-active' : '' ?>" data-view="consulta" role="menuitem" tabindex="0">Consulta</span>
           <? } else { ?>
-          <a class="app-menu-link <?= view === 'consulta' ? 'is-active' : '' ?>" href="<?= urlConsulta ?>" role="menuitem" target="_top" rel="noopener">Consulta</a>
+          <a class="app-menu-link <?= menuConsultaAtiva ? 'is-active' : '' ?>" href="<?= urlConsulta ?>" role="menuitem" target="_top" rel="noopener">Consulta</a>
+          <? } ?>
+        </li>
+        <li role="none">
+          <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= menuInserirAtivo ? 'is-active' : '' ?>" data-view="cadastro" data-id="" role="menuitem" tabindex="0">Inserir</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= menuInserirAtivo ? 'is-active' : '' ?>" href="<?= urlCadastroInserir ?>" role="menuitem" target="_top" rel="noopener">Inserir</a>
           <? } ?>
         </li>
       </ul>

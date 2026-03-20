@@ -2,6 +2,8 @@
   window.AgendamentoIncluirInit = function() {
     var msgEl = document.getElementById("msgAgendamento");
     var PREFILL_KEY = "agendamentoIncluirPrefill";
+    /** ID da turma quando o fluxo veio da consulta (curso/turma bloqueados); vazio no fluxo pelo menu. */
+    var turmaIdContexto = "";
 
     function renderMsg(text, kind) {
       msgEl.innerHTML = "";
@@ -58,7 +60,29 @@
       sel.disabled = !(turmas && turmas.length);
     }
 
-    function carregarTurmasParaCurso(curso, turmaPreselecionada) {
+    function aplicarBloqueioCursoTurma() {
+      document.getElementById("agCurso").disabled = true;
+      document.getElementById("agTurma").disabled = true;
+      var sec = document.getElementById("agTurmaSection");
+      if (sec) sec.classList.add("formulario-bloqueado");
+    }
+
+    function limparBloqueioCursoTurma() {
+      turmaIdContexto = "";
+      document.getElementById("agCurso").disabled = false;
+      var sec = document.getElementById("agTurmaSection");
+      if (sec) sec.classList.remove("formulario-bloqueado");
+    }
+
+    /**
+     * @param {string} curso
+     * @param {{ turmaPreselecionada?: string, lockAfterLoad?: boolean, turmaId?: string }} [opts]
+     */
+    function carregarTurmasParaCurso(curso, opts) {
+      opts = opts || {};
+      var turmaPreselecionada = opts.turmaPreselecionada;
+      var lockAfterLoad = opts.lockAfterLoad === true;
+      var turmaIdPref = opts.turmaId ? String(opts.turmaId).trim() : "";
       curso = String(curso || "").trim();
       resetTurmaSelect();
       if (!curso) return;
@@ -71,14 +95,27 @@
             return;
           }
           preencherTurmas(resp.turmas);
+          var sel = document.getElementById("agTurma");
+          var matched = false;
           if (turmaPreselecionada) {
             var t = String(turmaPreselecionada).trim();
-            var sel = document.getElementById("agTurma");
             for (var i = 0; i < sel.options.length; i++) {
               if (sel.options[i].value === t) {
                 sel.selectedIndex = i;
+                matched = true;
                 break;
               }
+            }
+          }
+          if (lockAfterLoad) {
+            if (matched) {
+              turmaIdContexto = turmaIdPref;
+              aplicarBloqueioCursoTurma();
+            } else {
+              renderMsg(
+                "Não foi possível fixar a turma vinda da consulta. Selecione curso e turma manualmente.",
+                "danger"
+              );
             }
           }
         })
@@ -97,6 +134,8 @@
         var o = JSON.parse(raw);
         var curso = o && o.curso ? String(o.curso) : "";
         var turma = o && o.turma ? String(o.turma) : "";
+        var lock = !!(o && o.lockCursoTurma);
+        var tid = o && o.turmaId ? String(o.turmaId).trim() : "";
         if (!curso) return;
         var selC = document.getElementById("agCurso");
         var found = false;
@@ -108,7 +147,11 @@
           }
         }
         if (!found) return;
-        carregarTurmasParaCurso(curso, turma);
+        carregarTurmasParaCurso(curso, {
+          turmaPreselecionada: turma,
+          lockAfterLoad: lock,
+          turmaId: tid
+        });
       } catch (e) {
         /* ignore */
       }
@@ -127,8 +170,10 @@
     toggleTipo();
 
     document.getElementById("agCurso").addEventListener("change", function() {
+      turmaIdContexto = "";
+      limparBloqueioCursoTurma();
       var c = document.getElementById("agCurso").value;
-      carregarTurmasParaCurso(c, "");
+      carregarTurmasParaCurso(c, {});
     });
 
     document.getElementById("agBtnSalvar").addEventListener("click", function() {
@@ -172,6 +217,7 @@
         salaNome: String(document.getElementById("agSala").value || "").trim(),
         convidados: document.getElementById("agConvidados").value
       };
+      if (turmaIdContexto) payload.turmaId = turmaIdContexto;
 
       if (tipo === "simples") {
         payload.data = String(document.getElementById("agDataSimples").value || "").trim();
@@ -225,6 +271,8 @@
           renderMsg((resp && resp.message) || "Não foi possível carregar a tela.", "danger");
           return;
         }
+        turmaIdContexto = "";
+        limparBloqueioCursoTurma();
         preencherCursos(resp.cursos);
         preencherSelectSalas(resp.salas);
         aplicarPrefillSeHouver();

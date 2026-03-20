@@ -7,22 +7,24 @@
     <a href="#" data-view="consulta" class="btn-custom">Consulta</a>
   </div>
 
-  <h2 class="section-title">Turma</h2>
-  <div class="columns is-multiline">
-    <div class="column is-6">
-      <label class="label">Curso</label>
-      <div class="select is-fullwidth">
-        <select id="agCurso">
-          <option value="">Selecione o curso</option>
-        </select>
+  <div id="agTurmaSection">
+    <h2 class="section-title">Turma</h2>
+    <div class="columns is-multiline">
+      <div class="column is-6">
+        <label class="label">Curso</label>
+        <div class="select is-fullwidth">
+          <select id="agCurso">
+            <option value="">Selecione</option>
+          </select>
+        </div>
       </div>
-    </div>
-    <div class="column is-6">
-      <label class="label">Turma</label>
-      <div class="select is-fullwidth">
-        <select id="agTurma" disabled>
-          <option value="">Selecione a turma</option>
-        </select>
+      <div class="column is-6">
+        <label class="label">Turma</label>
+        <div class="select is-fullwidth">
+          <select id="agTurma" disabled>
+            <option value="">Selecione</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
@@ -63,11 +65,11 @@
       </div>
     </div>
     <div class="column is-4">
-      <label class="label">Exceção (excluir 1 data, opcional)</label>
+      <label class="label">Excluir Data (opcional)</label>
       <input class="input" type="date" id="agExdate">
     </div>
     <div class="column is-4">
-      <label class="label">Data extra (opcional)</label>
+      <label class="label">Incluir Data (opcional)</label>
       <input class="input" type="date" id="agRdate">
     </div>
   </div>
@@ -82,7 +84,7 @@
       <input class="input" type="time" id="agHoraFim" step="60">
     </div>
     <div class="column is-6">
-      <label class="label">Sala (recurso)</label>
+      <label class="label">Sala (opcional)</label>
       <div class="select is-fullwidth">
         <select id="agSala">
           <option value="">— Sem sala —</option>

@@ -14,7 +14,7 @@ function doGet(e) {
   const template = HtmlService.createTemplateFromFile("Shell");
   template.initialView = view;
   template.initialId = id;
-  template.menuHtml = getMenuHtml(view, true);
+  template.menuHtml = getMenuHtml(view, true, id);
   return template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -55,12 +55,19 @@ function doPost(e) {
  * Retorna o HTML do menu principal. Se spa=true, links usam data-view e href="#".
  * @param {string} view - "home", "consulta" ou "cadastro".
  * @param {boolean} spa - Se true, menu para SPA (navegação client-side).
+ * @param {string} [cadastroId] - id na URL quando view=cadastro (edição); vazio = inclusão.
  * @returns {string}
  */
-function getMenuHtml(view, spa) {
+function getMenuHtml(view, spa, cadastroId) {
+  const idNorm =
+    cadastroId && String(cadastroId).trim() ? String(cadastroId).trim() : "";
+  const v = view || "";
   const t = HtmlService.createTemplateFromFile("Menu");
-  t.view = view || "";
+  t.view = v;
+  t.menuConsultaAtiva = v === "consulta" || (v === "cadastro" && idNorm.length > 0);
+  t.menuInserirAtivo = v === "cadastro" && idNorm.length === 0;
   t.urlConsulta = spa ? "#" : obterUrlWebApp("consulta");
+  t.urlCadastroInserir = spa ? "#" : obterUrlWebApp("cadastro");
   t.urlAgendamentoIncluir = spa ? "#" : obterUrlWebApp("agendamento-incluir");
   t.spa = spa === true;
   return t.evaluate().getContent();

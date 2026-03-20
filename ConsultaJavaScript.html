@@ -100,7 +100,12 @@
       try {
         sessionStorage.setItem(
           "agendamentoIncluirPrefill",
-          JSON.stringify({ curso: selectedRowCurso, turma: selectedRowTurma })
+          JSON.stringify({
+            curso: selectedRowCurso,
+            turma: selectedRowTurma,
+            turmaId: selectedRowId,
+            lockCursoTurma: true
+          })
         );
       } catch (e) { /* ignore */ }
       if (typeof window.navigate === "function") {
