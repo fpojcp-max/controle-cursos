@@ -19,6 +19,37 @@
     </div>
 
     <script>
+  /** Disponível em todas as views: rola a janela para o topo e leva a área da mensagem à vista. */
+  window.rolarParaVerMensagemNoTopo = function(optAnchor) {
+    setTimeout(function() {
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (e) {
+        try {
+          window.scrollTo(0, 0);
+        } catch (e2) {}
+      }
+      try {
+        document.documentElement.scrollTop = 0;
+        document.body.scrollTop = 0;
+      } catch (e3) {}
+      var anchor =
+        optAnchor ||
+        document.getElementById("msgAgendamento") ||
+        document.getElementById("msg");
+      if (anchor && anchor.scrollIntoView) {
+        try {
+          anchor.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (e4) {
+          try {
+            anchor.scrollIntoView(true);
+          } catch (e5) {}
+        }
+      }
+    }, 0);
+  };
+    </script>
+    <script>
 (function() {
   var mainContent = document.getElementById("main-content");
   if (!mainContent) return;
@@ -45,9 +76,13 @@
     if (!menu) return;
     menu.querySelectorAll(".app-menu-item-dropdown").forEach(function(li) { li.classList.remove("is-active"); });
     menu.querySelectorAll(".app-menu-link").forEach(function(a) { a.classList.remove("is-active"); });
-    if (view === "consulta" || view === "cadastro") {
-      var dropdown = menu.querySelector(".app-menu-item-dropdown");
-      if (dropdown) dropdown.classList.add("is-active");
+    menu.querySelectorAll(".app-menu-link-spa").forEach(function(a) { a.classList.remove("is-active"); });
+    var group = null;
+    if (view === "consulta" || view === "cadastro") group = "turma";
+    else if (view === "agendamento-incluir") group = "agendamento";
+    if (group) {
+      var dd = menu.querySelector('.app-menu-item-dropdown[data-dropdown="' + group + '"]');
+      if (dd) dd.classList.add("is-active");
     }
     var link = menu.querySelector('.app-menu-link[data-view="' + view + '"]');
     if (!link) link = menu.querySelector('.app-menu-link-spa[data-view="' + view + '"]');
@@ -56,6 +91,9 @@
 
   function showError(msg) {
     mainContent.innerHTML = "<div class=\"main-placeholder\" style=\"display:flex;align-items:center;justify-content:center;color:#b71c1c;padding:24px;\">" + String(msg).replace(/</g, "&lt;") + "</div>";
+    if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+      window.rolarParaVerMensagemNoTopo(mainContent);
+    }
   }
 
   function navigate(view, id) {
@@ -81,6 +119,8 @@
             try { window.ConsultaInit(); } catch (err) { showError("Erro ao iniciar Consulta: " + (err && err.message ? err.message : String(err))); }
           } else if (view === "cadastro" && typeof window.CadastroInit === "function") {
             try { window.CadastroInit(); } catch (err) { showError("Erro ao iniciar Cadastro: " + (err && err.message ? err.message : String(err))); }
+          } else if (view === "agendamento-incluir" && typeof window.AgendamentoIncluirInit === "function") {
+            try { window.AgendamentoIncluirInit(); } catch (err) { showError("Erro ao iniciar Agendamento: " + (err && err.message ? err.message : String(err))); }
           }
         } catch (err) {
           showError("Erro ao aplicar conteúdo: " + (err && err.message ? err.message : String(err)));

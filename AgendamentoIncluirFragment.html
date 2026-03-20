@@ -1,0 +1,106 @@
+<div class="form-content" id="agendamentoIncluirRoot">
+  <div id="msgAgendamento" class="mb-3"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+      <span class="is-size-7 ml-2" id="agTzHint"></span>
+    </div>
+    <a href="#" data-view="consulta" class="btn-custom">Consulta</a>
+  </div>
+
+  <h2 class="section-title">Turma</h2>
+  <p class="help mb-3">Valores listados conforme registros existentes na planilha de turmas (curso + turma únicos).</p>
+  <div class="columns is-multiline">
+    <div class="column is-6">
+      <label class="label">Curso</label>
+      <div class="select is-fullwidth">
+        <select id="agCurso">
+          <option value="">Selecione o curso</option>
+        </select>
+      </div>
+    </div>
+    <div class="column is-6">
+      <label class="label">Turma</label>
+      <div class="select is-fullwidth">
+        <select id="agTurma" disabled>
+          <option value="">Selecione a turma</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <h2 class="section-title">Tipo e horários</h2>
+  <div class="field">
+    <label class="label">Tipo</label>
+    <div class="control">
+      <label class="radio mr-4"><input type="radio" name="agTipo" value="simples" checked> Simples</label>
+      <label class="radio"><input type="radio" name="agTipo" value="recorrente"> Recorrente</label>
+    </div>
+  </div>
+
+  <div id="agBlocoSimples" class="columns is-multiline">
+    <div class="column is-4">
+      <label class="label">Data</label>
+      <input class="input" type="date" id="agDataSimples">
+    </div>
+  </div>
+
+  <div id="agBlocoRecorrente" class="columns is-multiline" style="display:none;">
+    <div class="column is-4">
+      <label class="label">Data início</label>
+      <input class="input" type="date" id="agDataInicio">
+    </div>
+    <div class="column is-4">
+      <label class="label">Data fim (inclusiva)</label>
+      <input class="input" type="date" id="agDataFim">
+    </div>
+    <div class="column is-12">
+      <label class="label">Dias da semana</label>
+      <div class="field is-grouped is-grouped-multiline">
+        <label class="checkbox mr-4"><input type="checkbox" id="agDiaSeg"> Seg</label>
+        <label class="checkbox mr-4"><input type="checkbox" id="agDiaTer"> Ter</label>
+        <label class="checkbox mr-4"><input type="checkbox" id="agDiaQua"> Qua</label>
+        <label class="checkbox mr-4"><input type="checkbox" id="agDiaQui"> Qui</label>
+        <label class="checkbox"><input type="checkbox" id="agDiaSex"> Sex</label>
+      </div>
+    </div>
+    <div class="column is-4">
+      <label class="label">Exceção (excluir 1 data, opcional)</label>
+      <input class="input" type="date" id="agExdate">
+    </div>
+    <div class="column is-4">
+      <label class="label">Data extra (opcional)</label>
+      <input class="input" type="date" id="agRdate">
+    </div>
+  </div>
+
+  <div class="columns is-multiline">
+    <div class="column is-3">
+      <label class="label">Hora início</label>
+      <input class="input" type="time" id="agHoraInicio" step="60">
+    </div>
+    <div class="column is-3">
+      <label class="label">Hora fim</label>
+      <input class="input" type="time" id="agHoraFim" step="60">
+    </div>
+    <div class="column is-6">
+      <label class="label">Sala (recurso)</label>
+      <div class="select is-fullwidth">
+        <select id="agSala">
+          <option value="">— Sem sala —</option>
+        </select>
+      </div>
+      <p class="help" id="agSalaHelp"></p>
+    </div>
+  </div>
+
+  <h2 class="section-title">Convidados</h2>
+  <div class="field">
+    <label class="label">E-mails (separar por vírgula ou ponto e vírgula)</label>
+    <textarea class="textarea" id="agConvidados" rows="3" placeholder="opcional"></textarea>
+  </div>
+
+  <div class="field mt-4">
+    <button type="button" class="btn-custom" id="agBtnSalvar">Salvar no Google Calendar e na planilha</button>
+  </div>
+</div>

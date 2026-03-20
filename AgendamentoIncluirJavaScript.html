@@ -1,0 +1,235 @@
+<script>
+  window.AgendamentoIncluirInit = function() {
+    var msgEl = document.getElementById("msgAgendamento");
+    var PREFILL_KEY = "agendamentoIncluirPrefill";
+
+    function renderMsg(text, kind) {
+      msgEl.innerHTML = "";
+      if (!text) return;
+      var cls = "notification is-light";
+      if (kind === "success") cls = "notification is-success is-light";
+      else if (kind === "danger") cls = "notification is-danger is-light";
+      else if (kind === "info") cls = "notification is-info is-light";
+      var div = document.createElement("div");
+      div.className = cls;
+      div.style.whiteSpace = "pre-line";
+      div.textContent = text;
+      msgEl.appendChild(div);
+      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+        window.rolarParaVerMensagemNoTopo(msgEl);
+      }
+    }
+
+    function preencherSelectSalas(salas) {
+      var sel = document.getElementById("agSala");
+      while (sel.options.length > 1) sel.remove(1);
+      (salas || []).forEach(function(s) {
+        var opt = document.createElement("option");
+        opt.value = s.nome;
+        opt.textContent = s.nome + (s.configurada ? "" : " (sem ID — configure em Configuracoes)");
+        sel.appendChild(opt);
+      });
+      document.getElementById("agSalaHelp").textContent = "";
+    }
+
+    function preencherCursos(cursos) {
+      var sel = document.getElementById("agCurso");
+      sel.innerHTML = "";
+      sel.appendChild(new Option("Selecione o curso", ""));
+      (cursos || []).forEach(function(c) {
+        sel.appendChild(new Option(c, c));
+      });
+    }
+
+    function resetTurmaSelect() {
+      var sel = document.getElementById("agTurma");
+      sel.innerHTML = "";
+      sel.appendChild(new Option("Selecione a turma", ""));
+      sel.disabled = true;
+    }
+
+    function preencherTurmas(turmas) {
+      var sel = document.getElementById("agTurma");
+      sel.innerHTML = "";
+      sel.appendChild(new Option("Selecione a turma", ""));
+      (turmas || []).forEach(function(t) {
+        sel.appendChild(new Option(t, t));
+      });
+      sel.disabled = !(turmas && turmas.length);
+    }
+
+    function carregarTurmasParaCurso(curso, turmaPreselecionada) {
+      curso = String(curso || "").trim();
+      resetTurmaSelect();
+      if (!curso) return;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Não foi possível carregar as turmas.", "danger");
+            return;
+          }
+          preencherTurmas(resp.turmas);
+          if (turmaPreselecionada) {
+            var t = String(turmaPreselecionada).trim();
+            var sel = document.getElementById("agTurma");
+            for (var i = 0; i < sel.options.length; i++) {
+              if (sel.options[i].value === t) {
+                sel.selectedIndex = i;
+                break;
+              }
+            }
+          }
+        })
+        .withFailureHandler(function(err) {
+          renderMsg("Erro ao carregar turmas: " + err, "danger");
+        })
+        .obterTurmasAgendamentoPorCurso(curso);
+    }
+
+    function aplicarPrefillSeHouver() {
+      try {
+        var raw = sessionStorage.getItem(PREFILL_KEY);
+        if (!raw) return;
+        sessionStorage.removeItem(PREFILL_KEY);
+        var o = JSON.parse(raw);
+        var curso = o && o.curso ? String(o.curso) : "";
+        var turma = o && o.turma ? String(o.turma) : "";
+        if (!curso) return;
+        var selC = document.getElementById("agCurso");
+        var found = false;
+        for (var i = 0; i < selC.options.length; i++) {
+          if (selC.options[i].value === curso) {
+            selC.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found) return;
+        carregarTurmasParaCurso(curso, turma);
+      } catch (e) {
+        /* ignore */
+      }
+    }
+
+    function toggleTipo() {
+      var tipo = document.querySelector('input[name="agTipo"]:checked');
+      var v = tipo ? tipo.value : "simples";
+      document.getElementById("agBlocoSimples").style.display = v === "simples" ? "" : "none";
+      document.getElementById("agBlocoRecorrente").style.display = v === "recorrente" ? "" : "none";
+    }
+
+    document.querySelectorAll('input[name="agTipo"]').forEach(function(r) {
+      r.addEventListener("change", toggleTipo);
+    });
+    toggleTipo();
+
+    document.getElementById("agCurso").addEventListener("change", function() {
+      var c = document.getElementById("agCurso").value;
+      carregarTurmasParaCurso(c, "");
+    });
+
+    document.getElementById("agBtnSalvar").addEventListener("click", function() {
+      renderMsg("");
+      var curso = String(document.getElementById("agCurso").value || "").trim();
+      var turma = String(document.getElementById("agTurma").value || "").trim();
+      if (!curso || !turma) {
+        renderMsg("Selecione curso e turma.", "danger");
+        return;
+      }
+
+      var tipoEl = document.querySelector('input[name="agTipo"]:checked');
+      var tipo = tipoEl ? tipoEl.value : "simples";
+
+      function fmtTime(el) {
+        var v = el && el.value ? String(el.value).trim() : "";
+        if (!v) return "";
+        if (v.length === 5) return v;
+        var parts = v.split(":");
+        if (parts.length >= 2) {
+          var h = ("0" + parseInt(parts[0], 10)).slice(-2);
+          var m = ("0" + parseInt(parts[1], 10)).slice(-2);
+          return h + ":" + m;
+        }
+        return v;
+      }
+
+      var horaInicio = fmtTime(document.getElementById("agHoraInicio"));
+      var horaFim = fmtTime(document.getElementById("agHoraFim"));
+      if (!horaInicio || !horaFim) {
+        renderMsg("Hora início e hora fim são obrigatórias.", "danger");
+        return;
+      }
+
+      var payload = {
+        curso: curso,
+        turma: turma,
+        tipo: tipo,
+        horaInicio: horaInicio,
+        horaFim: horaFim,
+        salaNome: String(document.getElementById("agSala").value || "").trim(),
+        convidados: document.getElementById("agConvidados").value
+      };
+
+      if (tipo === "simples") {
+        payload.data = String(document.getElementById("agDataSimples").value || "").trim();
+        if (!payload.data) {
+          renderMsg("Informe a data do evento simples.", "danger");
+          return;
+        }
+      } else {
+        payload.dataInicio = String(document.getElementById("agDataInicio").value || "").trim();
+        payload.dataFim = String(document.getElementById("agDataFim").value || "").trim();
+        if (!payload.dataInicio || !payload.dataFim) {
+          renderMsg("Informe data início e data fim (inclusiva) da recorrência.", "danger");
+          return;
+        }
+        payload.diasSemana = {
+          seg: document.getElementById("agDiaSeg").checked,
+          ter: document.getElementById("agDiaTer").checked,
+          qua: document.getElementById("agDiaQua").checked,
+          qui: document.getElementById("agDiaQui").checked,
+          sex: document.getElementById("agDiaSex").checked
+        };
+        var exd = String(document.getElementById("agExdate").value || "").trim();
+        var rd = String(document.getElementById("agRdate").value || "").trim();
+        if (exd) payload.exdate = exd;
+        if (rd) payload.rdate = rd;
+      }
+
+      renderMsg("Salvando...", "info");
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Falha ao salvar.", "danger");
+            return;
+          }
+          renderMsg(resp.message || "Concluído.", "success");
+        })
+        .withFailureHandler(function(err) {
+          renderMsg("Erro: " + err, "danger");
+        })
+        .criarAgendamentos(payload);
+    });
+
+    renderMsg("Carregando opções...", "info");
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        renderMsg("");
+        if (!resp || !resp.success) {
+          renderMsg((resp && resp.message) || "Não foi possível carregar a tela.", "danger");
+          return;
+        }
+        preencherCursos(resp.cursos);
+        preencherSelectSalas(resp.salas);
+        if (resp.timezone) {
+          var hint = document.getElementById("agTzHint");
+          if (hint) hint.textContent = "Fuso: " + resp.timezone;
+        }
+        aplicarPrefillSeHouver();
+      })
+      .withFailureHandler(function(err) {
+        renderMsg("Erro: " + err, "danger");
+      })
+      .obterDadosTelaAgendamentoIncluir();
+  };
+</script>

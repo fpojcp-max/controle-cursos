@@ -32,14 +32,15 @@ function getMenuHtml(view, spa) {
   const t = HtmlService.createTemplateFromFile("Menu");
   t.view = view || "";
   t.urlConsulta = spa ? "#" : obterUrlWebApp("consulta");
+  t.urlAgendamentoIncluir = spa ? "#" : obterUrlWebApp("agendamento-incluir");
   t.spa = spa === true;
   return t.evaluate().getContent();
 }
 
 /**
  * Retorna conteúdo HTML e script de uma view para injeção no SPA (chamado pelo cliente).
- * @param {string} view - "home", "consulta" ou "cadastro".
- * @param {string} id - ID do registro (só para cadastro/edição).
+ * @param {string} view - "home", "consulta", "cadastro" ou "agendamento-incluir".
+ * @param {string} id - ID do registro (cadastro/edição ou agendamento).
  * @returns {{ html: string, script: string }}
  */
 function getPageContent(view, id) {
@@ -70,6 +71,17 @@ function getPageContent(view, id) {
     return {
       html: t.evaluate().getContent(),
       script: scriptUpdateStyle + scriptCadastro
+    };
+  }
+  if (view === "agendamento-incluir") {
+    const t = HtmlService.createTemplateFromFile("AgendamentoIncluirFragment");
+    t.id = id;
+    t.spa = true;
+    t.parentItem = "Agendamento";
+    t.subItem = "Incluir";
+    return {
+      html: t.evaluate().getContent(),
+      script: HtmlService.createHtmlOutputFromFile("AgendamentoIncluirJavaScript").getContent()
     };
   }
   return { html: "", script: "" };

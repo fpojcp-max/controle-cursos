@@ -29,12 +29,26 @@
           preencherFormularioEdicao(dados);
         } else {
           var msg = document.getElementById("msg");
-          if (msg) msg.innerHTML = '<div class="notification is-warning is-light">Registro não encontrado.</div>';
+          if (msg) {
+            msg.innerHTML = '<div class="notification is-warning is-light">Registro não encontrado.</div>';
+            if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+              window.rolarParaVerMensagemNoTopo(msg);
+            } else {
+              scrollParaTopo();
+            }
+          }
         }
       })
       .withFailureHandler(function(err) {
         var msg = document.getElementById("msg");
-        if (msg) msg.innerHTML = '<div class="notification is-danger is-light">Erro ao carregar registro: ' + (err && err.message ? err.message : String(err)) + '</div>';
+        if (msg) {
+          msg.innerHTML = '<div class="notification is-danger is-light">Erro ao carregar registro: ' + (err && err.message ? err.message : String(err)) + '</div>';
+          if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+            window.rolarParaVerMensagemNoTopo(msg);
+          } else {
+            scrollParaTopo();
+          }
+        }
       })
       .obterRegistroPorId(id);
   }
@@ -144,7 +158,11 @@
       document.getElementById('ticketForm').reset();
       document.getElementById('registroId').value = '';
       resetVisualStyles();
-      scrollParaTopo();
+      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+        window.rolarParaVerMensagemNoTopo(msg);
+      } else {
+        scrollParaTopo();
+      }
       google.script.run.withSuccessHandler(c => popularCampos(c)).obterConfiguracaoFormulario();
     }
 
@@ -153,14 +171,22 @@
       btn.textContent = "Salvar";
       btn.disabled = false;
       bloquearFormularioAposEdicao();
-      scrollParaTopo();
+      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+        window.rolarParaVerMensagemNoTopo(msg);
+      } else {
+        scrollParaTopo();
+      }
     }
 
     function falha(err) {
       msg.innerHTML = `<div class="notification is-danger is-light">Erro: ${err}</div>`;
       btn.textContent = "Salvar";
       btn.disabled = false;
-      scrollParaTopo();
+      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+        window.rolarParaVerMensagemNoTopo(msg);
+      } else {
+        scrollParaTopo();
+      }
     }
 
     function onResult(resp) {
