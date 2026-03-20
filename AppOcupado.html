@@ -1,0 +1,134 @@
+<style>
+  body.app-busy-lock-scroll {
+    overflow: hidden;
+  }
+  #appBusyBlocking {
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.38);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+  }
+  #appBusyBlocking.app-busy-visible {
+    display: flex;
+  }
+  /* Mesmo visual compacto nos dois modos; só muda máscara + bloqueio de interação. */
+  #appBusyBlocking .app-busy-panel,
+  #appBusyLite .app-busy-panel {
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16);
+    padding: 14px 24px;
+    min-width: 220px;
+    max-width: min(90vw, 360px);
+  }
+  .app-busy-bar-wrap {
+    height: 9px;
+    border-radius: 5px;
+    overflow: hidden;
+    background: #dde8e6;
+  }
+  .app-busy-bar-indeterminate {
+    height: 100%;
+    width: 45%;
+    background: repeating-linear-gradient(
+      -45deg,
+      #7ec4d8,
+      #7ec4d8 7px,
+      #e3f4f8 7px,
+      #e3f4f8 14px
+    );
+    animation: app-busy-slide 1s linear infinite;
+  }
+  @keyframes app-busy-slide {
+    0% {
+      transform: translateX(-120%);
+    }
+    100% {
+      transform: translateX(320%);
+    }
+  }
+  /* Centro da viewport; modo leve não usa máscara nem bloqueia cliques. */
+  #appBusyLite {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1990;
+    display: none;
+    pointer-events: none;
+  }
+  #appBusyLite.app-busy-visible {
+    display: block;
+  }
+</style>
+<div id="appBusyBlocking" aria-hidden="true">
+  <div class="app-busy-panel">
+    <div class="app-busy-bar-wrap" aria-hidden="true">
+      <div class="app-busy-bar-indeterminate"></div>
+    </div>
+  </div>
+</div>
+<div id="appBusyLite" aria-hidden="true">
+  <div class="app-busy-panel">
+    <div class="app-busy-bar-wrap" aria-hidden="true">
+      <div class="app-busy-bar-indeterminate"></div>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var total = 0;
+  var blockingCount = 0;
+  var elB = document.getElementById("appBusyBlocking");
+  var elL = document.getElementById("appBusyLite");
+
+  function sync() {
+    if (!elB || !elL) return;
+    if (blockingCount > 0) {
+      elB.classList.add("app-busy-visible");
+      elB.setAttribute("aria-hidden", "false");
+      elL.classList.remove("app-busy-visible");
+      elL.setAttribute("aria-hidden", "true");
+      document.body.classList.add("app-busy-lock-scroll");
+    } else if (total > 0) {
+      elB.classList.remove("app-busy-visible");
+      elB.setAttribute("aria-hidden", "true");
+      elL.classList.add("app-busy-visible");
+      elL.setAttribute("aria-hidden", "false");
+      document.body.classList.remove("app-busy-lock-scroll");
+    } else {
+      elB.classList.remove("app-busy-visible");
+      elB.setAttribute("aria-hidden", "true");
+      elL.classList.remove("app-busy-visible");
+      elL.setAttribute("aria-hidden", "true");
+      document.body.classList.remove("app-busy-lock-scroll");
+    }
+  }
+
+  /**
+   * @param {{ blocking?: boolean }} opts - blocking false = indicador discreto (sem bloquear UI). Omisso = bloqueio.
+   * @returns {function(): void}
+   */
+  window.appOcupadoIniciar = function (opts) {
+    opts = opts || {};
+    var isBlocking = opts.blocking !== false;
+    total++;
+    if (isBlocking) blockingCount++;
+    sync();
+    var done = false;
+    return function appOcupadoEncerrar() {
+      if (done) return;
+      done = true;
+      total--;
+      if (isBlocking) blockingCount--;
+      if (total < 0) total = 0;
+      if (blockingCount < 0) blockingCount = 0;
+      sync();
+    };
+  };
+})();
+</script>

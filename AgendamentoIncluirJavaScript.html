@@ -62,8 +62,10 @@
       curso = String(curso || "").trim();
       resetTurmaSelect();
       if (!curso) return;
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
       google.script.run
         .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
           if (!resp || !resp.success) {
             renderMsg((resp && resp.message) || "Não foi possível carregar as turmas.", "danger");
             return;
@@ -81,6 +83,7 @@
           }
         })
         .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
           renderMsg("Erro ao carregar turmas: " + err, "danger");
         })
         .obterTurmasAgendamentoPorCurso(curso);
@@ -196,9 +199,10 @@
         if (rd) payload.rdate = rd;
       }
 
-      renderMsg("Salvando...", "info");
+      var endSalvar = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
       google.script.run
         .withSuccessHandler(function(resp) {
+          if (endSalvar) endSalvar();
           if (!resp || !resp.success) {
             renderMsg((resp && resp.message) || "Falha ao salvar.", "danger");
             return;
@@ -206,14 +210,16 @@
           renderMsg(resp.message || "Concluído.", "success");
         })
         .withFailureHandler(function(err) {
+          if (endSalvar) endSalvar();
           renderMsg("Erro: " + err, "danger");
         })
         .criarAgendamentos(payload);
     });
 
-    renderMsg("Carregando opções...", "info");
+    var endInit = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run
       .withSuccessHandler(function(resp) {
+        if (endInit) endInit();
         renderMsg("");
         if (!resp || !resp.success) {
           renderMsg((resp && resp.message) || "Não foi possível carregar a tela.", "danger");
@@ -221,13 +227,10 @@
         }
         preencherCursos(resp.cursos);
         preencherSelectSalas(resp.salas);
-        if (resp.timezone) {
-          var hint = document.getElementById("agTzHint");
-          if (hint) hint.textContent = "Fuso: " + resp.timezone;
-        }
         aplicarPrefillSeHouver();
       })
       .withFailureHandler(function(err) {
+        if (endInit) endInit();
         renderMsg("Erro: " + err, "danger");
       })
       .obterDadosTelaAgendamentoIncluir();

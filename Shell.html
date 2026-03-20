@@ -7,6 +7,7 @@
     <?!= HtmlService.createHtmlOutputFromFile('ShellViewStyles').getContent(); ?>
   </head>
   <body data-initial-view="<?= initialView ?>" data-initial-id="<?= initialId ? String(initialId).replace(/&/g,'&amp;').replace(/"/g,'&quot;') : '' ?>">
+    <?!= HtmlService.createHtmlOutputFromFile('AppOcupado').getContent(); ?>
     <div class="form-container">
       <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
 
@@ -99,10 +100,12 @@
   function navigate(view, id) {
     view = view || "home";
     id = (id && String(id).trim()) ? String(id).trim() : "";
-    mainContent.innerHTML = "<div class=\"main-placeholder\" style=\"display:flex;align-items:center;justify-content:center;color:#6b8b86;\">Carregando...</div>";
+    mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
     setMenuActive(view);
     google.script.run
       .withSuccessHandler(function(data) {
+        if (endBusy) endBusy();
         try {
           if (!data || typeof data.html === "undefined") {
             mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
@@ -127,6 +130,7 @@
         }
       })
       .withFailureHandler(function(err) {
+        if (endBusy) endBusy();
         showError("Erro ao carregar: " + String(err));
       })
       .getPageContent(view, id);

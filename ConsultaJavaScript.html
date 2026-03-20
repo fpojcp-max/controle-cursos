@@ -57,9 +57,10 @@
     document.getElementById("modalBtnSim").addEventListener("click", () => {
       esconderModalConfirmarExclusao();
       if (!selectedRowId) return;
-      renderMessage("Excluindo...", "info");
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
       google.script.run
         .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
           if (resp && String(resp).indexOf("Erro ao") === 0) {
             renderMessage(resp, "danger");
           } else {
@@ -68,6 +69,7 @@
           }
         })
         .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
           renderMessage("Erro ao excluir: " + err, "danger");
         })
         .excluirRegistro(selectedRowId);
@@ -150,8 +152,10 @@
   }
 
   function loadFilterOptions() {
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run
       .withSuccessHandler((config) => {
+        if (endBusy) endBusy();
         fillSelect("fCurso", config.CURSOS);
         fillSelect("fTurma", config.TURMAS);
         fillSelect("fStatus", config.STATUS);
@@ -160,6 +164,7 @@
         fillSelect("fOferta", config.OFERTAS);
       })
       .withFailureHandler((err) => {
+        if (endBusy) endBusy();
         renderMessage(`Erro ao carregar filtros: ${err}`, "danger");
       })
       .obterConfiguracaoFormulario();
@@ -191,10 +196,11 @@
     lastQuery = { filtros: filtros, sort: currentSort, page: { offset: offset, limit: PAGE_SIZE } };
 
     setSearching(true);
-    renderMessage("Pesquisando...", "info");
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
 
     google.script.run
       .withSuccessHandler(function(resp) {
+        if (endBusy) endBusy();
         setSearching(false);
         if (!resp || !resp.columns) {
           renderMessage("Resposta inválida do servidor.", "danger");
@@ -206,6 +212,7 @@
         updatePaginationUI(resp);
       })
       .withFailureHandler(function(err) {
+        if (endBusy) endBusy();
         setSearching(false);
         renderMessage("Erro na pesquisa: " + err, "danger");
       })
@@ -244,7 +251,7 @@
   function setSearching(isSearching) {
     const btn = document.getElementById("btnPesquisar");
     btn.disabled = isSearching;
-    btn.textContent = isSearching ? "Pesquisando..." : "Pesquisar";
+    btn.setAttribute("aria-busy", isSearching ? "true" : "false");
   }
 
   function renderMessage(text, type) {
@@ -283,9 +290,10 @@
     if (!lastQuery || totalRecords === 0) return;
     var btn = document.getElementById("btnExportarCsv");
     btn.disabled = true;
-    renderMessage("Preparando exportação...", "info");
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
     google.script.run
       .withSuccessHandler(function(data) {
+        if (endBusy) endBusy();
         btn.disabled = totalRecords === 0;
         renderMessage("");
         if (!data || !data.columns) {
@@ -314,6 +322,7 @@
         URL.revokeObjectURL(url);
       })
       .withFailureHandler(function(err) {
+        if (endBusy) endBusy();
         btn.disabled = false;
         renderMessage("Erro ao exportar: " + err, "danger");
       })

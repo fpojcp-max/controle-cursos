@@ -3,13 +3,11 @@
   <div class="actions-row">
     <div class="is-size-6 muted">
       Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
-      <span class="is-size-7 ml-2" id="agTzHint"></span>
     </div>
     <a href="#" data-view="consulta" class="btn-custom">Consulta</a>
   </div>
 
   <h2 class="section-title">Turma</h2>
-  <p class="help mb-3">Valores listados conforme registros existentes na planilha de turmas (curso + turma únicos).</p>
   <div class="columns is-multiline">
     <div class="column is-6">
       <label class="label">Curso</label>
@@ -100,7 +98,7 @@
     <textarea class="textarea" id="agConvidados" rows="3" placeholder="opcional"></textarea>
   </div>
 
-  <div class="field mt-4">
-    <button type="button" class="btn-custom" id="agBtnSalvar">Salvar no Google Calendar e na planilha</button>
+  <div class="ag-agendar-row">
+    <button type="button" class="btn-custom" id="agBtnSalvar">Agendar</button>
   </div>
 </div>

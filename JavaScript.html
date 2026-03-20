@@ -7,10 +7,22 @@
   ];
 
   window.CadastroInit = function() {
+    var endCfg = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run
       .withSuccessHandler(function(config) {
+        if (endCfg) endCfg();
         popularCampos(config);
         inicializarEdicaoSeNecessario();
+      })
+      .withFailureHandler(function(err) {
+        if (endCfg) endCfg();
+        var msg = document.getElementById("msg");
+        if (msg) {
+          msg.innerHTML = "<div class=\"notification is-danger is-light\">Erro ao carregar opções: " + String(err).replace(/</g, "&lt;") + "</div>";
+          if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+            window.rolarParaVerMensagemNoTopo(msg);
+          }
+        }
       })
       .obterConfiguracaoFormulario();
   };
@@ -23,8 +35,10 @@
     if (form.classList.contains("formulario-bloqueado")) return;
     document.getElementById("btnEnviar").textContent = "Salvar";
     document.getElementById("btnLimpar").disabled = true;
+    var endLoad = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run
       .withSuccessHandler(function(dados) {
+        if (endLoad) endLoad();
         if (dados) {
           preencherFormularioEdicao(dados);
         } else {
@@ -40,6 +54,7 @@
         }
       })
       .withFailureHandler(function(err) {
+        if (endLoad) endLoad();
         var msg = document.getElementById("msg");
         if (msg) {
           msg.innerHTML = '<div class="notification is-danger is-light">Erro ao carregar registro: ' + (err && err.message ? err.message : String(err)) + '</div>';
@@ -108,7 +123,16 @@
       document.getElementById('registroId').value = '';
       document.getElementById('msg').innerHTML = '';
       resetVisualStyles();
-      google.script.run.withSuccessHandler(c => popularCampos(c)).obterConfiguracaoFormulario();
+      var endLimpar = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(c) {
+          if (endLimpar) endLimpar();
+          popularCampos(c);
+        })
+        .withFailureHandler(function() {
+          if (endLimpar) endLimpar();
+        })
+        .obterConfiguracaoFormulario();
       document.getElementById('btnEnviar').textContent = 'Salvar';
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
@@ -146,15 +170,18 @@
     const msg = document.getElementById('msg');
     const registroId = (document.getElementById('registroId').value || '').trim();
     
-    btn.textContent = "Enviando...";
     btn.disabled = true;
-    
+    btn.setAttribute("aria-busy", "true");
+
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
+
     const dados = coletarDadosFormulario();
 
     function sucessoCadastro(resp) {
       msg.innerHTML = `<div class="notification is-success is-light has-text-centered"><b>Sucesso!</b> ${resp}</div>`;
       btn.textContent = "Salvar";
       btn.disabled = false;
+      btn.setAttribute("aria-busy", "false");
       document.getElementById('ticketForm').reset();
       document.getElementById('registroId').value = '';
       resetVisualStyles();
@@ -170,6 +197,7 @@
       msg.innerHTML = `<div class="notification is-success is-light has-text-centered"><b>Sucesso!</b> ${resp}</div>`;
       btn.textContent = "Salvar";
       btn.disabled = false;
+      btn.setAttribute("aria-busy", "false");
       bloquearFormularioAposEdicao();
       if (typeof window.rolarParaVerMensagemNoTopo === "function") {
         window.rolarParaVerMensagemNoTopo(msg);
@@ -178,10 +206,11 @@
       }
     }
 
-    function falha(err) {
+    function falhaMsg(err) {
       msg.innerHTML = `<div class="notification is-danger is-light">Erro: ${err}</div>`;
       btn.textContent = "Salvar";
       btn.disabled = false;
+      btn.setAttribute("aria-busy", "false");
       if (typeof window.rolarParaVerMensagemNoTopo === "function") {
         window.rolarParaVerMensagemNoTopo(msg);
       } else {
@@ -190,8 +219,9 @@
     }
 
     function onResult(resp) {
+      if (endBusy) endBusy();
       if (!resp || resp.success === false) {
-        falha(resp ? resp.message : "Erro desconhecido.");
+        falhaMsg(resp ? resp.message : "Erro desconhecido.");
         return;
       }
       if (registroId) sucessoEdicao(resp.message);
@@ -199,9 +229,21 @@
     }
 
     if (registroId) {
-      google.script.run.withSuccessHandler(onResult).withFailureHandler(falha).atualizarRegistro(registroId, dados);
+      google.script.run
+        .withSuccessHandler(onResult)
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          falhaMsg(err);
+        })
+        .atualizarRegistro(registroId, dados);
     } else {
-      google.script.run.withSuccessHandler(onResult).withFailureHandler(falha).salvarRegistro(dados);
+      google.script.run
+        .withSuccessHandler(onResult)
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          falhaMsg(err);
+        })
+        .salvarRegistro(dados);
     }
   };
 </script>
