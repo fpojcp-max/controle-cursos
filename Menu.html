@@ -1,6 +1,6 @@
 <nav class="app-menu" role="navigation" aria-label="Menu principal">
   <ul class="app-menu-list">
-    <li class="app-menu-item app-menu-item-dropdown <?= view === 'consulta' || view === 'cadastro' ? 'is-active' : '' ?>">
+    <li class="app-menu-item app-menu-item-dropdown <?= view === 'consulta' || view === 'cadastro' ? 'is-active' : '' ?>" data-dropdown="turma">
       <button type="button" class="app-menu-trigger" aria-expanded="false" aria-controls="submenu-turma" id="menu-turma">
         <span>Turma</span>
         <span class="app-menu-chevron" aria-hidden="true"></span>
@@ -15,8 +15,20 @@
         </li>
       </ul>
     </li>
-    <li class="app-menu-item app-menu-item-disabled">
-      <span class="app-menu-trigger" aria-disabled="true" title="Em breve">Agendamento</span>
+    <li class="app-menu-item app-menu-item-dropdown <?= view === 'agendamento-incluir' ? 'is-active' : '' ?>" data-dropdown="agendamento">
+      <button type="button" class="app-menu-trigger" aria-expanded="false" aria-controls="submenu-agendamento" id="menu-agendamento">
+        <span>Agendamento</span>
+        <span class="app-menu-chevron" aria-hidden="true"></span>
+      </button>
+      <ul class="app-menu-sub" id="submenu-agendamento" role="menu" aria-labelledby="menu-agendamento">
+        <li role="none">
+          <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= view === 'agendamento-incluir' ? 'is-active' : '' ?>" data-view="agendamento-incluir" role="menuitem" tabindex="0">Incluir</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= view === 'agendamento-incluir' ? 'is-active' : '' ?>" href="<?= urlAgendamentoIncluir ?>" role="menuitem" target="_top" rel="noopener">Incluir</a>
+          <? } ?>
+        </li>
+      </ul>
     </li>
   </ul>
 </nav>

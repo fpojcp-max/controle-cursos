@@ -6,6 +6,8 @@
   let totalRecords = 0;
   let selectedRowElement = null;
   let selectedRowId = null;
+  let selectedRowCurso = "";
+  let selectedRowTurma = "";
   let idColumnIndex = -1;
 
   window.ConsultaInit = function() {
@@ -90,6 +92,26 @@
         })
         .obterUrlWebApp("cadastro");
     });
+
+    document.getElementById("btnAgendar").addEventListener("click", () => {
+      if (!selectedRowId || !selectedRowCurso || !selectedRowTurma) return;
+      try {
+        sessionStorage.setItem(
+          "agendamentoIncluirPrefill",
+          JSON.stringify({ curso: selectedRowCurso, turma: selectedRowTurma })
+        );
+      } catch (e) { /* ignore */ }
+      if (typeof window.navigate === "function") {
+        window.navigate("agendamento-incluir", "");
+        return;
+      }
+      google.script.run
+        .withSuccessHandler(function(baseUrl) {
+          var url = baseUrl;
+          try { window.top.location.href = url; } catch (_) { window.location.href = url; }
+        })
+        .obterUrlWebApp("agendamento-incluir");
+    });
   }
 
   function esconderBotaoEditar() {
@@ -114,6 +136,7 @@
     wrap.style.display = "flex";
     document.getElementById("btnEditar").disabled = !habilitado;
     document.getElementById("btnExcluir").disabled = !habilitado;
+    document.getElementById("btnAgendar").disabled = !habilitado;
   }
 
   function indiceColunaId(columns) {
@@ -234,6 +257,9 @@
       : type === "info" ? "is-info"
       : "is-success";
     el.innerHTML = `<div class="notification ${cls} is-light">${escapeHtml(text)}</div>`;
+    if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+      window.rolarParaVerMensagemNoTopo(el);
+    }
   }
 
   function escapeHtml(str) {
@@ -306,6 +332,8 @@
     idColumnIndex = indiceColunaId(columns);
     selectedRowElement = null;
     selectedRowId = null;
+    selectedRowCurso = "";
+    selectedRowTurma = "";
 
     renderHeader(columns);
     renderBody(columns, rows);
@@ -370,6 +398,14 @@
       return;
     }
 
+    let idxCursoCol = -1;
+    let idxTurmaCol = -1;
+    columns.forEach((col, idx) => {
+      const k = String(col.key || col.label || "").trim().toLowerCase();
+      if (k === "curso") idxCursoCol = idx;
+      if (k === "turma") idxTurmaCol = idx;
+    });
+
     rows.forEach((row) => {
       const tr = document.createElement("tr");
       columns.forEach((col, idx) => {
@@ -383,8 +419,12 @@
           selectedRowElement = tr;
           tr.classList.add("row-selected");
           selectedRowId = (idColumnIndex >= 0 && row[idColumnIndex] != null) ? String(row[idColumnIndex]) : null;
+          selectedRowCurso = idxCursoCol >= 0 ? String(row[idxCursoCol] || "").trim() : "";
+          selectedRowTurma = idxTurmaCol >= 0 ? String(row[idxTurmaCol] || "").trim() : "";
           document.getElementById("btnEditar").disabled = !selectedRowId;
           document.getElementById("btnExcluir").disabled = !selectedRowId;
+          var podeAgendar = !!(selectedRowId && selectedRowCurso && selectedRowTurma);
+          document.getElementById("btnAgendar").disabled = !podeAgendar;
         });
         tr.appendChild(td);
       });
