@@ -8,7 +8,6 @@
     <div class="is-size-6 muted">
       Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
     </div>
-    <a href="#" data-view="agendamento-incluir" class="btn-custom">Incluir</a>
   </div>
 
   <h2 class="section-title">Filtro</h2>
@@ -28,11 +27,15 @@
       </div>
     </div>
     <div class="consulta-form-actions">
-      <button type="submit" class="btn-custom" id="btnAgExPesquisar">Pesquisar agendamentos</button>
+      <button type="button" class="btn-custom btn-secondary" id="btnAgExLimparTudo">Limpar filtro</button>
+      <button type="submit" class="btn-custom" id="btnAgExPesquisar">Pesquisar</button>
     </div>
   </form>
 
   <div id="agExResultsBlock" style="display: none;">
+    <div class="resultados-header">
+      <h2 class="section-title">Resultados</h2>
+    </div>
     <div class="field mb-3">
       <div class="is-flex is-align-items-center ag-ex-selecionar-tudo-row">
         <input type="checkbox" id="agExSelecionarTudo" disabled aria-label="Selecionar todos os agendamentos desta pesquisa">

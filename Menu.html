@@ -8,16 +8,16 @@
       <ul class="app-menu-sub" id="submenu-turma" role="menu" aria-labelledby="menu-turma">
         <li role="none">
           <? if (spa) { ?>
-          <span class="app-menu-link app-menu-link-spa <?= menuConsultaAtiva ? 'is-active' : '' ?>" data-view="consulta" role="menuitem" tabindex="0">Consulta</span>
+          <span class="app-menu-link app-menu-link-spa <?= menuConsultaAtiva ? 'is-active' : '' ?>" data-view="consulta" role="menuitem" tabindex="0">Consultar</span>
           <? } else { ?>
-          <a class="app-menu-link <?= menuConsultaAtiva ? 'is-active' : '' ?>" href="<?= urlConsulta ?>" role="menuitem" target="_top" rel="noopener">Consulta</a>
+          <a class="app-menu-link <?= menuConsultaAtiva ? 'is-active' : '' ?>" href="<?= urlConsulta ?>" role="menuitem" target="_top" rel="noopener">Consultar</a>
           <? } ?>
         </li>
         <li role="none">
           <? if (spa) { ?>
-          <span class="app-menu-link app-menu-link-spa <?= menuInserirAtivo ? 'is-active' : '' ?>" data-view="cadastro" data-id="" role="menuitem" tabindex="0">Inserir</span>
+          <span class="app-menu-link app-menu-link-spa <?= menuInserirAtivo ? 'is-active' : '' ?>" data-view="cadastro" data-id="" role="menuitem" tabindex="0">Incluir</span>
           <? } else { ?>
-          <a class="app-menu-link <?= menuInserirAtivo ? 'is-active' : '' ?>" href="<?= urlCadastroInserir ?>" role="menuitem" target="_top" rel="noopener">Inserir</a>
+          <a class="app-menu-link <?= menuInserirAtivo ? 'is-active' : '' ?>" href="<?= urlCadastroInserir ?>" role="menuitem" target="_top" rel="noopener">Incluir</a>
           <? } ?>
         </li>
       </ul>
@@ -28,6 +28,13 @@
         <span class="app-menu-chevron" aria-hidden="true"></span>
       </button>
       <ul class="app-menu-sub" id="submenu-agendamento" role="menu" aria-labelledby="menu-agendamento">
+        <li role="none">
+          <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= view === 'agendamento-consulta' ? 'is-active' : '' ?>" data-view="agendamento-consulta" role="menuitem" tabindex="0">Consultar</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= view === 'agendamento-consulta' ? 'is-active' : '' ?>" href="<?= urlAgendamentoConsulta ?>" role="menuitem" target="_top" rel="noopener">Consultar</a>
+          <? } ?>
+        </li>
         <li role="none">
           <? if (spa) { ?>
           <span class="app-menu-link app-menu-link-spa <?= view === 'agendamento-incluir' ? 'is-active' : '' ?>" data-view="agendamento-incluir" role="menuitem" tabindex="0">Incluir</span>

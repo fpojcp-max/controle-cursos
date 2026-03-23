@@ -731,6 +731,48 @@ const AgendamentoService = (() => {
     };
   }
 
+  const LIMITE_EXPORT_AGENDAMENTOS = 10000;
+
+  /**
+   * Todos os agendamentos do filtro (curso+turma) com a mesma ordenação da pesquisa — para CSV.
+   * @returns {{ columns: { key: string, label: string }[], rows: string[][] }}
+   */
+  function obterAgendamentosConsultaParaExportar_(curso, turma, sortCol, sortDir) {
+    const c = String(curso || "").trim();
+    const t = String(turma || "").trim();
+    if (!c || !t) {
+      throw new Error("Selecione curso e turma.");
+    }
+    const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
+    if (!idTurma) {
+      throw new Error(
+        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+      );
+    }
+    let sc = -1;
+    if (sortCol !== undefined && sortCol !== null && String(sortCol).trim() !== "") {
+      const n = parseInt(sortCol, 10);
+      if (!isNaN(n)) sc = n;
+    }
+    const sortAsc = String(sortDir == null ? "asc" : sortDir).toLowerCase() !== "desc";
+    const r = AgendamentoRepo.listarAgendamentosPaginadoPorIdTurma(
+      idTurma,
+      0,
+      LIMITE_EXPORT_AGENDAMENTOS,
+      sc,
+      sortAsc
+    );
+    const cab = r.cabecalho || [];
+    const columns = cab.map((h, idx) => ({
+      key: "c" + idx,
+      label: String(h != null ? h : "")
+    }));
+    const rows = (r.itens || []).map((item) =>
+      (item.cells || []).map((cell) => (cell === null || cell === undefined ? "" : String(cell)))
+    );
+    return { columns: columns, rows: rows };
+  }
+
   function obterTodosEventIdsExcluir_(curso, turma) {
     const c = String(curso || "").trim();
     const t = String(turma || "").trim();
@@ -861,6 +903,7 @@ const AgendamentoService = (() => {
     listarTurmasPorCursoIncluir: listarTurmasPorCursoIncluir_,
     criarAgendamentos: criarAgendamentos_,
     pesquisarAgendamentosExcluir: pesquisarAgendamentosExcluir_,
+    obterAgendamentosConsultaParaExportar: obterAgendamentosConsultaParaExportar_,
     obterTodosEventIdsExcluir: obterTodosEventIdsExcluir_,
     excluirAgendamentosLote: excluirAgendamentosLote_
   };

@@ -38,6 +38,7 @@
         optAnchor ||
         document.getElementById("msgAgendamento") ||
         document.getElementById("msgAgEx") ||
+        document.getElementById("msgAgCo") ||
         document.getElementById("msg");
       if (anchor && anchor.scrollIntoView) {
         try {
@@ -82,7 +83,12 @@
     menu.querySelectorAll(".app-menu-link-spa").forEach(function(a) { a.classList.remove("is-active"); });
     var group = null;
     if (view === "consulta" || view === "cadastro") group = "turma";
-    else if (view === "agendamento-incluir" || view === "agendamento-excluir") group = "agendamento";
+    else if (
+      view === "agendamento-incluir" ||
+      view === "agendamento-consulta" ||
+      view === "agendamento-excluir"
+    )
+      group = "agendamento";
     if (group) {
       var dd = menu.querySelector('.app-menu-item-dropdown[data-dropdown="' + group + '"]');
       if (dd) dd.classList.add("is-active");
@@ -128,11 +134,13 @@
           mainContent.innerHTML = html;
           if (data.script && data.script.trim()) runScript(data.script);
           if (view === "consulta" && typeof window.ConsultaInit === "function") {
-            try { window.ConsultaInit(); } catch (err) { showError("Erro ao iniciar Consulta: " + (err && err.message ? err.message : String(err))); }
+            try { window.ConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (turmas): " + (err && err.message ? err.message : String(err))); }
           } else if (view === "cadastro" && typeof window.CadastroInit === "function") {
             try { window.CadastroInit(); } catch (err) { showError("Erro ao iniciar Cadastro: " + (err && err.message ? err.message : String(err))); }
           } else if (view === "agendamento-incluir" && typeof window.AgendamentoIncluirInit === "function") {
             try { window.AgendamentoIncluirInit(); } catch (err) { showError("Erro ao iniciar Agendamento: " + (err && err.message ? err.message : String(err))); }
+          } else if (view === "agendamento-consulta" && typeof window.AgendamentoConsultaInit === "function") {
+            try { window.AgendamentoConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (agendamentos): " + (err && err.message ? err.message : String(err))); }
           } else if (view === "agendamento-excluir" && typeof window.AgendamentoExcluirInit === "function") {
             try { window.AgendamentoExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de agendamentos: " + (err && err.message ? err.message : String(err))); }
           }

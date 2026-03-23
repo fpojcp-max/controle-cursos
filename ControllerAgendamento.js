@@ -138,6 +138,28 @@ function pesquisarAgendamentosExcluir(payload) {
 }
 
 /**
+ * Exportação CSV: todos os agendamentos do filtro (curso+turma) com a ordenação atual.
+ * @param {{ curso: string, turma: string, sortCol?: number, sortDir?: string }} payload
+ * @returns {{ columns: { key: string, label: string }[], rows: string[][] }}
+ */
+function obterAgendamentosConsultaParaExportar(payload) {
+  const p = payload && typeof payload === "object" ? payload : {};
+  let sortCol = -1;
+  if (p.sortCol !== undefined && p.sortCol !== null && p.sortCol !== "") {
+    const n = Number(p.sortCol);
+    if (!isNaN(n)) sortCol = n;
+  }
+  const sortDir =
+    p.sortDir != null && String(p.sortDir).trim() !== "" ? String(p.sortDir) : "asc";
+  return AgendamentoService.obterAgendamentosConsultaParaExportar(
+    p.curso,
+    p.turma,
+    sortCol,
+    sortDir
+  );
+}
+
+/**
  * Todos os eventIds do filtro atual (para “Selecionar tudo”).
  */
 function obterTodosEventIdsAgendamentoExcluir(curso, turma) {

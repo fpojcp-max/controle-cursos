@@ -1,0 +1,373 @@
+<script>
+  window.AgendamentoConsultaInit = function() {
+    var PAGE_SIZE = 50;
+    var msgEl = document.getElementById("msgAgCo");
+    var root = document.getElementById("agendamentoConsultaRoot");
+    function attrOuPadrao(el, nome, padrao) {
+      if (!el) return padrao;
+      var v = el.getAttribute(nome);
+      v = v != null ? String(v).trim() : "";
+      return v || padrao;
+    }
+    var PLACEHOLDER = attrOuPadrao(root, "data-placeholder-curso-turma", "Selecione");
+
+    var currentPage = 1;
+    var totalRecords = 0;
+    var currentSort = { col: -1, dir: "asc" };
+    var cabecalhoAtual = [];
+    var lastItensPagina = [];
+    /** Última pesquisa com sucesso e total > 0 — usado na exportação CSV. */
+    var lastExportQuery = null;
+
+    function renderMsg(text, kind) {
+      if (!text) {
+        msgEl.innerHTML = "";
+        return;
+      }
+      msgEl.innerHTML = "";
+      var cls = "notification is-light";
+      if (kind === "success") cls = "notification is-success is-light";
+      else if (kind === "danger") cls = "notification is-danger is-light";
+      else if (kind === "info") cls = "notification is-info is-light";
+      var div = document.createElement("div");
+      div.className = cls;
+      div.style.whiteSpace = "pre-line";
+      div.textContent = text;
+      msgEl.appendChild(div);
+      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+        window.rolarParaVerMensagemNoTopo(msgEl);
+      }
+    }
+
+    function preencherCursos(cursos) {
+      var sel = document.getElementById("agCoCurso");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      (cursos || []).forEach(function(c) {
+        sel.appendChild(new Option(c, c));
+      });
+    }
+
+    function resetTurmaSelect() {
+      var sel = document.getElementById("agCoTurma");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      sel.disabled = true;
+    }
+
+    function preencherTurmas(turmas) {
+      var sel = document.getElementById("agCoTurma");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      (turmas || []).forEach(function(t) {
+        sel.appendChild(new Option(t, t));
+      });
+      sel.disabled = !(turmas && turmas.length);
+    }
+
+    function carregarTurmasParaCurso(curso) {
+      curso = String(curso || "").trim();
+      resetTurmaSelect();
+      if (!curso) return;
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Não foi possível carregar as turmas.", "danger");
+            return;
+          }
+          preencherTurmas(resp.turmas);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          renderMsg("Erro ao carregar turmas: " + err, "danger");
+        })
+        .obterTurmasAgendamentoPorCurso(curso);
+    }
+
+    function getSortIcon(colIdx) {
+      if (currentSort.col !== colIdx) return "\u21c5";
+      return currentSort.dir === "asc" ? "\u25b2" : "\u25bc";
+    }
+
+    function toggleSort(colIdx) {
+      if (currentSort.col === colIdx) {
+        currentSort = { col: colIdx, dir: currentSort.dir === "asc" ? "desc" : "asc" };
+      } else {
+        currentSort = { col: colIdx, dir: "asc" };
+      }
+      currentPage = 1;
+      pesquisar();
+    }
+
+    function renderTable(itens) {
+      var thead = document.getElementById("agCoHead");
+      var tbody = document.getElementById("agCoBody");
+      thead.innerHTML = "";
+      tbody.innerHTML = "";
+
+      var trh = document.createElement("tr");
+      cabecalhoAtual.forEach(function(h, colIdx) {
+        var th = document.createElement("th");
+        th.classList.add("sortable");
+        th.textContent = h;
+        var icon = document.createElement("span");
+        icon.className = "sort-icon";
+        icon.textContent = getSortIcon(colIdx);
+        th.appendChild(icon);
+        th.addEventListener("click", function() {
+          toggleSort(colIdx);
+        });
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+
+      if (!itens || !itens.length) {
+        var trE = document.createElement("tr");
+        var tdE = document.createElement("td");
+        tdE.colSpan = Math.max(1, cabecalhoAtual.length);
+        tdE.className = "has-text-centered muted";
+        tdE.style.padding = "18px";
+        tdE.textContent = "Nenhum registro nesta página.";
+        trE.appendChild(tdE);
+        tbody.appendChild(trE);
+        return;
+      }
+
+      itens.forEach(function(item) {
+        var tr = document.createElement("tr");
+        (item.cells || []).forEach(function(cell) {
+          var td = document.createElement("td");
+          var t = cell === null || cell === undefined ? "" : String(cell);
+          td.textContent = t;
+          td.title = t;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+    }
+
+    function atualizarPaginacao() {
+      var bar = document.getElementById("agCoPaginationBar");
+      var totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+      if (totalRecords <= PAGE_SIZE) {
+        bar.style.display = "none";
+      } else {
+        bar.style.display = "flex";
+        document.getElementById("agCoMeta").textContent =
+          "Total: " + totalRecords + " — Página " + currentPage + " de " + totalPages;
+        document.getElementById("agCoPagLabel").textContent =
+          "Exibindo " + (Math.min((currentPage - 1) * PAGE_SIZE + 1, totalRecords)) +
+          "–" +
+          Math.min(currentPage * PAGE_SIZE, totalRecords);
+        document.getElementById("btnAgCoAnt").disabled = currentPage <= 1;
+        document.getElementById("btnAgCoProx").disabled = currentPage >= totalPages;
+      }
+    }
+
+    function setExportButtonState() {
+      var btn = document.getElementById("btnAgCoExportarCsv");
+      btn.disabled = totalRecords === 0 || !lastExportQuery;
+    }
+
+    function afterSearchSuccess(resp) {
+      cabecalhoAtual = resp.cabecalho || [];
+      totalRecords = Math.max(0, parseInt(resp.total, 10) || 0);
+      var curso = resp.curso || "";
+      var turma = resp.turma || "";
+      document.getElementById("agCoResultsBlock").style.display = "";
+
+      if (totalRecords === 0) {
+        lastExportQuery = null;
+        renderMsg(
+          "Nenhum agendamento foi efetuado para a turma " + turma + " do curso " + curso,
+          "info"
+        );
+        lastItensPagina = [];
+        renderTable([]);
+        document.getElementById("agCoPaginationBar").style.display = "none";
+        setExportButtonState();
+        return;
+      }
+
+      renderMsg("");
+      lastExportQuery = {
+        curso: curso,
+        turma: turma,
+        sortCol: currentSort.col,
+        sortDir: currentSort.dir
+      };
+      lastItensPagina = resp.itens || [];
+      renderTable(lastItensPagina);
+      atualizarPaginacao();
+      setExportButtonState();
+    }
+
+    function pesquisar() {
+      var curso = String(document.getElementById("agCoCurso").value || "").trim();
+      var turma = String(document.getElementById("agCoTurma").value || "").trim();
+      if (!curso || !turma) {
+        renderMsg("Selecione curso e turma.", "danger");
+        return;
+      }
+      var offset = (currentPage - 1) * PAGE_SIZE;
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Falha na pesquisa.", "danger");
+            document.getElementById("agCoResultsBlock").style.display = "none";
+            lastExportQuery = null;
+            setExportButtonState();
+            return;
+          }
+          afterSearchSuccess(resp);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          renderMsg("Erro: " + err, "danger");
+        })
+        .pesquisarAgendamentosExcluir({
+          curso: curso,
+          turma: turma,
+          offset: offset,
+          limit: PAGE_SIZE,
+          sortCol: currentSort.col,
+          sortDir: currentSort.dir
+        });
+    }
+
+    function escapeCsvCell(val) {
+      var s = (val === null || val === undefined) ? "" : String(val);
+      if (/[",\r\n]/.test(s)) {
+        return '"' + s.replace(/"/g, '""') + '"';
+      }
+      return s;
+    }
+
+    function exportarCsv() {
+      if (!lastExportQuery || totalRecords === 0) return;
+      var btn = document.getElementById("btnAgCoExportarCsv");
+      btn.disabled = true;
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (endBusy) endBusy();
+          btn.disabled = totalRecords === 0 || !lastExportQuery;
+          renderMsg("");
+          if (!data || !data.columns) {
+            renderMsg("Nenhum dado para exportar.", "danger");
+            return;
+          }
+          var columns = data.columns || [];
+          var rows = data.rows || [];
+          var BOM = "\uFEFF";
+          var header = columns.map(function(c) {
+            return escapeCsvCell(c.label || c.key);
+          }).join(";");
+          var body = rows.map(function(row) {
+            return row.map(function(cell) {
+              return escapeCsvCell(cell);
+            }).join(";");
+          }).join("\r\n");
+          var csv = BOM + header + "\r\n" + body;
+          var blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement("a");
+          a.href = url;
+          var now = new Date();
+          var ds =
+            now.getFullYear() +
+            "-" +
+            String(now.getMonth() + 1).padStart(2, "0") +
+            "-" +
+            String(now.getDate()).padStart(2, "0");
+          var ts =
+            String(now.getHours()).padStart(2, "0") + "-" + String(now.getMinutes()).padStart(2, "0");
+          a.download = "exportacao_agendamentos_" + ds + "_" + ts + ".csv";
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          btn.disabled = false;
+          renderMsg("Erro ao exportar: " + err, "danger");
+        })
+        .obterAgendamentosConsultaParaExportar(lastExportQuery);
+    }
+
+    function limparTudo() {
+      renderMsg("");
+      document.getElementById("agCoCurso").value = "";
+      resetTurmaSelect();
+      currentPage = 1;
+      currentSort = { col: -1, dir: "asc" };
+      totalRecords = 0;
+      lastExportQuery = null;
+      cabecalhoAtual = [];
+      lastItensPagina = [];
+      document.getElementById("agCoHead").innerHTML = "";
+      document.getElementById("agCoBody").innerHTML = "";
+      document.getElementById("agCoResultsBlock").style.display = "none";
+      document.getElementById("agCoPaginationBar").style.display = "none";
+      setExportButtonState();
+    }
+
+    document.getElementById("btnAgCoLimparTudo").addEventListener("click", function() {
+      limparTudo();
+    });
+
+    document.getElementById("agCoFormFiltro").addEventListener("submit", function(e) {
+      e.preventDefault();
+      currentPage = 1;
+      currentSort = { col: -1, dir: "asc" };
+      pesquisar();
+    });
+
+    document.getElementById("agCoCurso").addEventListener("change", function() {
+      lastExportQuery = null;
+      setExportButtonState();
+      carregarTurmasParaCurso(document.getElementById("agCoCurso").value);
+    });
+
+    document.getElementById("agCoTurma").addEventListener("change", function() {
+      lastExportQuery = null;
+      setExportButtonState();
+    });
+
+    document.getElementById("btnAgCoAnt").addEventListener("click", function() {
+      if (currentPage <= 1) return;
+      currentPage--;
+      pesquisar();
+    });
+
+    document.getElementById("btnAgCoProx").addEventListener("click", function() {
+      var totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+      if (currentPage >= totalPages) return;
+      currentPage++;
+      pesquisar();
+    });
+
+    document.getElementById("btnAgCoExportarCsv").addEventListener("click", exportarCsv);
+
+    var endInit = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        if (endInit) endInit();
+        if (!resp || !resp.success) {
+          renderMsg((resp && resp.message) || "Não foi possível carregar a tela.", "danger");
+          return;
+        }
+        preencherCursos(resp.cursos);
+      })
+      .withFailureHandler(function(err) {
+        if (endInit) endInit();
+        renderMsg("Erro: " + err, "danger");
+      })
+      .obterDadosTelaAgendamentoIncluir();
+  };
+</script>

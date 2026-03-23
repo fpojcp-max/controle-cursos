@@ -48,31 +48,32 @@
     </div>
   </form>
 
-  <div class="resultados-header">
-    <h2 class="section-title">Resultados</h2>
-    <button type="button" class="btn-custom" id="btnExportarCsv" disabled title="Exportar tabela para CSV (todos os registros dos filtros)">
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      Exportar CSV
-    </button>
-  </div>
-  <div class="table-wrap">
-    <table class="table is-striped is-hoverable is-fullwidth" id="resultsTable">
-      <thead id="resultsHead"></thead>
-      <tbody id="resultsBody"></tbody>
-    </table>
-  </div>
-  <div id="paginationBar" class="pagination-bar" style="display: none;">
-    <span class="pagination-info muted is-size-7" id="resultsMeta"></span>
-    <div class="pagination-controls">
-      <button type="button" id="btnPaginaAnterior">Anterior</button>
-      <span class="pagination-info muted is-size-7" id="paginationLabel"></span>
-      <button type="button" id="btnPaginaProxima">Próxima</button>
+  <div id="consultaResultadosBlock" class="consulta-resultados-block" style="display: none;">
+    <div class="resultados-header">
+      <h2 class="section-title">Resultados</h2>
+      <button type="button" class="btn-custom" id="btnExportarCsv" disabled title="Exportar tabela para CSV (todos os registros dos filtros)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Exportar CSV
+      </button>
     </div>
-  </div>
-  <div id="wrapBtnEditar" class="wrapBtnEditar">
-    <button type="button" class="btn-custom" id="btnExcluir" disabled>Excluir</button>
-    <button type="button" class="btn-custom" id="btnAgendar" disabled>Agendar</button>
-    <button type="button" class="btn-custom" id="btnEditar" disabled>Editar</button>
+    <div class="table-wrap">
+      <table class="table is-striped is-hoverable is-fullwidth" id="resultsTable">
+        <thead id="resultsHead"></thead>
+        <tbody id="resultsBody"></tbody>
+      </table>
+    </div>
+    <div id="paginationBar" class="pagination-bar" style="display: none;">
+      <span class="pagination-info muted is-size-7" id="resultsMeta"></span>
+      <div class="pagination-controls">
+        <button type="button" id="btnPaginaAnterior">Anterior</button>
+        <span class="pagination-info muted is-size-7" id="paginationLabel"></span>
+        <button type="button" id="btnPaginaProxima">Próxima</button>
+      </div>
+    </div>
+    <div id="wrapBtnEditar" class="wrapBtnEditar">
+      <button type="button" class="btn-custom" id="btnExcluir" disabled>Excluir</button>
+      <button type="button" class="btn-custom" id="btnEditar" disabled>Editar</button>
+    </div>
   </div>
 </div>
 
