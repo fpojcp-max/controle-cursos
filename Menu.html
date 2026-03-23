@@ -22,7 +22,7 @@
         </li>
       </ul>
     </li>
-    <li class="app-menu-item app-menu-item-dropdown <?= view === 'agendamento-incluir' ? 'is-active' : '' ?>" data-dropdown="agendamento">
+    <li class="app-menu-item app-menu-item-dropdown <?= menuAgendamentoAtivo ? 'is-active' : '' ?>" data-dropdown="agendamento">
       <button type="button" class="app-menu-trigger" aria-expanded="false" aria-controls="submenu-agendamento" id="menu-agendamento">
         <span>Agendamento</span>
         <span class="app-menu-chevron" aria-hidden="true"></span>
@@ -33,6 +33,13 @@
           <span class="app-menu-link app-menu-link-spa <?= view === 'agendamento-incluir' ? 'is-active' : '' ?>" data-view="agendamento-incluir" role="menuitem" tabindex="0">Incluir</span>
           <? } else { ?>
           <a class="app-menu-link <?= view === 'agendamento-incluir' ? 'is-active' : '' ?>" href="<?= urlAgendamentoIncluir ?>" role="menuitem" target="_top" rel="noopener">Incluir</a>
+          <? } ?>
+        </li>
+        <li role="none">
+          <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= view === 'agendamento-excluir' ? 'is-active' : '' ?>" data-view="agendamento-excluir" role="menuitem" tabindex="0">Excluir</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= view === 'agendamento-excluir' ? 'is-active' : '' ?>" href="<?= urlAgendamentoExcluir ?>" role="menuitem" target="_top" rel="noopener">Excluir</a>
           <? } ?>
         </li>
       </ul>

@@ -59,10 +59,39 @@ const CalendarAdapter = (() => {
     }
   }
 
+  /**
+   * Remove evento no calendário primário. 404 / já removido = sucesso (idempotente).
+   * Outros erros propagam (exclusão em lote “tudo ou nada” após validação).
+   * @param {string} eventId
+   */
+  function eventsRemovePrimaryIdempotent(eventId) {
+    garantirCalendar_();
+    const id = String(eventId || "").trim();
+    if (!id) throw new Error("ID do evento inválido.");
+    try {
+      Calendar.Events.remove("primary", id);
+    } catch (e) {
+      if (isCalendarNotFoundError_(e)) return;
+      const msg = e && e.message ? String(e.message) : String(e);
+      throw new Error(msg);
+    }
+  }
+
+  function isCalendarNotFoundError_(e) {
+    if (!e) return false;
+    try {
+      const code = e.responseCode || e.statusCode || (e.details && e.details.status);
+      if (code === 404 || code === "404") return true;
+    } catch (_) {}
+    const m = String(e.message || e.toString() || "");
+    return /404|not\s*found|Not Found|Requested entity was not found/i.test(m);
+  }
+
   return {
     usandoServicoAvancado: usandoServicoAvancado,
     freeBusyQuery: freeBusyQuery,
     eventsInsertPrimary: eventsInsertPrimary,
-    eventsRemovePrimary: eventsRemovePrimary
+    eventsRemovePrimary: eventsRemovePrimary,
+    eventsRemovePrimaryIdempotent: eventsRemovePrimaryIdempotent
   };
 })();

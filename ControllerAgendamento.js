@@ -103,3 +103,67 @@ function criarAgendamentos(payload) {
     };
   }
 }
+
+/**
+ * Lista agendamentos da planilha para exclusão (filtro curso + turma, paginado).
+ * @param {{ curso: string, turma: string, offset?: number, limit?: number, sortCol?: number, sortDir?: string }} payload
+ * sortCol -1 = data + hora início (padrão); 0..n-1 = índice da coluna no cabeçalho da planilha.
+ */
+function pesquisarAgendamentosExcluir(payload) {
+  try {
+    const p = payload && typeof payload === "object" ? payload : {};
+    const off = p.offset != null ? Number(p.offset) : 0;
+    const lim = p.limit != null ? Number(p.limit) : 50;
+    let sortCol = -1;
+    if (p.sortCol !== undefined && p.sortCol !== null && p.sortCol !== "") {
+      const n = Number(p.sortCol);
+      if (!isNaN(n)) sortCol = n;
+    }
+    const sortDir =
+      p.sortDir != null && String(p.sortDir).trim() !== "" ? String(p.sortDir) : "asc";
+    return AgendamentoService.pesquisarAgendamentosExcluir(
+      p.curso,
+      p.turma,
+      off,
+      lim,
+      sortCol,
+      sortDir
+    );
+  } catch (e) {
+    return {
+      success: false,
+      message: e && e.message ? e.message : String(e)
+    };
+  }
+}
+
+/**
+ * Todos os eventIds do filtro atual (para “Selecionar tudo”).
+ */
+function obterTodosEventIdsAgendamentoExcluir(curso, turma) {
+  try {
+    return AgendamentoService.obterTodosEventIdsExcluir(curso, turma);
+  } catch (e) {
+    return {
+      success: false,
+      message: e && e.message ? e.message : String(e)
+    };
+  }
+}
+
+/**
+ * Exclui agendamentos (Calendar + planilha), tudo ou nada por tentativa.
+ * @param {{ curso: string, turma: string, sheetRows?: number[], eventIds?: string[] }} payload
+ */
+function excluirAgendamentosLote(payload) {
+  try {
+    const p = payload && typeof payload === "object" ? payload : {};
+    const r = AgendamentoService.excluirAgendamentosLote(p.curso, p.turma, p);
+    return { success: true, message: r.mensagem };
+  } catch (e) {
+    return {
+      success: false,
+      message: e && e.message ? e.message : String(e)
+    };
+  }
+}

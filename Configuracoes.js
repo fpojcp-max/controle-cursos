@@ -41,6 +41,9 @@ const Configuracoes = {
   /** Limite de convidados após normalização (evita limites da API). */
   LIMITE_CONVIDADOS_AGENDAMENTO: 50,
 
+  /** Máximo de agendamentos excluídos por operação (Web App). */
+  LIMITE_EXCLUSAO_AGENDAMENTOS_LOTE: 100,
+
   /**
    * Salas/recursos: nome exibido = chave `nome` (deve bater com o select).
    * Preencha `calendarId` com o e-mail do recurso no Google Calendar (ex.: sala@resource.calendar.google.com).

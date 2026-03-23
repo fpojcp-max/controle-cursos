@@ -1,6 +1,16 @@
 <script>
   window.AgendamentoIncluirInit = function() {
     var msgEl = document.getElementById("msgAgendamento");
+    var root = document.getElementById("agendamentoIncluirRoot");
+    function attrOuPadrao(el, nome, padrao) {
+      if (!el) return padrao;
+      var v = el.getAttribute(nome);
+      v = v != null ? String(v).trim() : "";
+      return v || padrao;
+    }
+    /** Textos definidos só no fragment (`data-placeholder-*` em #agendamentoIncluirRoot). */
+    var PLACEHOLDER_CURSO_TURMA = attrOuPadrao(root, "data-placeholder-curso-turma", "Selecione");
+    var PLACEHOLDER_SALA = attrOuPadrao(root, "data-placeholder-sala", "\u2014 Sem sala \u2014");
     var PREFILL_KEY = "agendamentoIncluirPrefill";
     /** ID da turma quando o fluxo veio da consulta (curso/turma bloqueados); vazio no fluxo pelo menu. */
     var turmaIdContexto = "";
@@ -24,7 +34,8 @@
 
     function preencherSelectSalas(salas) {
       var sel = document.getElementById("agSala");
-      while (sel.options.length > 1) sel.remove(1);
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER_SALA, ""));
       (salas || []).forEach(function(s) {
         var opt = document.createElement("option");
         opt.value = s.nome;
@@ -37,7 +48,7 @@
     function preencherCursos(cursos) {
       var sel = document.getElementById("agCurso");
       sel.innerHTML = "";
-      sel.appendChild(new Option("Selecione o curso", ""));
+      sel.appendChild(new Option(PLACEHOLDER_CURSO_TURMA, ""));
       (cursos || []).forEach(function(c) {
         sel.appendChild(new Option(c, c));
       });
@@ -46,14 +57,14 @@
     function resetTurmaSelect() {
       var sel = document.getElementById("agTurma");
       sel.innerHTML = "";
-      sel.appendChild(new Option("Selecione a turma", ""));
+      sel.appendChild(new Option(PLACEHOLDER_CURSO_TURMA, ""));
       sel.disabled = true;
     }
 
     function preencherTurmas(turmas) {
       var sel = document.getElementById("agTurma");
       sel.innerHTML = "";
-      sel.appendChild(new Option("Selecione a turma", ""));
+      sel.appendChild(new Option(PLACEHOLDER_CURSO_TURMA, ""));
       (turmas || []).forEach(function(t) {
         sel.appendChild(new Option(t, t));
       });

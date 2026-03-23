@@ -69,6 +69,8 @@ function getMenuHtml(view, spa, cadastroId) {
   t.urlConsulta = spa ? "#" : obterUrlWebApp("consulta");
   t.urlCadastroInserir = spa ? "#" : obterUrlWebApp("cadastro");
   t.urlAgendamentoIncluir = spa ? "#" : obterUrlWebApp("agendamento-incluir");
+  t.urlAgendamentoExcluir = spa ? "#" : obterUrlWebApp("agendamento-excluir");
+  t.menuAgendamentoAtivo = v === "agendamento-incluir" || v === "agendamento-excluir";
   t.spa = spa === true;
   return t.evaluate().getContent();
 }
@@ -118,6 +120,17 @@ function getPageContent(view, id) {
     return {
       html: t.evaluate().getContent(),
       script: HtmlService.createHtmlOutputFromFile("AgendamentoIncluirJavaScript").getContent()
+    };
+  }
+  if (view === "agendamento-excluir") {
+    const t = HtmlService.createTemplateFromFile("AgendamentoExcluirFragment");
+    t.id = id;
+    t.spa = true;
+    t.parentItem = "Agendamento";
+    t.subItem = "Excluir";
+    return {
+      html: t.evaluate().getContent(),
+      script: HtmlService.createHtmlOutputFromFile("AgendamentoExcluirJavaScript").getContent()
     };
   }
   return { html: "", script: "" };

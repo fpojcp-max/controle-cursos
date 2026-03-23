@@ -1,0 +1,70 @@
+<div
+  class="form-content"
+  id="agendamentoExcluirRoot"
+  data-placeholder-curso-turma="Selecione"
+>
+  <div id="msgAgEx" class="mb-3"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+    </div>
+    <a href="#" data-view="agendamento-incluir" class="btn-custom">Incluir</a>
+  </div>
+
+  <h2 class="section-title">Filtro</h2>
+  <form id="agExFormFiltro">
+    <div class="columns is-multiline">
+      <div class="column is-6">
+        <label class="label">Curso</label>
+        <div class="select is-fullwidth">
+          <select id="agExCurso" required></select>
+        </div>
+      </div>
+      <div class="column is-6">
+        <label class="label">Turma</label>
+        <div class="select is-fullwidth">
+          <select id="agExTurma" disabled required></select>
+        </div>
+      </div>
+    </div>
+    <div class="consulta-form-actions">
+      <button type="submit" class="btn-custom" id="btnAgExPesquisar">Pesquisar agendamentos</button>
+    </div>
+  </form>
+
+  <div id="agExResultsBlock" style="display: none;">
+    <div class="field mb-3">
+      <div class="is-flex is-align-items-center ag-ex-selecionar-tudo-row">
+        <input type="checkbox" id="agExSelecionarTudo" disabled aria-label="Selecionar todos os agendamentos desta pesquisa">
+        <label for="agExSelecionarTudo" class="mb-0 ml-2">Selecionar tudo</label>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table is-striped is-hoverable is-fullwidth" id="agExTable">
+        <thead id="agExHead"></thead>
+        <tbody id="agExBody"></tbody>
+      </table>
+    </div>
+    <div id="agExPaginationBar" class="pagination-bar" style="display: none;">
+      <span class="pagination-info muted is-size-7" id="agExMeta"></span>
+      <div class="pagination-controls">
+        <button type="button" id="btnAgExAnt">Anterior</button>
+        <span class="pagination-info muted is-size-7" id="agExPagLabel"></span>
+        <button type="button" id="btnAgExProx">Próxima</button>
+      </div>
+    </div>
+    <div class="ag-excluir-actions">
+      <button type="button" class="btn-custom" id="btnAgExExcluir" disabled>Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div id="agExModal" aria-hidden="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="agExModalMsg">
+    <p id="agExModalMsg" class="modal-mensagem">A exclusão não poderá ser revertida. Confirma a exclusão dos agendamentos?</p>
+    <div class="modal-botoes">
+      <button type="button" class="btn-custom" id="btnAgExModalSim">Sim</button>
+      <button type="button" class="btn-custom btn-modal-nao" id="btnAgExModalNao">Não</button>
+    </div>
+  </div>
+</div>

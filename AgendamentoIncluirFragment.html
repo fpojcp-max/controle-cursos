@@ -1,4 +1,9 @@
-<div class="form-content" id="agendamentoIncluirRoot">
+<div
+  class="form-content"
+  id="agendamentoIncluirRoot"
+  data-placeholder-curso-turma="Selecione"
+  data-placeholder-sala="— Sem sala —"
+>
   <div id="msgAgendamento" class="mb-3"></div>
   <div class="actions-row">
     <div class="is-size-6 muted">
@@ -13,17 +18,13 @@
       <div class="column is-6">
         <label class="label">Curso</label>
         <div class="select is-fullwidth">
-          <select id="agCurso">
-            <option value="">Selecione</option>
-          </select>
+          <select id="agCurso"></select>
         </div>
       </div>
       <div class="column is-6">
         <label class="label">Turma</label>
         <div class="select is-fullwidth">
-          <select id="agTurma" disabled>
-            <option value="">Selecione</option>
-          </select>
+          <select id="agTurma" disabled></select>
         </div>
       </div>
     </div>
@@ -54,7 +55,7 @@
       <label class="label">Data fim (inclusiva)</label>
       <input class="input" type="date" id="agDataFim">
     </div>
-    <div class="column is-12">
+    <div class="column is-12 mb-5">
       <label class="label">Dias da semana</label>
       <div class="field is-grouped is-grouped-multiline">
         <label class="checkbox mr-4"><input type="checkbox" id="agDiaSeg"> Seg</label>
@@ -86,9 +87,7 @@
     <div class="column is-6">
       <label class="label">Sala (opcional)</label>
       <div class="select is-fullwidth">
-        <select id="agSala">
-          <option value="">— Sem sala —</option>
-        </select>
+        <select id="agSala"></select>
       </div>
       <p class="help" id="agSalaHelp"></p>
     </div>

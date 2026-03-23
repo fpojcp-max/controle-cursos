@@ -15,6 +15,9 @@
   .input:focus, .select select:focus { border-color: #00bfa5; box-shadow: 0 0 0 0.125em rgba(0, 191, 165, 0.2); }
   .actions-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 15px; }
   .ag-agendar-row { display: flex; justify-content: flex-end; align-items: center; margin-top: 1.25rem; }
+  .ag-excluir-actions { display: flex; justify-content: flex-end; align-items: center; margin-top: 15px; gap: 10px; }
+  .ag-ex-selecionar-tudo-row { flex-wrap: wrap; gap: 0.25rem; }
+  .ag-ex-selecionar-tudo-row label { cursor: pointer; user-select: none; }
   .consulta-form-actions { display: flex; justify-content: flex-end; align-items: center; gap: 12px; margin-top: 10px; }
   .buttons-row { display: flex; justify-content: flex-end; gap: 15px; margin-top: 50px; padding-top: 25px; border-top: 1px solid #eee; }
   .btn-custom { background-color: #00bfa5; color: #fff; border: none; padding: 0 14px; font-weight: 600; font-size: 0.9rem; height: 2.4em; border-radius: 4px; cursor: pointer; transition: opacity 0.3s; white-space: nowrap; display: inline-flex; align-items: center; justify-content: center; text-align: center; text-decoration: none; gap: 0; }
@@ -45,6 +48,8 @@
   .pagination-bar button:disabled { opacity: 0.5; cursor: not-allowed; }
   #modalConfirmarExclusao { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; }
   #modalConfirmarExclusao.visivel { display: flex; }
+  #agExModal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: 1000; background: rgba(0,0,0,0.45); align-items: center; justify-content: center; }
+  #agExModal.visivel { display: flex; }
   .modal-panel { background: #fff; border-radius: 12px; box-shadow: 0 20px 60px rgba(0,0,0,0.2); max-width: 420px; width: 90%; padding: 28px 32px; }
   .modal-mensagem { font-size: 1.15rem; font-weight: 600; color: #1b3330; line-height: 1.5; margin-bottom: 24px; text-align: center; }
   .modal-botoes { display: flex; justify-content: center; gap: 14px; }

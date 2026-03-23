@@ -648,11 +648,221 @@ const AgendamentoService = (() => {
     };
   }
 
+  function limiteExclusaoAgendamentosLote_() {
+    const n = Number(Configuracoes.LIMITE_EXCLUSAO_AGENDAMENTOS_LOTE);
+    return n > 0 ? n : 100;
+  }
+
+  function montarMensagemExclusaoAgendamentos_(cellsList) {
+    const C = AgendamentoRepo.COL_AG;
+    if (!cellsList || !cellsList.length) return "Agendamentos excluídos.";
+    const turma = cellsList[0][C.TURMA] || "";
+    const curso = cellsList[0][C.CURSO] || "";
+    const grupos = {};
+    for (let i = 0; i < cellsList.length; i++) {
+      const row = cellsList[i];
+      const hi = row[C.HORA_INI] || "";
+      const hf = row[C.HORA_FIM] || "";
+      const sala = row[C.NOME_SALA] || "";
+      const dt = row[C.DATA] || "";
+      const key = hi + "\t" + hf + "\t" + sala;
+      if (!grupos[key]) grupos[key] = [];
+      grupos[key].push(dt);
+    }
+    let out = "Os seguintes agendamentos foram excluídos:\n";
+    out += "Evento: " + turma + " - " + curso + "\n";
+    const keys = Object.keys(grupos).sort();
+    for (let k = 0; k < keys.length; k++) {
+      const parts = keys[k].split("\t");
+      const hi = parts[0] || "";
+      const hf = parts[1] || "";
+      const sala = parts[2] || "";
+      const datas = grupos[keys[k]]
+        .slice()
+        .sort()
+        .map(function (ymd) {
+          return formatarYmdParaMsgBr_(ymd);
+        });
+      out += "Horário: " + hi + " - " + hf + "\n";
+      out += "Sala: " + (sala || "—") + "\n";
+      out += datas.join(", ") + "\n";
+    }
+    return out;
+  }
+
+  function pesquisarAgendamentosExcluir_(curso, turma, offset, limit, sortCol, sortDir) {
+    const c = String(curso || "").trim();
+    const t = String(turma || "").trim();
+    if (!c || !t) {
+      throw new Error("Selecione curso e turma.");
+    }
+    const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
+    if (!idTurma) {
+      throw new Error(
+        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+      );
+    }
+    let sc = -1;
+    if (sortCol !== undefined && sortCol !== null && String(sortCol).trim() !== "") {
+      const n = parseInt(sortCol, 10);
+      if (!isNaN(n)) sc = n;
+    }
+    const sortAsc = String(sortDir == null ? "asc" : sortDir).toLowerCase() !== "desc";
+    const r = AgendamentoRepo.listarAgendamentosPaginadoPorIdTurma(
+      idTurma,
+      offset,
+      limit,
+      sc,
+      sortAsc
+    );
+    return {
+      success: true,
+      idTurma: idTurma,
+      curso: c,
+      turma: t,
+      cabecalho: r.cabecalho,
+      total: r.total,
+      allLinhas: r.allLinhas || [],
+      itens: r.itens.map((item) => ({
+        eventId: item.eventId,
+        sheetRow: item.sheetRow,
+        cells: item.cells
+      }))
+    };
+  }
+
+  function obterTodosEventIdsExcluir_(curso, turma) {
+    const c = String(curso || "").trim();
+    const t = String(turma || "").trim();
+    if (!c || !t) {
+      throw new Error("Selecione curso e turma.");
+    }
+    const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
+    if (!idTurma) {
+      throw new Error(
+        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+      );
+    }
+    const ids = AgendamentoRepo.listarTodosEventIdsPorIdTurma(idTurma);
+    return { success: true, eventIds: ids };
+  }
+
+  /**
+   * @param {string} curso
+   * @param {string} turma
+   * @param {{ sheetRows?: number[], eventIds?: string[] }} payload — preferir sheetRows (uma linha por checkbox).
+   */
+  function excluirAgendamentosLote_(curso, turma, payload) {
+    const LIM = limiteExclusaoAgendamentosLote_();
+    const c = String(curso || "").trim();
+    const t = String(turma || "").trim();
+    if (!c || !t) {
+      throw new Error("Selecione curso e turma.");
+    }
+    const pay = payload && typeof payload === "object" ? payload : {};
+    const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
+    if (!idTurma) {
+      throw new Error(
+        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+      );
+    }
+
+    const todas = AgendamentoRepo.listarLinhasAgendamentoPorIdTurma(idTurma);
+    const byRow = {};
+    for (let j = 0; j < todas.length; j++) {
+      byRow[todas[j].sheetRow] = todas[j];
+    }
+
+    let selecionadas = [];
+    const rowsIn = Array.isArray(pay.sheetRows) ? pay.sheetRows : [];
+
+    if (rowsIn.length) {
+      const nums = [];
+      const seenR = {};
+      for (let i = 0; i < rowsIn.length; i++) {
+        const n = parseInt(rowsIn[i], 10);
+        if (isNaN(n) || n < 2) continue;
+        if (seenR[n]) continue;
+        seenR[n] = 1;
+        nums.push(n);
+      }
+      if (!nums.length) {
+        throw new Error("Selecione ao menos um agendamento.");
+      }
+      if (nums.length > LIM) {
+        throw new Error("Selecione no máximo " + LIM + " agendamentos para excluir por vez.");
+      }
+      for (let k = 0; k < nums.length; k++) {
+        const m = byRow[nums[k]];
+        if (!m) {
+          throw new Error("Agendamento inválido ou não pertence à turma selecionada.");
+        }
+        selecionadas.push(m);
+      }
+    } else {
+      const idsIn = Array.isArray(pay.eventIds)
+        ? pay.eventIds.map((x) => String(x || "").trim()).filter(Boolean)
+        : [];
+      const uniq = [];
+      const seen = {};
+      for (let i = 0; i < idsIn.length; i++) {
+        const id = idsIn[i];
+        if (!seen[id]) {
+          seen[id] = 1;
+          uniq.push(id);
+        }
+      }
+      if (!uniq.length) {
+        throw new Error("Selecione ao menos um agendamento.");
+      }
+      if (uniq.length > LIM) {
+        throw new Error("Selecione no máximo " + LIM + " agendamentos para excluir por vez.");
+      }
+      const mapa = {};
+      for (let j = 0; j < todas.length; j++) {
+        mapa[todas[j].eventId] = todas[j];
+      }
+      for (let k = 0; k < uniq.length; k++) {
+        const ev = uniq[k];
+        if (!mapa[ev]) {
+          throw new Error("Agendamento inválido ou não pertence à turma selecionada.");
+        }
+        selecionadas.push(mapa[ev]);
+      }
+    }
+
+    const calSeen = {};
+    for (let idx = 0; idx < selecionadas.length; idx++) {
+      const ev = String(selecionadas[idx].eventId || "").trim();
+      if (!ev || calSeen[ev]) continue;
+      calSeen[ev] = 1;
+      try {
+        CalendarAdapter.eventsRemovePrimaryIdempotent(ev);
+      } catch (calErr) {
+        throw new Error("A EXCLUSÃO FALHOU. TENTE NOVAMENTE MAIS TARDE.");
+      }
+    }
+    const rowsDesc = selecionadas.map((m) => m.sheetRow).sort((a, b) => b - a);
+    try {
+      AgendamentoRepo.excluirLinhasPorNumeros(rowsDesc);
+    } catch (sheetErr) {
+      throw new Error("A EXCLUSÃO FALHOU. TENTE NOVAMENTE MAIS TARDE.");
+    }
+
+    return {
+      success: true,
+      mensagem: montarMensagemExclusaoAgendamentos_(selecionadas.map((s) => s.cells))
+    };
+  }
+
   return {
     criarEventos: criarEventos_,
     obterDadosIncluir: obterDadosIncluir_,
     listarTurmasPorCursoIncluir: listarTurmasPorCursoIncluir_,
-    criarAgendamentos: criarAgendamentos_
+    criarAgendamentos: criarAgendamentos_,
+    pesquisarAgendamentosExcluir: pesquisarAgendamentosExcluir_,
+    obterTodosEventIdsExcluir: obterTodosEventIdsExcluir_,
+    excluirAgendamentosLote: excluirAgendamentosLote_
   };
 })();
 
