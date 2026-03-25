@@ -98,10 +98,7 @@ function obterOpcoesFormulario() {
       "801 - Técnicas de Poda de Árvores conforme ABNT 16.246-1", "802 - Treinamento do Registro do Ponto em Formato Eletrônico - Gestores",
       "803 - Treinamento do Registro do Ponto em Formato Eletrônico – RH's Locais", "804 - Treinamento do Registro do Ponto em Formato Eletrônico - Servidores",
       "805 - Orçamentação de Obras", "807 - Oficina Liquidação de Despesas: SIAD / Liquidação de Despesas", "808 - Acessibilidade à Pessoa com Deficiência",
-      "830 - Oficina de CNV", "902 - PDG - Desafios, Riscos e Crises - Estratégias para Gestão", "903 - PDG - Palestra - O Papel dos Gestores na Sustentação da Excelência da Unicamp",
-      "A Comunicação na Boa Gestão", "CINFOTEC", "Consórcios Nova Lei e Contratos", "Espanhol Avançado I", "Espanhol Avançado II", "Espanhol Básico II",
-      "Espanhol Básico III", "Espanhol Intermediário I", "Espanhol Intermediário III", "Estratégias para Gestão", "Fluxo dos Processos de Compras da Unicamp",
-      "Formação de Acolhedores", "Licitações Internacionais", "Semana da Inovação", "Seminários Educorp", "SIMTEC"
+      "830 - Oficina de CNV", "902 - PDG - Desafios, Riscos e Crises - Estratégias para Gestão", "903 - PDG - Palestra - O Papel dos Gestores na Sustentação da Excelência da Unicamp"
     ],
     TURMAS: ["2601", "2602", "2603", "2604", "2605", "2606", "2607", "2608", "2609", "2610", "2611", "2612", "2613", "2614", "2615", "2616", "2617", "2618", "2619", "2620"],
     SALAS: listarRotulosCatalogoRecursosSala(),
