@@ -78,7 +78,8 @@ const RegistroService = (() => {
     }
     const aliases = {
       "curso": "Curso", "turma": "Turma", "status": "Status", "sala": "Sala",
-      "responsavel": "Responsável", "oferta": "Oferta", "datacadastro": "Data Cadastro", "id": "ID"
+      "responsavel": "Responsável", "oferta": "Oferta", "datacadastro": "Data Cadastro",
+      "inicio": "Início", "id": "ID"
     };
     const aliased = aliases[k];
     if (aliased) return indiceDaColuna_(colunas, aliased);
@@ -119,25 +120,48 @@ const RegistroService = (() => {
     });
   }
 
-  function aplicarOrdenacao_(linhas, colunas, ordenacao) {
+  function compararCelulasOrdenacao_(av, bv, dir) {
+    const ad = interpretarData_(av);
+    const bd = interpretarData_(bv);
+    if (ad && bd) return (ad.getTime() - bd.getTime()) * dir;
+    const an = interpretarNumero_(av);
+    const bn = interpretarNumero_(bv);
+    if (an !== null && bn !== null) return (an - bn) * dir;
+    const as = (av === null || av === undefined) ? "" : String(av).toLowerCase();
+    const bs = (bv === null || bv === undefined) ? "" : String(bv).toLowerCase();
+    if (as < bs) return -1 * dir;
+    if (as > bs) return 1 * dir;
+    return 0;
+  }
+
+  function resolverSpecsOrdenacao_(colunas, ordenacao) {
+    const specs = [];
+    if (ordenacao && Array.isArray(ordenacao.keys) && ordenacao.keys.length) {
+      ordenacao.keys.forEach((item) => {
+        const chave = item && item.key ? String(item.key) : "";
+        const dir = (item && item.dir ? String(item.dir) : "asc").toLowerCase() === "desc" ? -1 : 1;
+        const idx = indiceDaColuna_(colunas, chave);
+        if (idx >= 0) specs.push({ idx, dir });
+      });
+      return specs;
+    }
     const chave = ordenacao && ordenacao.key ? String(ordenacao.key) : "";
     const dir = (ordenacao && ordenacao.dir ? String(ordenacao.dir) : "asc").toLowerCase() === "desc" ? -1 : 1;
     const idx = indiceDaColuna_(colunas, chave);
-    if (idx < 0) return linhas || [];
+    if (idx >= 0) specs.push({ idx: idx, dir: dir });
+    return specs;
+  }
+
+  function aplicarOrdenacao_(linhas, colunas, ordenacao) {
+    const specs = resolverSpecsOrdenacao_(colunas, ordenacao);
+    if (!specs.length) return linhas || [];
     const copia = (linhas || []).slice();
     copia.sort((a, b) => {
-      const av = a[idx];
-      const bv = b[idx];
-      const ad = interpretarData_(av);
-      const bd = interpretarData_(bv);
-      if (ad && bd) return (ad.getTime() - bd.getTime()) * dir;
-      const an = interpretarNumero_(av);
-      const bn = interpretarNumero_(bv);
-      if (an !== null && bn !== null) return (an - bn) * dir;
-      const as = (av === null || av === undefined) ? "" : String(av).toLowerCase();
-      const bs = (bv === null || bv === undefined) ? "" : String(bv).toLowerCase();
-      if (as < bs) return -1 * dir;
-      if (as > bs) return 1 * dir;
+      for (let i = 0; i < specs.length; i++) {
+        const s = specs[i];
+        const c = compararCelulasOrdenacao_(a[s.idx], b[s.idx], s.dir);
+        if (c !== 0) return c;
+      }
       return 0;
     });
     return copia;

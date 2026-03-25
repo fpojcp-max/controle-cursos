@@ -31,12 +31,64 @@
   .pill { display: inline-block; padding: 3px 10px; border-radius: 999px; background: rgba(0,191,165,0.1); color: #1b3330; font-weight: 600; font-size: 0.9rem; }
   .table-wrap { border: 1px solid #dde5e3; border-radius: 10px; overflow-y: auto; overflow-x: auto; max-height: 600px; background: white; }
   table { width: 100%; border-collapse: collapse; }
+  /* Consulta turmas: larguras fixas em ~caracteres (1ch ≈ largura do “0”). */
+  #resultsTable {
+    table-layout: fixed;
+    width: max-content;
+    max-width: none;
+  }
+  #resultsTable th,
+  #resultsTable td {
+    box-sizing: border-box;
+  }
+  #resultsTable th:first-child,
+  #resultsTable td:first-child {
+    width: 45ch;
+    min-width: 45ch;
+    max-width: 45ch;
+  }
+  #resultsTable th:not(:first-child),
+  #resultsTable td:not(:first-child) {
+    width: 20ch;
+    min-width: 20ch;
+    max-width: 20ch;
+  }
+  /* Consulta agendamentos: 2.ª coluna (curso) mais larga; demais ~20 caracteres. */
+  #agCoTable {
+    table-layout: fixed;
+    width: max-content;
+    max-width: none;
+  }
+  #agCoTable th,
+  #agCoTable td {
+    box-sizing: border-box;
+  }
+  #agCoTable th:nth-child(2),
+  #agCoTable td:nth-child(2) {
+    width: 45ch;
+    min-width: 45ch;
+    max-width: 45ch;
+  }
+  #agCoTable th:not(:nth-child(2)),
+  #agCoTable td:not(:nth-child(2)) {
+    width: 20ch;
+    min-width: 20ch;
+    max-width: 20ch;
+  }
   thead th { position: sticky; top: 0; background: #f8fcfb; z-index: 2; white-space: nowrap; }
   th.sortable { cursor: pointer; user-select: none; }
   th, td { padding: 0.6rem 0.9rem; border: 1px solid #edf2f1; white-space: nowrap; }
   td { overflow: hidden; text-overflow: ellipsis; }
   .sort-icon { display: inline-block; margin-left: 6px; font-size: 0.85em; color: #6b8b86; }
   .row-selected { background-color: #e3f5f2 !important; }
+  .consulta-td-link a {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #0d6efd;
+    text-decoration: underline;
+  }
   #wrapBtnEditar { display: none; justify-content: flex-end; align-items: center; gap: 10px; margin-top: 12px; }
   #wrapBtnEditar.visivel { display: flex; }
   #btnEditar:disabled, #btnExcluir:disabled { opacity: 0.6; cursor: not-allowed; }

@@ -95,6 +95,27 @@
         width: 100%;
         border-collapse: collapse;
       }
+      #resultsTable {
+        table-layout: fixed;
+        width: max-content;
+        max-width: none;
+      }
+      #resultsTable th,
+      #resultsTable td {
+        box-sizing: border-box;
+      }
+      #resultsTable th:first-child,
+      #resultsTable td:first-child {
+        width: 45ch;
+        min-width: 45ch;
+        max-width: 45ch;
+      }
+      #resultsTable th:not(:first-child),
+      #resultsTable td:not(:first-child) {
+        width: 20ch;
+        min-width: 20ch;
+        max-width: 20ch;
+      }
       thead th {
         position: sticky;
         top: 0;
@@ -257,6 +278,7 @@
           </div>
         </form>
 
+        <div id="consultaResultadosBlock" class="consulta-resultados-block" style="display: none;">
         <div class="resultados-header">
           <h2 class="section-title">Resultados</h2>
           <button type="button" class="btn-custom" id="btnExportarCsv" disabled title="Exportar tabela para CSV (todos os registros dos filtros)">
@@ -281,6 +303,7 @@
         <div id="wrapBtnEditar" class="wrapBtnEditar">
           <button type="button" class="btn-custom" id="btnExcluir" disabled>Excluir</button>
           <button type="button" class="btn-custom" id="btnEditar" disabled>Editar</button>
+        </div>
         </div>
         </div>
       </main>

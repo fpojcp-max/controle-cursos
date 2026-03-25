@@ -13,7 +13,7 @@ function obterConfiguracaoFormulario() {
 /**
  * Pesquisa registros com filtros, ordenação e paginação.
  * @param {Object} filtros
- * @param {{ key: string, dir: string }} ordenacao
+ * @param {{ key?: string, dir?: string, keys?: { key: string, dir: string }[] }} ordenacao
  * @param {{ offset: number, limit: number }} paginacao
  * @returns {{ columns: any[], rows: any[][], total: number, truncated: boolean }}
  */
@@ -75,7 +75,7 @@ function excluirRegistro(id) {
 /**
  * Retorna todos os registros (filtros + ordenação) para exportação CSV.
  * @param {Object} filtros
- * @param {{ key: string, dir: string }} ordenacao
+ * @param {{ key?: string, dir?: string, keys?: { key: string, dir: string }[] }} ordenacao
  * @returns {{ columns: any[], rows: any[][] }}
  */
 function obterRegistrosParaExportar(filtros, ordenacao) {

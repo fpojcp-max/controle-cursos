@@ -1,6 +1,17 @@
 <script>
+window.ConsultaInit = function() {
   const PAGE_SIZE = 50;
-  let currentSort = { key: "DataCadastro", dir: "desc" };
+
+  function ordenacaoPadraoConsulta() {
+    return {
+      keys: [
+        { key: "Inicio", dir: "asc" },
+        { key: "Curso", dir: "asc" },
+        { key: "Turma", dir: "asc" }
+      ]
+    };
+  }
+  let currentSort = ordenacaoPadraoConsulta();
   let lastQuery = null;
   let currentPage = 1;
   let totalRecords = 0;
@@ -10,15 +21,27 @@
   /** Mensagem de sucesso após excluir turma: reexibir ao fim da pesquisa (evita renderMessage("") apagar). */
   let consultaMsgSucessoAposExclusao = "";
 
-  window.ConsultaInit = function() {
-    wireEvents();
-    loadFilterOptions();
-  };
-
   function setConsultaResultadosBlockVisivel(visivel) {
     var el = document.getElementById("consultaResultadosBlock");
     if (!el) return;
     el.style.display = visivel ? "" : "none";
+  }
+
+  var MSG_CONSULTA_SEM_RESULTADO_FILTROS = "Nenhum resultado encontrado para os filtros selecionados.";
+
+  function consultaTabelaResultadosWrap() {
+    var tbl = document.getElementById("resultsTable");
+    return tbl ? tbl.closest(".table-wrap") : null;
+  }
+
+  function consultaMostrarTabelaResultados() {
+    var tw = consultaTabelaResultadosWrap();
+    if (tw) tw.style.display = "";
+  }
+
+  function consultaOcultarTabelaResultados() {
+    var tw = consultaTabelaResultadosWrap();
+    if (tw) tw.style.display = "none";
   }
 
   function wireEvents() {
@@ -35,6 +58,7 @@
       document.getElementById("btnExportarCsv").disabled = true;
       esconderBotaoEditar();
       setConsultaResultadosBlockVisivel(false);
+      currentSort = ordenacaoPadraoConsulta();
     });
 
     document.getElementById("btnExportarCsv").addEventListener("click", exportarCsv);
@@ -140,6 +164,90 @@
     return columns.length - 1;
   }
 
+  /** Chaves padrão do servidor (RepositorioPlanilha.obterColunasPadrao_). */
+  var CHAVES_COLUNAS_LINK = {
+    LinkFSA: true,
+    QRInscricao: true,
+    LinkInscricao: true,
+    QRFrequencia: true,
+    Frequencia: true,
+    CodVerificacao: true,
+    QRAvaliacao: true,
+    AvaliacaoReacao: true,
+    LinkPagina: true
+  };
+
+  function normalizarTextoComparacaoLink(s) {
+    return String(s || "")
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+  }
+
+  /**
+   * Títulos literais das colunas URL quando a planilha usa cabeçalho (key === label).
+   * Alinhado a RepositorioPlanilha.obterColunasPadrao_ e Index/IndexFragment.
+   */
+  var ROTULOS_COLUNA_LINK = [
+    "Link FSA",
+    "Link Inscrição",
+    "Link Página",
+    "QR Code Inscrição",
+    "QR Code Frequência",
+    "Frequência",
+    "Cód. Verificação",
+    "QR Code Avaliação",
+    "Avaliação Reação"
+  ];
+  var ROTULOS_LINK_NORMALIZADOS = {};
+  ROTULOS_COLUNA_LINK.forEach(function(lab) {
+    ROTULOS_LINK_NORMALIZADOS[normalizarTextoComparacaoLink(lab)] = true;
+  });
+
+  function colunaConsultaDeveRenderizarComoLink(col) {
+    if (!col) return false;
+    var k = String(col.key || "").trim();
+    if (CHAVES_COLUNAS_LINK[k]) return true;
+    var label = String(col.label || "").trim();
+    if (!label) return false;
+    if (k && k !== label) return false;
+    return !!ROTULOS_LINK_NORMALIZADOS[normalizarTextoComparacaoLink(label)];
+  }
+
+  function normalizarHrefHttpSeguro(s) {
+    var t = String(s || "").trim();
+    if (!t) return null;
+    try {
+      var u = new URL(t);
+      if (u.protocol !== "http:" && u.protocol !== "https:") return null;
+      return u.href;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function preencherCelulaConsulta(td, col, v) {
+    var text = (v === null || v === undefined) ? "" : String(v);
+    var href = colunaConsultaDeveRenderizarComoLink(col) ? normalizarHrefHttpSeguro(text) : null;
+    if (href) {
+      td.classList.add("consulta-td-link");
+      var a = document.createElement("a");
+      a.href = href;
+      a.textContent = text;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      a.addEventListener("click", function(e) {
+        e.stopPropagation();
+      });
+      td.appendChild(a);
+      td.title = text;
+    } else {
+      td.textContent = text;
+      td.title = text;
+    }
+  }
+
   function loadFilterOptions() {
     var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run
@@ -198,15 +306,17 @@
           renderMessage("Resposta inválida do servidor.", "danger");
           return;
         }
+        var preservarNotificacaoTopo = false;
         if (consultaMsgSucessoAposExclusao) {
           renderMessage(consultaMsgSucessoAposExclusao, "success");
           consultaMsgSucessoAposExclusao = "";
+          preservarNotificacaoTopo = true;
         } else {
           renderMessage("");
         }
         totalRecords = resp.total || 0;
-        setConsultaResultadosBlockVisivel(true);
-        renderResults(resp);
+        setConsultaResultadosBlockVisivel(totalRecords > 0);
+        renderResults(resp, preservarNotificacaoTopo);
         updatePaginationUI(resp);
       })
       .withFailureHandler(function(err) {
@@ -252,7 +362,6 @@
 
   function setSearching(isSearching) {
     const btn = document.getElementById("btnPesquisar");
-    btn.disabled = isSearching;
     btn.setAttribute("aria-busy", isSearching ? "true" : "false");
   }
 
@@ -334,16 +443,30 @@
   function clearTable() {
     document.getElementById("resultsHead").innerHTML = "";
     document.getElementById("resultsBody").innerHTML = "";
+    consultaMostrarTabelaResultados();
   }
 
-  function renderResults(resp) {
+  function renderResults(resp, preservarNotificacaoTopo) {
     const columns = resp.columns || [];
     const rows = resp.rows || [];
+    const total = resp.total || 0;
 
     idColumnIndex = indiceColunaId(columns);
     selectedRowElement = null;
     selectedRowId = null;
 
+    if (total === 0) {
+      document.getElementById("resultsHead").innerHTML = "";
+      document.getElementById("resultsBody").innerHTML = "";
+      consultaOcultarTabelaResultados();
+      if (!preservarNotificacaoTopo) {
+        renderMessage(MSG_CONSULTA_SEM_RESULTADO_FILTROS, "info");
+      }
+      esconderBotaoEditar();
+      return;
+    }
+
+    consultaMostrarTabelaResultados();
     renderHeader(columns);
     renderBody(columns, rows);
 
@@ -377,12 +500,19 @@
   }
 
   function getSortIcon(key) {
+    if (currentSort.keys && currentSort.keys.length) {
+      const spec = currentSort.keys.find((k) => k.key === key);
+      if (!spec) return "⇅";
+      return spec.dir === "desc" ? "▼" : "▲";
+    }
     if (!currentSort || currentSort.key !== key) return "⇅";
     return currentSort.dir === "asc" ? "▲" : "▼";
   }
 
   function toggleSort(key) {
-    if (currentSort.key === key) {
+    if (currentSort.keys && currentSort.keys.length) {
+      currentSort = { key: key, dir: "asc" };
+    } else if (currentSort.key === key) {
       currentSort = { key, dir: currentSort.dir === "asc" ? "desc" : "asc" };
     } else {
       currentSort = { key, dir: "asc" };
@@ -412,9 +542,7 @@
       columns.forEach((col, idx) => {
         const td = document.createElement("td");
         const v = row[idx];
-        const text = (v === null || v === undefined) ? "" : String(v);
-        td.textContent = text;
-        td.title = text;
+        preencherCelulaConsulta(td, col, v);
         td.addEventListener("click", () => {
           if (selectedRowElement && selectedRowElement !== tr) selectedRowElement.classList.remove("row-selected");
           selectedRowElement = tr;
@@ -428,5 +556,9 @@
       tbody.appendChild(tr);
     });
   }
+
+  wireEvents();
+  loadFilterOptions();
+};
 </script>
 
