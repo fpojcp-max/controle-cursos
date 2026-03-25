@@ -10,6 +10,9 @@
       v = v != null ? String(v).trim() : "";
       return v || padrao;
     }
+    function citarRotuloMsg(texto) {
+      return "'" + String(texto != null ? texto : "").trim() + "'";
+    }
     var PLACEHOLDER = attrOuPadrao(root, "data-placeholder-curso-turma", "Selecione");
 
     var currentPage = 1;
@@ -284,11 +287,6 @@
       document.getElementById("agExResultsBlock").style.display = "";
 
       if (totalRecords === 0) {
-        limparSucessoPersistente();
-        renderMsg(
-          "Nenhum agendamento foi efetuado para a turma " + lastTurma + " do curso " + lastCurso,
-          "info"
-        );
         allLinhas = [];
         allIdsKnown = false;
         selectedSheetRows = {};
@@ -298,6 +296,18 @@
         document.getElementById("agExPaginationBar").style.display = "none";
         updateExcluirButton();
         syncMasterCheckbox();
+        if (msgSucessoPersistenteTexto) {
+          renderMsg(msgSucessoPersistenteTexto, "success");
+        } else {
+          renderMsg(
+            "Nenhum agendamento foi efetuado para a turma " +
+              citarRotuloMsg(lastTurma) +
+              " do curso " +
+              citarRotuloMsg(lastCurso) +
+              ".",
+            "info"
+          );
+        }
         return;
       }
 
@@ -476,7 +486,7 @@
           if (endBusy) endBusy();
           if (!resp || !resp.success) {
             limparSucessoPersistente();
-            renderMsg((resp && resp.message) || "A EXCLUSÃO FALHOU. TENTE NOVAMENTE MAIS TARDE.", "danger");
+            renderMsg((resp && resp.message) || "Não foi possível concluir a exclusão. Tente novamente mais tarde.", "danger");
             return;
           }
           msgSucessoPersistenteTexto = resp.message || "Concluído.";
@@ -491,7 +501,7 @@
         .withFailureHandler(function(err) {
           if (endBusy) endBusy();
           limparSucessoPersistente();
-          renderMsg("A EXCLUSÃO FALHOU. TENTE NOVAMENTE MAIS TARDE.", "danger");
+          renderMsg("Não foi possível concluir a exclusão. Tente novamente mais tarde.", "danger");
         })
         .excluirAgendamentosLote({ curso: curso, turma: turma, sheetRows: sheetRows });
     });

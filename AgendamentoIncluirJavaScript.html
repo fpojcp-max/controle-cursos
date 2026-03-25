@@ -39,7 +39,7 @@
       (salas || []).forEach(function(s) {
         var opt = document.createElement("option");
         opt.value = s.nome;
-        opt.textContent = s.nome + (s.configurada ? "" : " (sem ID — configure em Configuracoes)");
+        opt.textContent = s.nome + (s.configurada ? "" : " (sem ID — verifique o catálogo de recursos)");
         sel.appendChild(opt);
       });
       document.getElementById("agSalaHelp").textContent = "";

@@ -9,6 +9,9 @@
       v = v != null ? String(v).trim() : "";
       return v || padrao;
     }
+    function citarRotuloMsg(texto) {
+      return "'" + String(texto != null ? texto : "").trim() + "'";
+    }
     var PLACEHOLDER = attrOuPadrao(root, "data-placeholder-curso-turma", "Selecione");
 
     var currentPage = 1;
@@ -181,7 +184,11 @@
       if (totalRecords === 0) {
         lastExportQuery = null;
         renderMsg(
-          "Nenhum agendamento foi efetuado para a turma " + turma + " do curso " + curso,
+          "Nenhum agendamento foi efetuado para a turma " +
+            citarRotuloMsg(turma) +
+            " do curso " +
+            citarRotuloMsg(curso) +
+            ".",
           "info"
         );
         lastItensPagina = [];

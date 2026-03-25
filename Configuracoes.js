@@ -4,7 +4,7 @@
 
 const Configuracoes = {
   NOME_ABA: "Turmas",
-  NOME_COLUNA_ID: "ID",
+  NOME_COLUNA_ID: "ID Turma",
 
   // API de Agendamento (payload com spreadsheetId): aba na planilha informada.
   // Se não existir, a repository faz fallback para a primeira aba.
@@ -27,14 +27,14 @@ const Configuracoes = {
     "Turma",
     "Curso",
     "Data",
-    "Nome Sala",
+    "Sala",
     "Hora Início",
     "Hora Fim",
     "Convidados",
     "Criado em",
     "Criado por",
-    "ID Google",
-    "ID Registro Turma",
+    "ID Agendamento",
+    "ID Turma",
     "ID Sala"
   ],
 
@@ -45,17 +45,16 @@ const Configuracoes = {
   LIMITE_EXCLUSAO_AGENDAMENTOS_LOTE: 100,
 
   /**
-   * Salas/recursos: nome exibido = chave `nome` (deve bater com o select).
-   * Preencha `calendarId` com o e-mail do recurso no Google Calendar (ex.: sala@resource.calendar.google.com).
+   * Catálogo único: `rotulo` = texto em selects e planilhas; `identificadorCalendario` = recurso no Google Calendar.
    */
-  SALAS_RECURSOS_CALENDAR: [
-    { nome: "(EDUCORP)-Auditório", calendarId: "c_188fsj4m0hnfii6qgjn69muavm51g@resource.calendar.google.com" },
-    { nome: "(EDUCORP)-Idiomas", calendarId: "c_188akjbiofvveiatinhe5dd2oclmi@resource.calendar.google.com" },
-    { nome: "(EDUCORP)-Lab. 01", calendarId: "c_188evr21m28u4h53guerh2v826efe@resource.calendar.google.com" },
-    { nome: "(EDUCORP)-Lab. 02", calendarId: "c_188djbpv265fqhjajsdtsmkagmgt4@resource.calendar.google.com" },
-    { nome: "(EDUCORP)-M1", calendarId: "c_188dal6k74eoij0mm2hqqq53bucps@resource.calendar.google.com" },
-    { nome: "(EDUCORP)-M2", calendarId: "c_1886ke3al9bb8g4ditrf4340nflb4@resource.calendar.google.com" },
-    { nome: "Externo", calendarId: "c_188b5jvdenpk4igdlbv99lsd1i52k@resource.calendar.google.com" }
+  CATALOGO_RECURSOS_SALA: [
+    { rotulo: "(EDUCORP)-Auditório", identificadorCalendario: "c_188fsj4m0hnfii6qgjn69muavm51g@resource.calendar.google.com" },
+    { rotulo: "(EDUCORP)-Idiomas", identificadorCalendario: "c_188akjbiofvveiatinhe5dd2oclmi@resource.calendar.google.com" },
+    { rotulo: "(EDUCORP)-Lab. 01", identificadorCalendario: "c_188evr21m28u4h53guerh2v826efe@resource.calendar.google.com" },
+    { rotulo: "(EDUCORP)-Lab. 02", identificadorCalendario: "c_188djbpv265fqhjajsdtsmkagmgt4@resource.calendar.google.com" },
+    { rotulo: "(EDUCORP)-M1", identificadorCalendario: "c_188dal6k74eoij0mm2hqqq53bucps@resource.calendar.google.com" },
+    { rotulo: "(EDUCORP)-M2", identificadorCalendario: "c_1886ke3al9bb8g4ditrf4340nflb4@resource.calendar.google.com" },
+    { rotulo: "Externo", identificadorCalendario: "c_188b5jvdenpk4igdlbv99lsd1i52k@resource.calendar.google.com" }
   ]
 };
 
@@ -105,7 +104,7 @@ function obterOpcoesFormulario() {
       "Formação de Acolhedores", "Licitações Internacionais", "Semana da Inovação", "Seminários Educorp", "SIMTEC"
     ],
     TURMAS: ["2601", "2602", "2603", "2604", "2605", "2606", "2607", "2608", "2609", "2610", "2611", "2612", "2613", "2614", "2615", "2616", "2617", "2618", "2619", "2620"],
-    SALAS: ["Auditório", "M1", "M2", "Idiomas", "Lab. 01", "Lab. 02", "Externo"],
+    SALAS: listarRotulosCatalogoRecursosSala(),
     OFERTAS: ["Assíncrono", "Síncrono", "Híbrido", "Presencial"],
     RESPONSAVEIS: ["Alexandre Fagiani", "Carlos", "Cecília", "Cirlene", "Denilson", "Elson", "Kitaka", "Márcia", "Raquel", "Valéria"],
     PRIORIDADES: ["Baixa", "Média", "Alta", "Urgente"],

@@ -18,7 +18,7 @@
         if (endCfg) endCfg();
         var msg = document.getElementById("msg");
         if (msg) {
-          msg.innerHTML = "<div class=\"notification is-danger is-light\">Erro ao carregar opções: " + String(err).replace(/</g, "&lt;") + "</div>";
+          msg.innerHTML = "<div class=\"notification is-danger is-light has-text-right\">Erro ao carregar opções: " + String(err).replace(/</g, "&lt;") + "</div>";
           if (typeof window.rolarParaVerMensagemNoTopo === "function") {
             window.rolarParaVerMensagemNoTopo(msg);
           }
@@ -44,7 +44,7 @@
         } else {
           var msg = document.getElementById("msg");
           if (msg) {
-            msg.innerHTML = '<div class="notification is-warning is-light">Registro não encontrado.</div>';
+            msg.innerHTML = '<div class="notification is-warning is-light has-text-right">Registro não encontrado.</div>';
             if (typeof window.rolarParaVerMensagemNoTopo === "function") {
               window.rolarParaVerMensagemNoTopo(msg);
             } else {
@@ -57,7 +57,7 @@
         if (endLoad) endLoad();
         var msg = document.getElementById("msg");
         if (msg) {
-          msg.innerHTML = '<div class="notification is-danger is-light">Erro ao carregar registro: ' + (err && err.message ? err.message : String(err)) + '</div>';
+          msg.innerHTML = '<div class="notification is-danger is-light has-text-right">Erro ao carregar registro: ' + (err && err.message ? err.message : String(err)) + '</div>';
           if (typeof window.rolarParaVerMensagemNoTopo === "function") {
             window.rolarParaVerMensagemNoTopo(msg);
           } else {
@@ -151,6 +151,19 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  /** Evita depender de firstChild após innerHTML (robusto em SPA / parsing do DOM). */
+  function notificarNoElementoMsg(el, texto, tipo) {
+    if (!el) return;
+    el.innerHTML = "";
+    var div = document.createElement("div");
+    div.className =
+      tipo === "danger"
+        ? "notification is-danger is-light has-text-right"
+        : "notification is-success is-light has-text-left";
+    div.textContent = texto != null ? String(texto) : "";
+    el.appendChild(div);
+  }
+
   function bloquearFormularioAposEdicao() {
     const form = document.getElementById("ticketForm");
     form.classList.add("formulario-bloqueado");
@@ -178,7 +191,7 @@
     const dados = coletarDadosFormulario();
 
     function sucessoCadastro(resp) {
-      msg.innerHTML = `<div class="notification is-success is-light has-text-centered"><b>Sucesso!</b> ${resp}</div>`;
+      notificarNoElementoMsg(msg, resp || "", "success");
       btn.textContent = "Salvar";
       btn.disabled = false;
       btn.setAttribute("aria-busy", "false");
@@ -194,7 +207,7 @@
     }
 
     function sucessoEdicao(resp) {
-      msg.innerHTML = `<div class="notification is-success is-light has-text-centered"><b>Sucesso!</b> ${resp}</div>`;
+      notificarNoElementoMsg(msg, resp || "", "success");
       btn.textContent = "Salvar";
       btn.disabled = false;
       btn.setAttribute("aria-busy", "false");
@@ -207,7 +220,7 @@
     }
 
     function falhaMsg(err) {
-      msg.innerHTML = `<div class="notification is-danger is-light">Erro: ${err}</div>`;
+      notificarNoElementoMsg(msg, "Erro: " + (err != null ? String(err) : ""), "danger");
       btn.textContent = "Salvar";
       btn.disabled = false;
       btn.setAttribute("aria-busy", "false");

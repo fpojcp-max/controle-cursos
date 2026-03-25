@@ -19,6 +19,11 @@ const RegistroService = (() => {
   const IDX_EMAIL_USUARIO = CAMPOS_EDITAVEIS.length + 1;
   const IDX_ID = CAMPOS_EDITAVEIS.length + 2;
 
+  /** Delimita rótulos (turma, curso, etc.) em mensagens ao utilizador. */
+  function citarRotuloMsg_(texto) {
+    return "'" + String(texto != null ? texto : "").trim() + "'";
+  }
+
   // ---- Helpers de data e número ----
   function interpretarDataIso_(str) {
     if (!str) return null;
@@ -185,19 +190,25 @@ const RegistroService = (() => {
   function cadastrarRegistro_(dados) {
     validarMinimo_(dados);
     if (RegistroRepo.existeTurmaParaCurso(dados.curso, dados.turma, null))
-      throw new Error("Já existe a turma " + "'" + (dados.turma || "").trim() + "'" + " para o curso " + "'" + (dados.curso || "").trim() + "'" + ".");
+      throw new Error(
+        "Já existe a turma " + citarRotuloMsg_(dados.turma) + " para o curso " + citarRotuloMsg_(dados.curso) + "."
+      );
     const emailUsuario = Session.getActiveUser().getEmail();
     const dataAtual = new Date();
     const id = Utilities.getUuid();
     RegistroRepo.inserirLinha(dadosParaLinha_(dados, { dataCadastro: dataAtual, emailUsuario, id }));
-    return "Registro salvo.";
+    const turma = String(dados.turma || "").trim();
+    const curso = String(dados.curso || "").trim();
+    return "Turma " + citarRotuloMsg_(turma) + " do curso " + citarRotuloMsg_(curso) + " incluída com sucesso.";
   }
 
   function atualizarRegistroPorId_(id, dados) {
     if (!id) throw new Error("ID obrigatório para atualização.");
     validarMinimo_(dados);
     if (RegistroRepo.existeTurmaParaCurso(dados.curso, dados.turma, id))
-      throw new Error("Já existe a turma " + "'" + (dados.turma || "").trim() + "'" + " para o curso " + "'" + (dados.curso || "").trim() + "'" + ".");
+      throw new Error(
+        "Já existe a turma " + citarRotuloMsg_(dados.turma) + " para o curso " + citarRotuloMsg_(dados.curso) + "."
+      );
     const indice = RegistroRepo.buscarIndiceLinhaPorId(id);
     if (indice === -1) throw new Error("Registro não encontrado para atualização.");
     const linhaAtual = RegistroRepo.obterLinhaPorIndice(indice);
@@ -220,8 +231,13 @@ const RegistroService = (() => {
     if (!id) throw new Error("ID obrigatório para exclusão.");
     const indice = RegistroRepo.buscarIndiceLinhaPorId(id);
     if (indice === -1) throw new Error("Registro não encontrado para exclusão.");
+    const linha = RegistroRepo.obterLinhaPorIndice(indice);
+    const dados = linhaParaDados_(linha);
+    const turma = String(dados.turma || "").trim();
+    const curso = String(dados.curso || "").trim();
+    AgendamentoService.excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro(id);
     RegistroRepo.removerLinha(indice);
-    return "Registro excluído.";
+    return "Turma " + citarRotuloMsg_(turma) + " do curso " + citarRotuloMsg_(curso) + " excluída com sucesso.";
   }
 
   return {

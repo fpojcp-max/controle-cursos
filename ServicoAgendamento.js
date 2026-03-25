@@ -11,6 +11,11 @@ const AgendamentoService = (() => {
     return v !== null && v !== undefined && String(v).trim() !== "";
   }
 
+  /** Delimita rótulos (turma, curso, etc.) em mensagens ao utilizador. */
+  function citarRotuloMsg_(texto) {
+    return "'" + String(texto != null ? texto : "").trim() + "'";
+  }
+
   function errorValidation_(message, details) {
     throw { code: "VALIDATION_ERROR", message: String(message || "Erro de validação"), details: details || [] };
   }
@@ -191,13 +196,8 @@ const AgendamentoService = (() => {
     return n > 0 ? n : 50;
   }
 
-  function mapaSalas_() {
-    const list = Configuracoes.SALAS_RECURSOS_CALENDAR || [];
-    const map = {};
-    list.forEach((s) => {
-      if (s && s.nome) map[String(s.nome).trim()] = String(s.calendarId || "").trim();
-    });
-    return map;
+  function mapaIdentificadorCalendarioPorRotulo_() {
+    return montarMapaRotuloParaIdentificadorCalendario();
   }
 
   function validarHora_(h, nome) {
@@ -423,7 +423,7 @@ const AgendamentoService = (() => {
 
   /** Mensagem de sucesso — evento simples (uma ocorrência), padrão acordado. */
   function montarMensagemSucessoSimples_(turma, curso, horaInicio, horaFim, salaNome, dataYmd) {
-    const evento = String(turma || "").trim() + " - " + String(curso || "").trim();
+    const evento = citarRotuloMsg_(turma) + " - " + citarRotuloMsg_(curso);
     const sala = String(salaNome || "").trim() || "—";
     return (
       "O seguinte agendamento foi gerado:\n" +
@@ -460,7 +460,7 @@ const AgendamentoService = (() => {
    * Várias ocorrências: cabeçalho fixo + agrupamento por dia da semana e datas em linha.
    */
   function montarMensagemSucessoMultiplos_(turma, curso, horaInicio, horaFim, salaNome, periodos) {
-    const evento = String(turma || "").trim() + " - " + String(curso || "").trim();
+    const evento = citarRotuloMsg_(turma) + " - " + citarRotuloMsg_(curso);
     const sala = String(salaNome || "").trim() || "—";
     const gruposPorDow = {};
     for (let i = 0; i < periodos.length; i++) {
@@ -505,9 +505,9 @@ const AgendamentoService = (() => {
   }
 
   function obterDadosIncluir_() {
-    const salas = (Configuracoes.SALAS_RECURSOS_CALENDAR || []).map((s) => ({
-      nome: s.nome,
-      configurada: !!(s.calendarId && String(s.calendarId).trim())
+    const salas = obterEntradasCatalogoRecursosSala().map((s) => ({
+      nome: s.rotulo,
+      configurada: !!(s.identificadorCalendario && String(s.identificadorCalendario).trim())
     }));
     const cursos = RegistroRepo.listarCursosDistintos();
     return { cursos: cursos, salas: salas, timezone: tz_() };
@@ -532,7 +532,11 @@ const AgendamentoService = (() => {
     const idTurma = RegistroRepo.buscarIdPorCursoTurma(curso, turma);
     if (!idTurma) {
       throw new Error(
-        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+        "Não existe registro na planilha de turmas para o curso " +
+          citarRotuloMsg_(curso) +
+          " e a turma " +
+          citarRotuloMsg_(turma) +
+          "."
       );
     }
     if (turmaIdCliente && turmaIdCliente !== idTurma) {
@@ -554,7 +558,7 @@ const AgendamentoService = (() => {
     const emails = normalizarEmails_(payload.convidados || "");
 
     const salaNome = String(payload.salaNome || "").trim();
-    const mapa = mapaSalas_();
+    const mapa = mapaIdentificadorCalendarioPorRotulo_();
     let salaId = "";
     if (salaNome) {
       if (!Object.prototype.hasOwnProperty.call(mapa, salaNome)) {
@@ -563,7 +567,7 @@ const AgendamentoService = (() => {
       salaId = mapa[salaNome];
       if (!salaId) {
         throw new Error(
-          "Sala \"" + salaNome + "\" sem calendarId em Configuracoes.SALAS_RECURSOS_CALENDAR."
+          "Sala \"" + salaNome + "\" sem identificador de calendário no catálogo (Configuracoes.CATALOGO_RECURSOS_SALA)."
         );
       }
     }
@@ -670,7 +674,7 @@ const AgendamentoService = (() => {
       grupos[key].push(dt);
     }
     let out = "Os seguintes agendamentos foram excluídos:\n";
-    out += "Evento: " + turma + " - " + curso + "\n";
+    out += "Evento: " + citarRotuloMsg_(turma) + " - " + citarRotuloMsg_(curso) + "\n";
     const keys = Object.keys(grupos).sort();
     for (let k = 0; k < keys.length; k++) {
       const parts = keys[k].split("\t");
@@ -699,7 +703,11 @@ const AgendamentoService = (() => {
     const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
     if (!idTurma) {
       throw new Error(
-        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+        "Não existe registro na planilha de turmas para o curso " +
+          citarRotuloMsg_(c) +
+          " e a turma " +
+          citarRotuloMsg_(t) +
+          "."
       );
     }
     let sc = -1;
@@ -746,7 +754,11 @@ const AgendamentoService = (() => {
     const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
     if (!idTurma) {
       throw new Error(
-        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+        "Não existe registro na planilha de turmas para o curso " +
+          citarRotuloMsg_(c) +
+          " e a turma " +
+          citarRotuloMsg_(t) +
+          "."
       );
     }
     let sc = -1;
@@ -782,11 +794,152 @@ const AgendamentoService = (() => {
     const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
     if (!idTurma) {
       throw new Error(
-        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+        "Não existe registro na planilha de turmas para o curso " +
+          citarRotuloMsg_(c) +
+          " e a turma " +
+          citarRotuloMsg_(t) +
+          "."
       );
     }
     const ids = AgendamentoRepo.listarTodosEventIdsPorIdTurma(idTurma);
     return { success: true, eventIds: ids };
+  }
+
+  const MSG_EXCLUSAO_TURMA_AGENDAMENTOS_FALHOU =
+    "Não foi possível excluir a turma. Tente novamente mais tarde.";
+
+  const MSG_EXCLUSAO_AGENDAMENTOS_LOTE_FALHOU =
+    "Não foi possível concluir a exclusão. Tente novamente mais tarde.";
+
+  function uniqueEventIdsOrderedParaExclusaoTurma_(linhas) {
+    const seen = {};
+    const out = [];
+    for (let i = 0; i < linhas.length; i++) {
+      const e = String(linhas[i].eventId || "").trim();
+      if (!e || seen[e]) continue;
+      seen[e] = 1;
+      out.push(e);
+    }
+    return out;
+  }
+
+  function recriarEventoAPartirLinhaAg_(cells) {
+    const C = AgendamentoRepo.COL_AG;
+    const turma = String(cells[C.TURMA] || "").trim();
+    const curso = String(cells[C.CURSO] || "").trim();
+    const dataYmd = String(cells[C.DATA] || "").trim();
+    const hi = validarHora_(cells[C.HORA_INI], "Hora início");
+    const hf = validarHora_(cells[C.HORA_FIM], "Hora fim");
+    parseYmd_(dataYmd);
+    const titulo = montarTitulo_(turma, curso);
+    const startIso = isoLocalSemValidar_(dataYmd, hi);
+    const endIso = isoLocalSemValidar_(dataYmd, hf);
+    const conv = String(cells[C.CONVIDADOS] || "").trim();
+    let emails = [];
+    if (conv) {
+      try {
+        emails = normalizarEmails_(conv);
+      } catch (_) {
+        emails = [];
+      }
+    }
+    const salaNome = String(cells[C.NOME_SALA] || "").trim();
+    let salaCalendarId = String(cells[C.ID_SALA] || "").trim();
+    if (!salaCalendarId && salaNome) {
+      const mm = mapaIdentificadorCalendarioPorRotulo_();
+      if (Object.prototype.hasOwnProperty.call(mm, salaNome)) {
+        salaCalendarId = String(mm[salaNome] || "").trim();
+      }
+    }
+    const novoId = criarEventoNoCalendario_(titulo, startIso, endIso, emails, salaCalendarId);
+    if (!novoId) {
+      throw new Error("Resposta sem ID do evento no Google Calendar.");
+    }
+    return novoId;
+  }
+
+  /**
+   * Desfaz remoções já feitas no Calendar após falha no meio da sequência.
+   * @param {{ sheetRow: number, cells: string[], eventId: string }[]} snapshotLinhas
+   * @param {string[]} removedIdsInOrder
+   */
+  function rollbackRemocoesCalendarExclusaoTurma_(snapshotLinhas, removedIdsInOrder) {
+    for (let i = removedIdsInOrder.length - 1; i >= 0; i--) {
+      const oldEv = removedIdsInOrder[i];
+      const comId = snapshotLinhas.filter(function (l) {
+        return String(l.eventId || "").trim() === oldEv;
+      });
+      if (!comId.length) continue;
+      const novoId = recriarEventoAPartirLinhaAg_(comId[0].cells);
+      for (let j = 0; j < comId.length; j++) {
+        AgendamentoRepo.atualizarIdGoogleNaLinha(comId[j].sheetRow, novoId);
+      }
+    }
+  }
+
+  /**
+   * Remove todos os agendamentos ligados ao ID do registro da turma (Calendar + planilha).
+   * Sem o limite da UX de lote; falha no Calendar antes de apagar planilha e com rollback das remoções já feitas no Calendar.
+   * Falha ao apagar a planilha após Calendar ok: não recria eventos (planilha pode ficar defasada).
+   */
+  function excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro_(idTurma) {
+    const idNorm = String(idTurma || "").trim();
+    if (!idNorm) return;
+
+    let linhas;
+    try {
+      linhas = AgendamentoRepo.listarLinhasAgendamentoPorIdTurmaCompleto(idNorm);
+    } catch (e) {
+      throw new Error(MSG_EXCLUSAO_TURMA_AGENDAMENTOS_FALHOU);
+    }
+    if (!linhas.length) return;
+
+    const idsCal = uniqueEventIdsOrderedParaExclusaoTurma_(linhas);
+    const removedStack = [];
+    for (let c = 0; c < idsCal.length; c++) {
+      try {
+        CalendarAdapter.eventsRemovePrimaryIdempotent(idsCal[c]);
+        removedStack.push(idsCal[c]);
+      } catch (calErr) {
+        try {
+          if (removedStack.length) {
+            rollbackRemocoesCalendarExclusaoTurma_(linhas, removedStack);
+          }
+        } catch (_) {
+          /* melhor esforço: estado pode ser inconsistente */
+        }
+        throw new Error(MSG_EXCLUSAO_TURMA_AGENDAMENTOS_FALHOU);
+      }
+    }
+
+    const rowsDesc = [];
+    const seenRow = {};
+    for (let r = 0; r < linhas.length; r++) {
+      const n = linhas[r].sheetRow;
+      if (seenRow[n]) continue;
+      seenRow[n] = 1;
+      rowsDesc.push(n);
+    }
+    rowsDesc.sort(function (a, b) {
+      return b - a;
+    });
+    const MAX_TRY = 3;
+    let ultimoErro = null;
+    for (let t = 0; t < MAX_TRY; t++) {
+      try {
+        AgendamentoRepo.excluirLinhasPorNumeros(rowsDesc);
+        ultimoErro = null;
+        break;
+      } catch (sheetErr) {
+        ultimoErro = sheetErr;
+        if (t < MAX_TRY - 1) {
+          Utilities.sleep(400 + t * 250);
+        }
+      }
+    }
+    if (ultimoErro) {
+      throw new Error(MSG_EXCLUSAO_TURMA_AGENDAMENTOS_FALHOU);
+    }
   }
 
   /**
@@ -805,7 +958,11 @@ const AgendamentoService = (() => {
     const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
     if (!idTurma) {
       throw new Error(
-        "Não existe registro na planilha de turmas para a combinação Curso + Turma selecionada."
+        "Não existe registro na planilha de turmas para o curso " +
+          citarRotuloMsg_(c) +
+          " e a turma " +
+          citarRotuloMsg_(t) +
+          "."
       );
     }
 
@@ -881,14 +1038,14 @@ const AgendamentoService = (() => {
       try {
         CalendarAdapter.eventsRemovePrimaryIdempotent(ev);
       } catch (calErr) {
-        throw new Error("A EXCLUSÃO FALHOU. TENTE NOVAMENTE MAIS TARDE.");
+        throw new Error(MSG_EXCLUSAO_AGENDAMENTOS_LOTE_FALHOU);
       }
     }
     const rowsDesc = selecionadas.map((m) => m.sheetRow).sort((a, b) => b - a);
     try {
       AgendamentoRepo.excluirLinhasPorNumeros(rowsDesc);
     } catch (sheetErr) {
-      throw new Error("A EXCLUSÃO FALHOU. TENTE NOVAMENTE MAIS TARDE.");
+      throw new Error(MSG_EXCLUSAO_AGENDAMENTOS_LOTE_FALHOU);
     }
 
     return {
@@ -905,7 +1062,8 @@ const AgendamentoService = (() => {
     pesquisarAgendamentosExcluir: pesquisarAgendamentosExcluir_,
     obterAgendamentosConsultaParaExportar: obterAgendamentosConsultaParaExportar_,
     obterTodosEventIdsExcluir: obterTodosEventIdsExcluir_,
-    excluirAgendamentosLote: excluirAgendamentosLote_
+    excluirAgendamentosLote: excluirAgendamentosLote_,
+    excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro: excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro_
   };
 })();
 

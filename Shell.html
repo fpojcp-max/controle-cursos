@@ -23,17 +23,6 @@
   /** Disponível em todas as views: rola a janela para o topo e leva a área da mensagem à vista. */
   window.rolarParaVerMensagemNoTopo = function(optAnchor) {
     setTimeout(function() {
-      try {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch (e) {
-        try {
-          window.scrollTo(0, 0);
-        } catch (e2) {}
-      }
-      try {
-        document.documentElement.scrollTop = 0;
-        document.body.scrollTop = 0;
-      } catch (e3) {}
       var anchor =
         optAnchor ||
         document.getElementById("msgAgendamento") ||
@@ -48,6 +37,14 @@
             anchor.scrollIntoView(true);
           } catch (e5) {}
         }
+        return;
+      }
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (e6) {
+        try {
+          window.scrollTo(0, 0);
+        } catch (e7) {}
       }
     }, 0);
   };

@@ -7,6 +7,8 @@
   let selectedRowElement = null;
   let selectedRowId = null;
   let idColumnIndex = -1;
+  /** Mensagem de sucesso após excluir turma: reexibir ao fim da pesquisa (evita renderMessage("") apagar). */
+  let consultaMsgSucessoAposExclusao = "";
 
   window.ConsultaInit = function() {
     wireEvents();
@@ -22,6 +24,7 @@
   function wireEvents() {
     document.getElementById("btnLimparFiltros").addEventListener("click", () => {
       document.getElementById("searchForm").reset();
+      consultaMsgSucessoAposExclusao = "";
       renderMessage("");
       clearTable();
       document.getElementById("resultsMeta").textContent = "";
@@ -38,6 +41,7 @@
 
     document.getElementById("searchForm").addEventListener("submit", (e) => {
       e.preventDefault();
+      consultaMsgSucessoAposExclusao = "";
       currentPage = 1;
       pesquisar();
     });
@@ -70,7 +74,7 @@
           if (resp && String(resp).indexOf("Erro ao") === 0) {
             renderMessage(resp, "danger");
           } else {
-            renderMessage(resp || "Registro excluído.", "success");
+            consultaMsgSucessoAposExclusao = resp || "";
             pesquisar();
           }
         })
@@ -190,10 +194,16 @@
         if (!resp || !resp.columns) {
           setConsultaResultadosBlockVisivel(false);
           clearTable();
+          consultaMsgSucessoAposExclusao = "";
           renderMessage("Resposta inválida do servidor.", "danger");
           return;
         }
-        renderMessage("");
+        if (consultaMsgSucessoAposExclusao) {
+          renderMessage(consultaMsgSucessoAposExclusao, "success");
+          consultaMsgSucessoAposExclusao = "";
+        } else {
+          renderMessage("");
+        }
         totalRecords = resp.total || 0;
         setConsultaResultadosBlockVisivel(true);
         renderResults(resp);
@@ -205,6 +215,7 @@
         totalRecords = 0;
         setConsultaResultadosBlockVisivel(false);
         clearTable();
+        consultaMsgSucessoAposExclusao = "";
         renderMessage("Erro na pesquisa: " + err, "danger");
       })
       .pesquisarRegistros(lastQuery.filtros, lastQuery.sort, lastQuery.page);

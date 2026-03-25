@@ -192,7 +192,7 @@ const AgendamentoRepo = (() => {
   }
 
   /**
-   * Linhas da aba (filtro ID Registro Turma), sem ordenação estável explícita.
+   * Linhas da aba (filtro coluna ID Turma), sem ordenação estável explícita.
    * @param {string} idTurma
    * @returns {{ sheetRow: number, cells: string[], eventId: string }[]}
    */
@@ -222,6 +222,62 @@ const AgendamentoRepo = (() => {
       });
     }
     return matches;
+  }
+
+  /**
+   * Todas as linhas com o ID da turma, inclusive sem "ID Agendamento" (só planilha).
+   * @param {string} idTurma
+   * @returns {{ sheetRow: number, cells: string[], eventId: string }[]}
+   */
+  function coletarTodasLinhasAgendamentoPorIdTurma_(idTurma) {
+    const idNorm = String(idTurma || "").trim();
+    if (!idNorm) return [];
+    const aba = obterAba_();
+    garantirCabecalho_(aba);
+    const esperado = Configuracoes.CABECALHOS_AGENDAMENTO || [];
+    const numCols = esperado.length;
+    const lastRow = aba.getLastRow();
+    if (lastRow < 2) return [];
+    const raw = aba.getRange(2, 1, lastRow, numCols).getValues();
+    const matches = [];
+    for (let i = 0; i < raw.length; i++) {
+      const row = raw[i];
+      const linha = normalizarLinhaAg_(row);
+      while (linha.length < numCols) linha.push("");
+      const idCell = String(linha[COL_AG_.ID_REGISTRO_TURMA] || "").trim();
+      if (idCell !== idNorm) continue;
+      const ev = String(linha[COL_AG_.ID_GOOGLE] || "").trim();
+      matches.push({
+        sheetRow: i + 2,
+        cells: linha.slice(0, numCols),
+        eventId: ev
+      });
+    }
+    return matches;
+  }
+
+  function listarLinhasAgendamentoPorIdTurmaCompleto_(idTurma) {
+    const m = coletarTodasLinhasAgendamentoPorIdTurma_(idTurma);
+    ordenarLinhasAgendamento_(m, -1, true);
+    return m;
+  }
+
+  /**
+   * Atualiza só a coluna "ID Agendamento" (1-based row, cabeçalho na linha 1).
+   * @param {number} sheetRow1Based
+   * @param {string} novoEventId
+   */
+  function atualizarIdGoogleNaLinha_(sheetRow1Based, novoEventId) {
+    const r = parseInt(sheetRow1Based, 10);
+    if (isNaN(r) || r < 2) {
+      throw new Error("Linha da planilha inválida.");
+    }
+    const id = String(novoEventId || "").trim();
+    if (!id) throw new Error("ID do evento inválido.");
+    const aba = obterAba_();
+    garantirCabecalho_(aba);
+    const col = COL_AG_.ID_GOOGLE + 1;
+    aba.getRange(r, col).setValue(id);
   }
 
   /**
@@ -334,8 +390,10 @@ const AgendamentoRepo = (() => {
     obterAba: obterAba_,
     listarAgendamentosPaginadoPorIdTurma: listarAgendamentosPaginadoPorIdTurma_,
     listarLinhasAgendamentoPorIdTurma: listarLinhasAgendamentoPorIdTurma_,
+    listarLinhasAgendamentoPorIdTurmaCompleto: listarLinhasAgendamentoPorIdTurmaCompleto_,
     listarTodosEventIdsPorIdTurma: listarTodosEventIdsPorIdTurma_,
     excluirLinhasPorNumeros: excluirLinhasPorNumeros_,
+    atualizarIdGoogleNaLinha: atualizarIdGoogleNaLinha_,
     COL_AG: COL_AG_
   };
 })();
