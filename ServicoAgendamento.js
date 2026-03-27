@@ -310,7 +310,11 @@ const AgendamentoService = (() => {
 
     if (tipo === "simples") {
       const d = String(payload.data || "").trim();
-      parseYmd_(d);
+      const dtSimples = parseYmd_(d);
+      const dowS = dtSimples.getDay();
+      if (dowS === 0 || dowS === 6) {
+        throw new Error("Não são permitidos agendamentos para sábados e domingos.");
+      }
       if (exdate || rdate) {
         throw new Error("Datas de exceção ou exceção positiva só se aplicam a evento recorrente.");
       }

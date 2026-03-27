@@ -114,71 +114,106 @@
     view = view || "home";
     id = (id && String(id).trim()) ? String(id).trim() : "";
     mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
-    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
-    var busySafetyTimer = setTimeout(function() {
-      busySafetyTimer = null;
+    var MS_POR_TENTATIVA = 55000;
+    var MAX_TENTATIVAS = 2;
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    var busySafetyTimer = null;
+    var tentativaCarregar = 1;
+
+    function limparTimerNavegacao() {
+      if (busySafetyTimer) {
+        clearTimeout(busySafetyTimer);
+        busySafetyTimer = null;
+      }
+    }
+
+    function encerrarOcupadoNavegacao() {
+      limparTimerNavegacao();
       if (endBusy) {
         endBusy();
         endBusy = null;
       }
-      showError(
-        "O servidor não respondeu a tempo ao carregar o conteúdo. Isto costuma ser intermitente no Apps Script. Atualize a página (F5) ou tente de novo em instantes."
-      );
-    }, 120000);
+    }
+
+    function falhaFinalNavegacao(mensagem) {
+      encerrarOcupadoNavegacao();
+      showError(mensagem);
+    }
+
+    function armarTimeoutPedido() {
+      limparTimerNavegacao();
+      busySafetyTimer = setTimeout(function() {
+        busySafetyTimer = null;
+        if (tentativaCarregar >= MAX_TENTATIVAS) {
+          falhaFinalNavegacao(
+            "A resposta do servidor não chegou ao browser a tempo (não está relacionado com o tamanho da planilha). " +
+              "Já foi feita uma nova tentativa automática. Atualize a página (F5) ou tente outro browser/rede."
+          );
+          return;
+        }
+        tentativaCarregar++;
+        pedirPagina();
+      }, MS_POR_TENTATIVA);
+    }
+
+    function pedirPagina() {
+      armarTimeoutPedido();
+      google.script.run
+        .withSuccessHandler(function(data) {
+          limparTimerNavegacao();
+          if (endBusy) {
+            endBusy();
+            endBusy = null;
+          }
+          try {
+            if (!data || typeof data.html === "undefined") {
+              mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
+              return;
+            }
+            var html = data.html;
+            if (typeof html !== "string" || !html.trim()) {
+              showError("Resposta vazia do servidor.");
+              return;
+            }
+            mainContent.innerHTML = html;
+            if (data.script && data.script.trim()) runScript(data.script);
+            if (view === "consulta" && typeof window.ConsultaInit === "function") {
+              try { window.ConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (turmas): " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "cadastro" && typeof window.CadastroInit === "function") {
+              try { window.CadastroInit(); } catch (err) { showError("Erro ao iniciar Cadastro: " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "agendamento-incluir" && typeof window.AgendamentoIncluirInit === "function") {
+              try { window.AgendamentoIncluirInit(); } catch (err) { showError("Erro ao iniciar Agendamento: " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "agendamento-consulta" && typeof window.AgendamentoConsultaInit === "function") {
+              try { window.AgendamentoConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (agendamentos): " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "agendamento-excluir" && typeof window.AgendamentoExcluirInit === "function") {
+              try { window.AgendamentoExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de agendamentos: " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "turma-excluir" && typeof window.TurmaExcluirInit === "function") {
+              try { window.TurmaExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de turmas: " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "turma-editar" && typeof window.TurmaEditarInit === "function") {
+              try { window.TurmaEditarInit(); } catch (err) { showError("Erro ao iniciar Edição de turmas: " + (err && err.message ? err.message : String(err))); }
+            }
+          } catch (err) {
+            showError("Erro ao aplicar conteúdo: " + (err && err.message ? err.message : String(err)));
+          }
+        })
+        .withFailureHandler(function(err) {
+          limparTimerNavegacao();
+          if (tentativaCarregar >= MAX_TENTATIVAS) {
+            if (endBusy) {
+              endBusy();
+              endBusy = null;
+            }
+            showError("Erro ao carregar: " + String(err));
+            return;
+          }
+          tentativaCarregar++;
+          pedirPagina();
+        })
+        .getPageContent(view, id);
+    }
+
     setMenuActive(view, id);
-    google.script.run
-      .withSuccessHandler(function(data) {
-        if (busySafetyTimer) {
-          clearTimeout(busySafetyTimer);
-          busySafetyTimer = null;
-        }
-        if (endBusy) {
-          endBusy();
-          endBusy = null;
-        }
-        try {
-          if (!data || typeof data.html === "undefined") {
-            mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
-            return;
-          }
-          var html = data.html;
-          if (typeof html !== "string" || !html.trim()) {
-            showError("Resposta vazia do servidor.");
-            return;
-          }
-          mainContent.innerHTML = html;
-          if (data.script && data.script.trim()) runScript(data.script);
-          if (view === "consulta" && typeof window.ConsultaInit === "function") {
-            try { window.ConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (turmas): " + (err && err.message ? err.message : String(err))); }
-          } else if (view === "cadastro" && typeof window.CadastroInit === "function") {
-            try { window.CadastroInit(); } catch (err) { showError("Erro ao iniciar Cadastro: " + (err && err.message ? err.message : String(err))); }
-          } else if (view === "agendamento-incluir" && typeof window.AgendamentoIncluirInit === "function") {
-            try { window.AgendamentoIncluirInit(); } catch (err) { showError("Erro ao iniciar Agendamento: " + (err && err.message ? err.message : String(err))); }
-          } else if (view === "agendamento-consulta" && typeof window.AgendamentoConsultaInit === "function") {
-            try { window.AgendamentoConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (agendamentos): " + (err && err.message ? err.message : String(err))); }
-          } else if (view === "agendamento-excluir" && typeof window.AgendamentoExcluirInit === "function") {
-            try { window.AgendamentoExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de agendamentos: " + (err && err.message ? err.message : String(err))); }
-          } else if (view === "turma-excluir" && typeof window.TurmaExcluirInit === "function") {
-            try { window.TurmaExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de turmas: " + (err && err.message ? err.message : String(err))); }
-          } else if (view === "turma-editar" && typeof window.TurmaEditarInit === "function") {
-            try { window.TurmaEditarInit(); } catch (err) { showError("Erro ao iniciar Edição de turmas: " + (err && err.message ? err.message : String(err))); }
-          }
-        } catch (err) {
-          showError("Erro ao aplicar conteúdo: " + (err && err.message ? err.message : String(err)));
-        }
-      })
-      .withFailureHandler(function(err) {
-        if (busySafetyTimer) {
-          clearTimeout(busySafetyTimer);
-          busySafetyTimer = null;
-        }
-        if (endBusy) {
-          endBusy();
-          endBusy = null;
-        }
-        showError("Erro ao carregar: " + String(err));
-      })
-      .getPageContent(view, id);
+    pedirPagina();
   }
 
   window.navigate = navigate;

@@ -179,10 +179,14 @@
       totalRecords = Math.max(0, parseInt(resp.total, 10) || 0);
       var curso = resp.curso || "";
       var turma = resp.turma || "";
-      document.getElementById("agCoResultsBlock").style.display = "";
 
       if (totalRecords === 0) {
         lastExportQuery = null;
+        lastItensPagina = [];
+        document.getElementById("agCoHead").innerHTML = "";
+        document.getElementById("agCoBody").innerHTML = "";
+        document.getElementById("agCoPaginationBar").style.display = "none";
+        document.getElementById("agCoResultsBlock").style.display = "none";
         renderMsg(
           "Nenhum agendamento foi efetuado para a turma " +
             citarRotuloMsg(turma) +
@@ -191,13 +195,11 @@
             ".",
           "info"
         );
-        lastItensPagina = [];
-        renderTable([]);
-        document.getElementById("agCoPaginationBar").style.display = "none";
         setExportButtonState();
         return;
       }
 
+      document.getElementById("agCoResultsBlock").style.display = "";
       renderMsg("");
       lastExportQuery = {
         curso: curso,

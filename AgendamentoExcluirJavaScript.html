@@ -370,6 +370,30 @@
         });
     }
 
+    /** Após exclusão com sucesso: limpa filtros e resultados, sem nova pesquisa; mantém a notificação verde. */
+    function resetTelaPosExclusaoSucesso(textoSucesso) {
+      msgSucessoPersistenteTexto = textoSucesso || "Concluído.";
+      document.getElementById("agExCurso").value = "";
+      resetTurmaSelect();
+      selectedSheetRows = {};
+      currentPage = 1;
+      currentSort = { col: -1, dir: "asc" };
+      totalRecords = 0;
+      lastCurso = "";
+      lastTurma = "";
+      cabecalhoAtual = [];
+      allLinhas = [];
+      allIdsKnown = false;
+      lastItensPagina = [];
+      document.getElementById("agExHead").innerHTML = "";
+      document.getElementById("agExBody").innerHTML = "";
+      document.getElementById("agExResultsBlock").style.display = "none";
+      document.getElementById("agExPaginationBar").style.display = "none";
+      syncMasterCheckbox();
+      updateExcluirButton();
+      renderMsg(msgSucessoPersistenteTexto, "success");
+    }
+
     function limparTudo() {
       limparSucessoPersistente();
       renderMsg("");
@@ -489,14 +513,7 @@
             renderMsg((resp && resp.message) || "Não foi possível concluir a exclusão. Tente novamente mais tarde.", "danger");
             return;
           }
-          msgSucessoPersistenteTexto = resp.message || "Concluído.";
-          selectedSheetRows = {};
-          currentPage = 1;
-          var textoOk = msgSucessoPersistenteTexto;
-          window.setTimeout(function() {
-            renderMsg(textoOk, "success");
-            pesquisar(true);
-          }, 0);
+          resetTelaPosExclusaoSucesso(resp.message || "Concluído.");
         })
         .withFailureHandler(function(err) {
           if (endBusy) endBusy();

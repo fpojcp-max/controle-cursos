@@ -168,6 +168,32 @@
       }
     }
 
+    function resetFormularioInclusaoAposSucesso() {
+      turmaIdContexto = "";
+      limparBloqueioCursoTurma();
+      var selC = document.getElementById("agCurso");
+      if (selC) selC.selectedIndex = 0;
+      resetTurmaSelect();
+      document.querySelectorAll('input[name="agTipo"]').forEach(function(r) {
+        r.checked = r.value === "simples";
+      });
+      toggleTipo();
+      ["agDataSimples", "agDataInicio", "agDataFim", "agExdate", "agRdate", "agHoraInicio", "agHoraFim"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.value = "";
+      });
+      ["agDiaSeg", "agDiaTer", "agDiaQua", "agDiaQui", "agDiaSex"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el) el.checked = false;
+      });
+      var selSala = document.getElementById("agSala");
+      if (selSala) selSala.selectedIndex = 0;
+      var help = document.getElementById("agSalaHelp");
+      if (help) help.textContent = "";
+      var conv = document.getElementById("agConvidados");
+      if (conv) conv.value = "";
+    }
+
     function toggleTipo() {
       var tipo = document.querySelector('input[name="agTipo"]:checked');
       var v = tipo ? tipo.value : "simples";
@@ -236,6 +262,20 @@
           renderMsg("Informe a data do evento simples.", "danger");
           return;
         }
+        var partesDs = payload.data.split("-");
+        if (partesDs.length === 3) {
+          var yDs = parseInt(partesDs[0], 10);
+          var mDs = parseInt(partesDs[1], 10) - 1;
+          var dDs = parseInt(partesDs[2], 10);
+          if (!isNaN(yDs) && !isNaN(mDs) && !isNaN(dDs)) {
+            var dtSimples = new Date(yDs, mDs, dDs);
+            var dowSimples = dtSimples.getDay();
+            if (dowSimples === 0 || dowSimples === 6) {
+              renderMsg("Não são permitidos agendamentos para sábados e domingos.", "danger");
+              return;
+            }
+          }
+        }
       } else {
         payload.dataInicio = String(document.getElementById("agDataInicio").value || "").trim();
         payload.dataFim = String(document.getElementById("agDataFim").value || "").trim();
@@ -265,6 +305,7 @@
             return;
           }
           renderMsg(resp.message || "Concluído.", "success");
+          resetFormularioInclusaoAposSucesso();
         })
         .withFailureHandler(function(err) {
           if (endSalvar) endSalvar();
