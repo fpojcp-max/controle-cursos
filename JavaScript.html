@@ -158,7 +158,7 @@
     var div = document.createElement("div");
     div.className =
       tipo === "danger"
-        ? "notification is-danger is-light has-text-right"
+        ? "notification is-danger is-light has-text-left"
         : "notification is-success is-light has-text-left";
     div.textContent = texto != null ? String(texto) : "";
     el.appendChild(div);
@@ -220,7 +220,11 @@
     }
 
     function falhaMsg(err) {
-      notificarNoElementoMsg(msg, "Erro: " + (err != null ? String(err) : ""), "danger");
+      var texto = "";
+      if (err != null && err !== "") {
+        texto = typeof err === "object" && err.message != null ? String(err.message) : String(err);
+      }
+      notificarNoElementoMsg(msg, texto, "danger");
       btn.textContent = "Salvar";
       btn.disabled = false;
       btn.setAttribute("aria-busy", "false");

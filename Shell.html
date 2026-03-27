@@ -27,6 +27,7 @@
         optAnchor ||
         document.getElementById("msgAgendamento") ||
         document.getElementById("msgAgEx") ||
+        document.getElementById("msgAgEd") ||
         document.getElementById("msgAgCo") ||
         document.getElementById("msgTuEd") ||
         document.getElementById("msg");
@@ -84,6 +85,7 @@
     else if (
       view === "agendamento-incluir" ||
       view === "agendamento-consulta" ||
+      view === "agendamento-editar" ||
       view === "agendamento-excluir"
     )
       group = "agendamento";
@@ -185,6 +187,8 @@
               try { window.AgendamentoIncluirInit(); } catch (err) { showError("Erro ao iniciar Agendamento: " + (err && err.message ? err.message : String(err))); }
             } else if (view === "agendamento-consulta" && typeof window.AgendamentoConsultaInit === "function") {
               try { window.AgendamentoConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (agendamentos): " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "agendamento-editar" && typeof window.AgendamentoEditarInit === "function") {
+              try { window.AgendamentoEditarInit(); } catch (err) { showError("Erro ao iniciar Edição de agendamentos: " + (err && err.message ? err.message : String(err))); }
             } else if (view === "agendamento-excluir" && typeof window.AgendamentoExcluirInit === "function") {
               try { window.AgendamentoExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de agendamentos: " + (err && err.message ? err.message : String(err))); }
             } else if (view === "turma-excluir" && typeof window.TurmaExcluirInit === "function") {

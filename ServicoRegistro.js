@@ -200,6 +200,62 @@ const RegistroService = (() => {
     if (faltando.length) throw new Error("Campos obrigatórios ausentes: " + faltando.join(", "));
   }
 
+  function tzRegistro_() {
+    return (typeof Configuracoes !== "undefined" && Configuracoes.TIMEZONE_AGENDAMENTO) || "America/Sao_Paulo";
+  }
+
+  function dataCivilHojeYmdRegistro_() {
+    return Utilities.formatDate(new Date(), tzRegistro_(), "yyyy-MM-dd");
+  }
+
+  function normalizarDataCampoTurma_(valor, nomeCampo) {
+    const s0 = String(valor || "").trim();
+    if (!s0) throw new Error("Data inválida em " + nomeCampo + ".");
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s0)) {
+      const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s0);
+      const y = parseInt(m[1], 10);
+      const mo = parseInt(m[2], 10) - 1;
+      const d = parseInt(m[3], 10);
+      const dt = new Date(y, mo, d);
+      if (dt.getFullYear() !== y || dt.getMonth() !== mo || dt.getDate() !== d) {
+        throw new Error("Data inválida em " + nomeCampo + ".");
+      }
+      return s0;
+    }
+    const d = interpretarData_(valor);
+    if (!d) throw new Error("Data inválida em " + nomeCampo + ".");
+    const y = d.getFullYear();
+    const mo = ("0" + (d.getMonth() + 1)).slice(-2);
+    const da = ("0" + d.getDate()).slice(-2);
+    return y + "-" + mo + "-" + da;
+  }
+
+  function extrairDatasTurmaNormalizadas_(dados) {
+    return {
+      inicioYmd: normalizarDataCampoTurma_(dados.inicio, "Início"),
+      fimYmd: normalizarDataCampoTurma_(dados.fim, "Fim"),
+      fimInscYmd: normalizarDataCampoTurma_(dados.fimInscricoes, "Fim das inscrições")
+    };
+  }
+
+  function validarCoerenciaDatasTurma_(inicioYmd, fimYmd, fimInscYmd) {
+    if (fimYmd < inicioYmd) {
+      throw new Error("A data de Fim deve ser maior ou igual à data de Início.");
+    }
+    if (!(fimInscYmd < inicioYmd && fimInscYmd < fimYmd)) {
+      throw new Error(
+        "A data de Fim das inscrições deve ser anterior à data de Início e à data de Fim da turma."
+      );
+    }
+  }
+
+  function validarDatasTurmaCadastroSemPassado_(inicioYmd, fimYmd, fimInscYmd) {
+    const hoje = dataCivilHojeYmdRegistro_();
+    if (inicioYmd < hoje || fimYmd < hoje || fimInscYmd < hoje) {
+      throw new Error("Datas passadas não são permitidas");
+    }
+  }
+
   function obterColunasLinhasFiltradasOrdenadas_(filtros, ordenacao) {
     const { valores, temCabecalho } = RegistroRepo.lerDadosPlanilha();
     if (!valores.length) {
@@ -372,6 +428,9 @@ const RegistroService = (() => {
 
   function cadastrarRegistro_(dados) {
     validarMinimo_(dados);
+    const ymdsCad = extrairDatasTurmaNormalizadas_(dados);
+    validarCoerenciaDatasTurma_(ymdsCad.inicioYmd, ymdsCad.fimYmd, ymdsCad.fimInscYmd);
+    validarDatasTurmaCadastroSemPassado_(ymdsCad.inicioYmd, ymdsCad.fimYmd, ymdsCad.fimInscYmd);
     if (RegistroRepo.existeTurmaParaCurso(dados.curso, dados.turma, null))
       throw new Error(
         "Já existe a turma " + citarRotuloMsg_(dados.turma) + " para o curso " + citarRotuloMsg_(dados.curso) + "."
@@ -388,6 +447,8 @@ const RegistroService = (() => {
   function atualizarRegistroPorId_(id, dados) {
     if (!id) throw new Error("ID obrigatório para atualização.");
     validarMinimo_(dados);
+    const ymdsEd = extrairDatasTurmaNormalizadas_(dados);
+    validarCoerenciaDatasTurma_(ymdsEd.inicioYmd, ymdsEd.fimYmd, ymdsEd.fimInscYmd);
     if (RegistroRepo.existeTurmaParaCurso(dados.curso, dados.turma, id))
       throw new Error(
         "Já existe a turma " + citarRotuloMsg_(dados.turma) + " para o curso " + citarRotuloMsg_(dados.curso) + "."

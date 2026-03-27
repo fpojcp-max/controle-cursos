@@ -1,0 +1,369 @@
+<script>
+  window.AgendamentoEditarInit = function() {
+    var PAGE_SIZE = 50;
+    var msgEl = document.getElementById("msgAgEd");
+    var root = document.getElementById("agendamentoEditarRoot");
+    function attrOuPadrao(el, nome, padrao) {
+      if (!el) return padrao;
+      var v = el.getAttribute(nome);
+      v = v != null ? String(v).trim() : "";
+      return v || padrao;
+    }
+    function citarRotuloMsg(texto) {
+      return "'" + String(texto != null ? texto : "").trim() + "'";
+    }
+    var PLACEHOLDER = attrOuPadrao(root, "data-placeholder-curso-turma", "Selecione");
+
+    var currentPage = 1;
+    var totalRecords = 0;
+    var currentSort = { col: -1, dir: "asc" };
+    var lastCurso = "";
+    var lastTurma = "";
+    var cabecalhoAtual = [];
+    var lastItensPagina = [];
+    /** Número da linha da planilha selecionada ou null. Segundo clique na mesma linha mantém a seleção. */
+    var selectedSheetRow = null;
+
+    function renderMsg(text, kind) {
+      if (!text) {
+        msgEl.innerHTML = "";
+        return;
+      }
+      msgEl.innerHTML = "";
+      var cls = "notification is-light";
+      if (kind === "success") cls = "notification is-success is-light";
+      else if (kind === "danger") cls = "notification is-danger is-light";
+      else if (kind === "info") cls = "notification is-info is-light";
+      var div = document.createElement("div");
+      div.className = cls;
+      div.style.whiteSpace = "pre-line";
+      div.textContent = text;
+      msgEl.appendChild(div);
+      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+        window.rolarParaVerMensagemNoTopo(msgEl);
+      }
+    }
+
+    function preencherCursos(cursos) {
+      var sel = document.getElementById("agEdCurso");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      (cursos || []).forEach(function(c) {
+        sel.appendChild(new Option(c, c));
+      });
+    }
+
+    function resetTurmaSelect() {
+      var sel = document.getElementById("agEdTurma");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      sel.disabled = true;
+    }
+
+    function preencherTurmas(turmas) {
+      var sel = document.getElementById("agEdTurma");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      (turmas || []).forEach(function(t) {
+        sel.appendChild(new Option(t, t));
+      });
+      sel.disabled = !(turmas && turmas.length);
+    }
+
+    function carregarTurmasParaCurso(curso) {
+      curso = String(curso || "").trim();
+      resetTurmaSelect();
+      if (!curso) return;
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Não foi possível carregar as turmas.", "danger");
+            return;
+          }
+          preencherTurmas(resp.turmas);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          renderMsg("Erro ao carregar turmas: " + err, "danger");
+        })
+        .obterTurmasAgendamentoPorCurso(curso);
+    }
+
+    function updateEditarButton() {
+      document.getElementById("btnAgEdEditar").disabled = selectedSheetRow == null;
+    }
+
+    function clearSelectionVisual() {
+      var tbody = document.getElementById("agEdBody");
+      if (!tbody) return;
+      tbody.querySelectorAll("tr.row-selected").forEach(function(tr) {
+        tr.classList.remove("row-selected");
+      });
+    }
+
+    function aplicarSelecaoNaLinha(rowNum) {
+      clearSelectionVisual();
+      selectedSheetRow = rowNum;
+      var tbody = document.getElementById("agEdBody");
+      if (!tbody || rowNum == null) {
+        updateEditarButton();
+        return;
+      }
+      var tr = tbody.querySelector('tr[data-sheet-row="' + rowNum + '"]');
+      if (tr) tr.classList.add("row-selected");
+      updateEditarButton();
+    }
+
+    function getSortIcon(colIdx) {
+      if (currentSort.col !== colIdx) return "\u21c5";
+      return currentSort.dir === "asc" ? "\u25b2" : "\u25bc";
+    }
+
+    function toggleSort(colIdx) {
+      if (currentSort.col === colIdx) {
+        currentSort = { col: colIdx, dir: currentSort.dir === "asc" ? "desc" : "asc" };
+      } else {
+        currentSort = { col: colIdx, dir: "asc" };
+      }
+      currentPage = 1;
+      pesquisar({ limparSelecao: true });
+    }
+
+    function renderTable(itens) {
+      var thead = document.getElementById("agEdHead");
+      var tbody = document.getElementById("agEdBody");
+      thead.innerHTML = "";
+      tbody.innerHTML = "";
+
+      var trh = document.createElement("tr");
+      cabecalhoAtual.forEach(function(h, colIdx) {
+        var th = document.createElement("th");
+        th.classList.add("sortable");
+        th.textContent = h;
+        var icon = document.createElement("span");
+        icon.className = "sort-icon";
+        icon.textContent = getSortIcon(colIdx);
+        th.appendChild(icon);
+        th.addEventListener("click", function() {
+          toggleSort(colIdx);
+        });
+        trh.appendChild(th);
+      });
+      thead.appendChild(trh);
+
+      if (!itens || !itens.length) {
+        var trE = document.createElement("tr");
+        var tdE = document.createElement("td");
+        tdE.colSpan = Math.max(1, cabecalhoAtual.length);
+        tdE.className = "has-text-centered muted";
+        tdE.style.padding = "18px";
+        tdE.textContent = "Nenhum registro nesta página.";
+        trE.appendChild(tdE);
+        tbody.appendChild(trE);
+        return;
+      }
+
+      itens.forEach(function(item) {
+        var rowKey = parseInt(item.sheetRow, 10);
+        var tr = document.createElement("tr");
+        tr.setAttribute("data-sheet-row", String(rowKey));
+        tr.style.cursor = "pointer";
+        tr.setAttribute("tabindex", "0");
+        tr.setAttribute("role", "button");
+        tr.addEventListener("click", function() {
+          if (selectedSheetRow === rowKey) return;
+          aplicarSelecaoNaLinha(rowKey);
+        });
+        tr.addEventListener("keydown", function(ev) {
+          if (ev.key !== "Enter" && ev.key !== " ") return;
+          ev.preventDefault();
+          if (selectedSheetRow === rowKey) return;
+          aplicarSelecaoNaLinha(rowKey);
+        });
+        (item.cells || []).forEach(function(cell) {
+          var td = document.createElement("td");
+          var t = cell === null || cell === undefined ? "" : String(cell);
+          td.textContent = t;
+          td.title = t;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+
+      if (selectedSheetRow != null) {
+        var trSel = tbody.querySelector('tr[data-sheet-row="' + selectedSheetRow + '"]');
+        if (trSel) trSel.classList.add("row-selected");
+      }
+      updateEditarButton();
+    }
+
+    function atualizarPaginacao() {
+      var bar = document.getElementById("agEdPaginationBar");
+      var totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+      if (totalRecords <= PAGE_SIZE) {
+        bar.style.display = "none";
+      } else {
+        bar.style.display = "flex";
+        document.getElementById("agEdMeta").textContent =
+          "Total: " + totalRecords + " — Página " + currentPage + " de " + totalPages;
+        document.getElementById("agEdPagLabel").textContent =
+          "Exibindo " + (Math.min((currentPage - 1) * PAGE_SIZE + 1, totalRecords)) +
+          "–" +
+          Math.min(currentPage * PAGE_SIZE, totalRecords);
+        document.getElementById("btnAgEdAnt").disabled = currentPage <= 1;
+        document.getElementById("btnAgEdProx").disabled = currentPage >= totalPages;
+      }
+    }
+
+    function afterSearchSuccess(resp) {
+      cabecalhoAtual = resp.cabecalho || [];
+      totalRecords = Math.max(0, parseInt(resp.total, 10) || 0);
+      lastCurso = resp.curso || "";
+      lastTurma = resp.turma || "";
+      document.getElementById("agEdResultsBlock").style.display = "";
+
+      if (totalRecords === 0) {
+        selectedSheetRow = null;
+        lastItensPagina = [];
+        renderTable([]);
+        document.getElementById("agEdPaginationBar").style.display = "none";
+        document.getElementById("agEdHintLinha").style.display = "none";
+        updateEditarButton();
+        renderMsg(
+          "Nenhum agendamento foi efetuado para a turma " +
+            citarRotuloMsg(lastTurma) +
+            " do curso " +
+            citarRotuloMsg(lastCurso) +
+            ".",
+          "info"
+        );
+        return;
+      }
+
+      renderMsg("");
+      lastItensPagina = resp.itens || [];
+      var visiveis = {};
+      (lastItensPagina || []).forEach(function(it) {
+        visiveis[String(it.sheetRow)] = true;
+      });
+      if (selectedSheetRow != null && !visiveis[String(selectedSheetRow)]) {
+        selectedSheetRow = null;
+      }
+      renderTable(lastItensPagina);
+      atualizarPaginacao();
+      document.getElementById("agEdHintLinha").style.display = "";
+    }
+
+    function pesquisar(opts) {
+      opts = opts || {};
+      var limparSel = opts.limparSelecao !== false;
+      var curso = String(document.getElementById("agEdCurso").value || "").trim();
+      var turma = String(document.getElementById("agEdTurma").value || "").trim();
+      if (!curso || !turma) {
+        renderMsg("Selecione curso e turma.", "danger");
+        return;
+      }
+      if (limparSel) {
+        selectedSheetRow = null;
+        clearSelectionVisual();
+      }
+      var offset = (currentPage - 1) * PAGE_SIZE;
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Falha na pesquisa.", "danger");
+            document.getElementById("agEdResultsBlock").style.display = "none";
+            var hintF = document.getElementById("agEdHintLinha");
+            if (hintF) hintF.style.display = "none";
+            return;
+          }
+          afterSearchSuccess(resp);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          renderMsg("Erro: " + err, "danger");
+        })
+        .pesquisarAgendamentosExcluir({
+          curso: curso,
+          turma: turma,
+          offset: offset,
+          limit: PAGE_SIZE,
+          sortCol: currentSort.col,
+          sortDir: currentSort.dir
+        });
+    }
+
+    function limparTudo() {
+      renderMsg("");
+      document.getElementById("agEdCurso").value = "";
+      resetTurmaSelect();
+      selectedSheetRow = null;
+      currentPage = 1;
+      currentSort = { col: -1, dir: "asc" };
+      totalRecords = 0;
+      lastCurso = "";
+      lastTurma = "";
+      cabecalhoAtual = [];
+      lastItensPagina = [];
+      document.getElementById("agEdHead").innerHTML = "";
+      document.getElementById("agEdBody").innerHTML = "";
+      document.getElementById("agEdResultsBlock").style.display = "none";
+      document.getElementById("agEdPaginationBar").style.display = "none";
+      var hintL = document.getElementById("agEdHintLinha");
+      if (hintL) hintL.style.display = "none";
+      updateEditarButton();
+    }
+
+    document.getElementById("btnAgEdLimparTudo").addEventListener("click", function() {
+      limparTudo();
+    });
+
+    document.getElementById("agEdFormFiltro").addEventListener("submit", function(e) {
+      e.preventDefault();
+      currentPage = 1;
+      currentSort = { col: -1, dir: "asc" };
+      pesquisar();
+    });
+
+    document.getElementById("agEdCurso").addEventListener("change", function() {
+      carregarTurmasParaCurso(document.getElementById("agEdCurso").value);
+    });
+
+    document.getElementById("btnAgEdAnt").addEventListener("click", function() {
+      if (currentPage <= 1) return;
+      currentPage--;
+      pesquisar({ limparSelecao: false });
+    });
+
+    document.getElementById("btnAgEdProx").addEventListener("click", function() {
+      var totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+      if (currentPage >= totalPages) return;
+      currentPage++;
+      pesquisar({ limparSelecao: false });
+    });
+
+    document.getElementById("btnAgEdEditar").addEventListener("click", function() {
+      if (selectedSheetRow == null) return;
+    });
+
+    var endInit = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        if (endInit) endInit();
+        if (!resp || !resp.success) {
+          renderMsg((resp && resp.message) || "Não foi possível carregar a tela.", "danger");
+          return;
+        }
+        preencherCursos(resp.cursos);
+      })
+      .withFailureHandler(function(err) {
+        if (endInit) endInit();
+        renderMsg("Erro: " + err, "danger");
+      })
+      .obterDadosTelaAgendamentoIncluir();
+  };
+</script>

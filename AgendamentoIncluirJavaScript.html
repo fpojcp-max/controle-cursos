@@ -14,6 +14,22 @@
     var PREFILL_KEY = "agendamentoIncluirPrefill";
     /** ID da turma quando o fluxo veio da consulta (curso/turma bloqueados); vazio no fluxo pelo menu. */
     var turmaIdContexto = "";
+    /** Data civil yyyy-MM-dd no fuso de agendamento (servidor); validação espelhada antes do envio. */
+    var agHojeYmd = "";
+
+    function aplicarMinDatasAgendamento_(ymd) {
+      if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd) || !root) return;
+      root.querySelectorAll('input[type="date"]').forEach(function(inp) {
+        inp.setAttribute("min", ymd);
+      });
+    }
+
+    function dowLocalYmd_(ymd) {
+      var p = String(ymd || "").split("-");
+      if (p.length !== 3) return -1;
+      var dt = new Date(parseInt(p[0], 10), parseInt(p[1], 10) - 1, parseInt(p[2], 10));
+      return dt.getDay();
+    }
 
     function renderMsg(text, kind) {
       msgEl.innerHTML = "";
@@ -192,6 +208,7 @@
       if (help) help.textContent = "";
       var conv = document.getElementById("agConvidados");
       if (conv) conv.value = "";
+      aplicarMinDatasAgendamento_(agHojeYmd);
     }
 
     function toggleTipo() {
@@ -296,6 +313,35 @@
         if (rd) payload.rdate = rd;
       }
 
+      if (agHojeYmd) {
+        if (tipo === "simples") {
+          if (payload.data < agHojeYmd) {
+            renderMsg("Datas passadas não são permitidas", "danger");
+            return;
+          }
+        } else {
+          if (payload.dataInicio < agHojeYmd || payload.dataFim < agHojeYmd) {
+            renderMsg("Datas passadas não são permitidas", "danger");
+            return;
+          }
+          if (payload.exdate && payload.exdate < agHojeYmd) {
+            renderMsg("Datas passadas não são permitidas", "danger");
+            return;
+          }
+          if (payload.rdate) {
+            if (payload.rdate < agHojeYmd) {
+              renderMsg("Datas passadas não são permitidas", "danger");
+              return;
+            }
+            var dowR = dowLocalYmd_(payload.rdate);
+            if (dowR === 0 || dowR === 6) {
+              renderMsg("Não são permitidos agendamentos para sábados e domingos.", "danger");
+              return;
+            }
+          }
+        }
+      }
+
       var endSalvar = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
       google.script.run
         .withSuccessHandler(function(resp) {
@@ -327,6 +373,8 @@
         limparBloqueioCursoTurma();
         preencherCursos(resp.cursos);
         preencherSelectSalas(resp.salas);
+        agHojeYmd = String(resp.hojeYmd || "").trim();
+        aplicarMinDatasAgendamento_(agHojeYmd);
         aplicarPrefillSeHouver();
       })
       .withFailureHandler(function(err) {

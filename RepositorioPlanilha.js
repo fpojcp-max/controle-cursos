@@ -236,6 +236,37 @@ const RegistroRepo = (() => {
     return null;
   }
 
+  /**
+   * Valores brutos das células Início/Fim da linha Curso+Turma (getValues — Date ou texto).
+   * @returns {{ inicioVal: *, fimVal: * }|null}
+   */
+  function buscarVigenciaInicioFimPorCursoTurma_(curso, turma) {
+    const cursoNorm = String(curso || "").trim();
+    const turmaNorm = String(turma || "").trim();
+    if (!cursoNorm || !turmaNorm) return null;
+    const aba = obterAba_();
+    const lastRow = aba.getLastRow();
+    const lastCol = aba.getLastColumn();
+    if (lastRow < 1 || lastCol < 1) return null;
+    const valores = aba.getRange(1, 1, lastRow, lastCol).getValues();
+    const cabecalho = valores[0] || [];
+    const temCab = temCabecalho_(cabecalho);
+    const idxCurso = indiceColunaPorLabel_(cabecalho, "Curso");
+    const idxTurma = indiceColunaPorLabel_(cabecalho, "Turma");
+    let idxInicio = indiceColunaPorLabel_(cabecalho, "Início");
+    if (idxInicio < 0) idxInicio = indiceColunaPorLabel_(cabecalho, "Inicio");
+    const idxFim = indiceColunaPorLabel_(cabecalho, "Fim");
+    if (idxCurso < 0 || idxTurma < 0 || idxInicio < 0 || idxFim < 0) return null;
+    const inicio = temCab ? 1 : 0;
+    for (let i = inicio; i < valores.length; i++) {
+      const row = valores[i];
+      if (String(row[idxCurso] || "").trim() !== cursoNorm) continue;
+      if (String(row[idxTurma] || "").trim() !== turmaNorm) continue;
+      return { inicioVal: row[idxInicio], fimVal: row[idxFim] };
+    }
+    return null;
+  }
+
   function preencherColunaId_() {
     const aba = obterAba_();
     const lastRow = aba.getLastRow();
@@ -292,7 +323,8 @@ const RegistroRepo = (() => {
     listarCursosDistintos: listarCursosDistintos_,
     listarResponsaveisDistintos: listarResponsaveisDistintos_,
     listarTurmasDistintasPorCurso: listarTurmasDistintasPorCurso_,
-    buscarIdPorCursoTurma: buscarIdPorCursoTurma_
+    buscarIdPorCursoTurma: buscarIdPorCursoTurma_,
+    buscarVigenciaInicioFimPorCursoTurma: buscarVigenciaInicioFimPorCursoTurma_
   };
 })();
 

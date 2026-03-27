@@ -111,6 +111,24 @@ const AgendamentoService = (() => {
       details.length = 0;
     }
 
+    const hojeApi = dataCivilHojeYmd_();
+    for (let j = 0; j < agendamentosNorm.length; j++) {
+      const it = agendamentosNorm[j];
+      const dApi = String(it.data || "").trim();
+      if (dApi < hojeApi) {
+        errorValidation_("Datas passadas não são permitidas", [{ field: `agendamentos[${j}].data`, message: "Inválido" }]);
+      }
+      if (String(it.tipo).toLowerCase() === "simples") {
+        const dtS = parseYmd_(dApi);
+        const dowS = dtS.getDay();
+        if (dowS === 0 || dowS === 6) {
+          errorValidation_("Não são permitidos agendamentos para sábados e domingos.", [
+            { field: `agendamentos[${j}].data`, message: "Inválido" }
+          ]);
+        }
+      }
+    }
+
     // 2) Cria eventos no Calendar (rollback em caso de falha).
     let createdEvents = [];
     let eventosResponse = [];
@@ -191,6 +209,11 @@ const AgendamentoService = (() => {
     return Configuracoes.TIMEZONE_AGENDAMENTO || "America/Sao_Paulo";
   }
 
+  /** Data civil corrente no fuso de agendamento (yyyy-MM-dd), para comparar com ocorrências. */
+  function dataCivilHojeYmd_() {
+    return Utilities.formatDate(new Date(), tz_(), "yyyy-MM-dd");
+  }
+
   function limiteConvidados_() {
     const n = Number(Configuracoes.LIMITE_CONVIDADOS_AGENDAMENTO);
     return n > 0 ? n : 50;
@@ -226,6 +249,102 @@ const AgendamentoService = (() => {
     const mo = ("0" + (d.getMonth() + 1)).slice(-2);
     const da = ("0" + d.getDate()).slice(-2);
     return y + "-" + mo + "-" + da;
+  }
+
+  function normalizarCelulaVigenciaParaYmd_(valor, nomeCampo) {
+    if (valor === null || valor === undefined) return "";
+    if (Object.prototype.toString.call(valor) === "[object Date]" && !isNaN(valor.getTime())) {
+      return Utilities.formatDate(valor, tz_(), "yyyy-MM-dd");
+    }
+    const s = String(valor).trim();
+    if (!s) return "";
+    const mIso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+    if (mIso) {
+      parseYmd_(s);
+      return s;
+    }
+    const mBr = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(s);
+    if (mBr) {
+      const da = parseInt(mBr[1], 10);
+      const mo = parseInt(mBr[2], 10);
+      const y = parseInt(mBr[3], 10);
+      const dt = new Date(y, mo - 1, da);
+      if (dt.getFullYear() !== y || dt.getMonth() !== mo - 1 || dt.getDate() !== da) {
+        throw new Error("Data de " + nomeCampo + " da turma na planilha é inválida.");
+      }
+      return formatYmd_(dt);
+    }
+    throw new Error("Data de " + nomeCampo + " da turma na planilha não está em formato reconhecido.");
+  }
+
+  function obterVigenciaTurmaOuErro_(curso, turma) {
+    const raw = RegistroRepo.buscarVigenciaInicioFimPorCursoTurma(curso, turma);
+    if (!raw) {
+      throw new Error(
+        "Não existe registro na planilha de turmas para o curso " +
+          citarRotuloMsg_(curso) +
+          " e a turma " +
+          citarRotuloMsg_(turma) +
+          "."
+      );
+    }
+    const inicioYmd = normalizarCelulaVigenciaParaYmd_(raw.inicioVal, "Início");
+    const fimYmd = normalizarCelulaVigenciaParaYmd_(raw.fimVal, "Fim");
+    if (!inicioYmd || !fimYmd) {
+      throw new Error(
+        "A turma " +
+          citarRotuloMsg_(turma) +
+          " do curso " +
+          citarRotuloMsg_(curso) +
+          " não possui datas de Início e Fim de vigência definidas na planilha."
+      );
+    }
+    if (inicioYmd > fimYmd) {
+      throw new Error(
+        "Período de vigência inválido (Início após Fim) para a turma " +
+          citarRotuloMsg_(turma) +
+          " do curso " +
+          citarRotuloMsg_(curso) +
+          "."
+      );
+    }
+    return { inicioYmd: inicioYmd, fimYmd: fimYmd };
+  }
+
+  function lancarForaVigenciaTurma_(turma, curso) {
+    throw new Error(
+      "Agendamento não permitido. Possui data fora do período de vigência da turma " +
+        citarRotuloMsg_(turma) +
+        " do curso " +
+        citarRotuloMsg_(curso) +
+        "."
+    );
+  }
+
+  function validarConjuntoDatasAgendamento_(payload, datasYmd, curso, turma) {
+    const hoje = dataCivilHojeYmd_();
+    const vig = obterVigenciaTurmaOuErro_(curso, turma);
+    function checarYmd(ymd) {
+      if (ymd < hoje) {
+        throw new Error("Datas passadas não são permitidas");
+      }
+      if (ymd < vig.inicioYmd || ymd > vig.fimYmd) {
+        lancarForaVigenciaTurma_(turma, curso);
+      }
+    }
+    for (let i = 0; i < datasYmd.length; i++) {
+      checarYmd(datasYmd[i]);
+    }
+    const exdate = String(payload.exdate || "").trim();
+    const rdate = String(payload.rdate || "").trim();
+    if (exdate) {
+      parseYmd_(exdate);
+      checarYmd(exdate);
+    }
+    if (rdate) {
+      parseYmd_(rdate);
+      checarYmd(rdate);
+    }
   }
 
   /** Somente mensagens ao usuário: yyyy-mm-dd → dd/mm/aaaa (planilha/API seguem em ISO). */
@@ -350,7 +469,11 @@ const AgendamentoService = (() => {
     });
 
     if (rdate) {
-      parseYmd_(rdate);
+      const dtR = parseYmd_(rdate);
+      const dowR = dtR.getDay();
+      if (dowR === 0 || dowR === 6) {
+        throw new Error("Não são permitidos agendamentos para sábados e domingos.");
+      }
       pushUnique(rdate);
     }
 
@@ -514,7 +637,7 @@ const AgendamentoService = (() => {
       configurada: !!(s.identificadorCalendario && String(s.identificadorCalendario).trim())
     }));
     const cursos = RegistroRepo.listarCursosDistintos();
-    return { cursos: cursos, salas: salas, timezone: tz_() };
+    return { cursos: cursos, salas: salas, timezone: tz_(), hojeYmd: dataCivilHojeYmd_() };
   }
 
   function listarTurmasPorCursoIncluir_(curso) {
@@ -580,6 +703,7 @@ const AgendamentoService = (() => {
     if (!datas.length) {
       throw new Error("Nenhuma ocorrência no período e dias selecionados.");
     }
+    validarConjuntoDatasAgendamento_(payload, datas, curso, turma);
 
     const titulo = montarTitulo_(turma, curso);
     const periodos = datas.map((ymd) => ({

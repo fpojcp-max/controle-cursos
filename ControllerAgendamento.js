@@ -43,7 +43,8 @@ function obterDadosTelaAgendamentoIncluir() {
       success: true,
       cursos: dados.cursos,
       salas: dados.salas,
-      timezone: dados.timezone
+      timezone: dados.timezone,
+      hojeYmd: dados.hojeYmd
     };
   } catch (e) {
     return {

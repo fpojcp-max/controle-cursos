@@ -72,13 +72,17 @@ function getMenuHtml(view, spa, cadastroId) {
   t.urlCadastroInserir = spa ? "#" : obterUrlWebApp("cadastro");
   t.urlAgendamentoIncluir = spa ? "#" : obterUrlWebApp("agendamento-incluir");
   t.urlAgendamentoConsulta = spa ? "#" : obterUrlWebApp("agendamento-consulta");
+  t.urlAgendamentoEditar = spa ? "#" : obterUrlWebApp("agendamento-editar");
   t.urlAgendamentoExcluir = spa ? "#" : obterUrlWebApp("agendamento-excluir");
   t.urlTurmaExcluir = spa ? "#" : obterUrlWebApp("turma-excluir");
   t.urlTurmaEditar = spa ? "#" : obterUrlWebApp("turma-editar");
   t.menuTurmaGrupoAtivo =
     v === "consulta" || v === "cadastro" || v === "turma-editar" || v === "turma-excluir";
   t.menuAgendamentoAtivo =
-    v === "agendamento-incluir" || v === "agendamento-consulta" || v === "agendamento-excluir";
+    v === "agendamento-incluir" ||
+    v === "agendamento-consulta" ||
+    v === "agendamento-editar" ||
+    v === "agendamento-excluir";
   t.spa = spa === true;
   return t.evaluate().getContent();
 }
@@ -139,6 +143,17 @@ function getPageContent(view, id) {
     return {
       html: t.evaluate().getContent(),
       script: HtmlService.createHtmlOutputFromFile("AgendamentoConsultaJavaScript").getContent()
+    };
+  }
+  if (view === "agendamento-editar") {
+    const t = HtmlService.createTemplateFromFile("AgendamentoEditarFragment");
+    t.id = id;
+    t.spa = true;
+    t.parentItem = "Agendamento";
+    t.subItem = "Editar";
+    return {
+      html: t.evaluate().getContent(),
+      script: HtmlService.createHtmlOutputFromFile("AgendamentoEditarJavaScript").getContent()
     };
   }
   if (view === "agendamento-excluir") {

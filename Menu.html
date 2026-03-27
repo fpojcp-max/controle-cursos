@@ -58,6 +58,13 @@
         </li>
         <li role="none">
           <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= view === 'agendamento-editar' ? 'is-active' : '' ?>" data-view="agendamento-editar" role="menuitem" tabindex="0">Editar</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= view === 'agendamento-editar' ? 'is-active' : '' ?>" href="<?= urlAgendamentoEditar ?>" role="menuitem" target="_top" rel="noopener">Editar</a>
+          <? } ?>
+        </li>
+        <li role="none">
+          <? if (spa) { ?>
           <span class="app-menu-link app-menu-link-spa <?= view === 'agendamento-excluir' ? 'is-active' : '' ?>" data-view="agendamento-excluir" role="menuitem" tabindex="0">Excluir</span>
           <? } else { ?>
           <a class="app-menu-link <?= view === 'agendamento-excluir' ? 'is-active' : '' ?>" href="<?= urlAgendamentoExcluir ?>" role="menuitem" target="_top" rel="noopener">Excluir</a>
