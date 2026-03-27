@@ -1,0 +1,79 @@
+<div
+  class="form-content"
+  id="turmaExcluirRoot"
+  data-placeholder-curso-turma="Selecione"
+>
+  <div id="msgTuEx" class="mb-3"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+    </div>
+  </div>
+
+  <h2 class="section-title">Filtro</h2>
+  <form id="tuExFormFiltro">
+    <div class="columns is-multiline">
+      <div class="column is-4">
+        <label class="label">Curso</label>
+        <div class="select is-fullwidth">
+          <select id="tuExCurso"></select>
+        </div>
+      </div>
+      <div class="column is-3">
+        <label class="label">Turma</label>
+        <div class="select is-fullwidth">
+          <select id="tuExTurma" disabled></select>
+        </div>
+      </div>
+      <div class="column is-5">
+        <label class="label">Responsável</label>
+        <div class="select is-fullwidth">
+          <select id="tuExResponsavel"></select>
+        </div>
+      </div>
+    </div>
+    <div class="consulta-form-actions">
+      <button type="button" class="btn-custom btn-secondary" id="btnTuExLimparTudo">Limpar tudo</button>
+      <button type="submit" class="btn-custom" id="btnTuExPesquisar">Pesquisar</button>
+    </div>
+  </form>
+
+  <div id="tuExResultsBlock" style="display: none;">
+    <div class="resultados-header">
+      <h2 class="section-title">Resultados</h2>
+    </div>
+    <div class="field mb-3">
+      <div class="is-flex is-align-items-center ag-ex-selecionar-tudo-row">
+        <input type="checkbox" id="tuExSelecionarTudo" disabled aria-label="Selecionar todas as turmas do filtro">
+        <label for="tuExSelecionarTudo" class="mb-0 ml-2">Selecionar tudo</label>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="table is-striped is-hoverable is-fullwidth" id="tuExTable">
+        <thead id="tuExHead"></thead>
+        <tbody id="tuExBody"></tbody>
+      </table>
+    </div>
+    <div id="tuExPaginationBar" class="pagination-bar" style="display: none;">
+      <span class="pagination-info muted is-size-7" id="tuExMeta"></span>
+      <div class="pagination-controls">
+        <button type="button" id="btnTuExAnt">Anterior</button>
+        <span class="pagination-info muted is-size-7" id="tuExPagLabel"></span>
+        <button type="button" id="btnTuExProx">Próxima</button>
+      </div>
+    </div>
+    <div class="ag-excluir-actions">
+      <button type="button" class="btn-custom" id="btnTuExExcluir" disabled>Excluir</button>
+    </div>
+  </div>
+</div>
+
+<div id="tuExModal" aria-hidden="true">
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="tuExModalMsg">
+    <p id="tuExModalMsg" class="modal-mensagem">A exclusão não poderá ser revertida. Confirma a exclusão das turmas?</p>
+    <div class="modal-botoes">
+      <button type="button" class="btn-custom" id="btnTuExModalSim">Sim</button>
+      <button type="button" class="btn-custom btn-modal-nao" id="btnTuExModalNao">Não</button>
+    </div>
+  </div>
+</div>

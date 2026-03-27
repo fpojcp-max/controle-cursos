@@ -82,7 +82,19 @@ const RegistroService = (() => {
       "inicio": "Início", "id": "ID"
     };
     const aliased = aliases[k];
-    if (aliased) return indiceDaColuna_(colunas, aliased);
+    if (aliased) {
+      const proxK = String(aliased).trim().toLowerCase();
+      // Evita recursão infinita quando o alias só muda caças (ex.: id ↔ ID): ambos normalizam para "id".
+      if (proxK !== k) return indiceDaColuna_(colunas, aliased);
+    }
+    const nomeIdCfg = (typeof Configuracoes !== "undefined" && Configuracoes.NOME_COLUNA_ID)
+      ? String(Configuracoes.NOME_COLUNA_ID).trim() : "";
+    if (nomeIdCfg && k === "id") {
+      const want = nomeIdCfg.toLowerCase();
+      for (let i = 0; i < colunas.length; i++) {
+        if (String(colunas[i].key).trim().toLowerCase() === want) return i;
+      }
+    }
     return -1;
   }
 
@@ -188,13 +200,20 @@ const RegistroService = (() => {
     if (faltando.length) throw new Error("Campos obrigatórios ausentes: " + faltando.join(", "));
   }
 
-  function buscarRegistrosComFiltros_(filtros, ordenacao, paginacao) {
+  function obterColunasLinhasFiltradasOrdenadas_(filtros, ordenacao) {
     const { valores, temCabecalho } = RegistroRepo.lerDadosPlanilha();
-    if (!valores.length) return { columns: RegistroRepo.obterColunasPadrao(), rows: [], total: 0, truncated: false };
+    if (!valores.length) {
+      return { colunas: RegistroRepo.obterColunasPadrao(), ordenadas: [] };
+    }
     const colunas = temCabecalho ? normalizarColunasDoCabecalho_(valores[0]) : RegistroRepo.obterColunasPadrao();
     const linhas = valores.slice(temCabecalho ? 1 : 0);
     const filtradas = aplicarFiltros_(linhas, colunas, filtros || {});
     const ordenadas = aplicarOrdenacao_(filtradas, colunas, ordenacao || { key: "", dir: "asc" });
+    return { colunas: colunas, ordenadas: ordenadas };
+  }
+
+  function buscarRegistrosComFiltros_(filtros, ordenacao, paginacao) {
+    const { colunas, ordenadas } = obterColunasLinhasFiltradasOrdenadas_(filtros, ordenacao);
     const offset = Math.max(0, Number(paginacao && paginacao.offset) || 0);
     const limit = Math.min(100, Math.max(1, Number(paginacao && paginacao.limit) || 50));
     const paginadas = ordenadas.slice(offset, offset + limit);
@@ -202,13 +221,122 @@ const RegistroService = (() => {
   }
 
   function buscarRegistrosParaExportar_(filtros, ordenacao) {
+    const { colunas, ordenadas } = obterColunasLinhasFiltradasOrdenadas_(filtros, ordenacao);
+    return { columns: colunas, rows: ordenadas.slice(0, LIMITE_EXPORTACAO) };
+  }
+
+  /**
+   * Pesquisa paginada + lista completa de IDs (filtro + ordenação) para "selecionar tudo" na exclusão em lote.
+   */
+  function buscarRegistrosExcluirTurmaTela_(filtros, ordenacao, paginacao) {
+    const { colunas, ordenadas } = obterColunasLinhasFiltradasOrdenadas_(filtros, ordenacao);
+    const offset = Math.max(0, Number(paginacao && paginacao.offset) || 0);
+    const limit = Math.min(100, Math.max(1, Number(paginacao && paginacao.limit) || 50));
+    const paginadas = ordenadas.slice(offset, offset + limit);
+    const idIdx = indiceDaColuna_(colunas, "ID");
+    const idsFiltradosOrdenados = [];
+    if (idIdx >= 0) {
+      for (let i = 0; i < ordenadas.length; i++) {
+        const idVal = String(ordenadas[i][idIdx] || "").trim();
+        if (idVal) idsFiltradosOrdenados.push(idVal);
+      }
+    }
+    return {
+      columns: colunas,
+      rows: paginadas,
+      total: ordenadas.length,
+      truncated: ordenadas.length > paginadas.length,
+      idsFiltradosOrdenados: idsFiltradosOrdenados,
+      idColumnIndex: idIdx
+    };
+  }
+
+  function obterLinhasRegistroTurmaPorIdsNaOrdem_(ids) {
+    const lista = (ids || []).map((x) => String(x || "").trim()).filter(Boolean);
+    if (!lista.length) {
+      const { valores, temCabecalho } = RegistroRepo.lerDadosPlanilha();
+      if (!valores.length) {
+        const colunas0 = RegistroRepo.obterColunasPadrao();
+        return { columns: colunas0, rows: [], idColumnIndex: indiceDaColuna_(colunas0, "ID") };
+      }
+      const colunas = temCabecalho ? normalizarColunasDoCabecalho_(valores[0]) : RegistroRepo.obterColunasPadrao();
+      return { columns: colunas, rows: [], idColumnIndex: indiceDaColuna_(colunas, "ID") };
+    }
     const { valores, temCabecalho } = RegistroRepo.lerDadosPlanilha();
-    if (!valores.length) return { columns: RegistroRepo.obterColunasPadrao(), rows: [] };
+    if (!valores.length) {
+      const colunas0 = RegistroRepo.obterColunasPadrao();
+      return { columns: colunas0, rows: [], idColumnIndex: indiceDaColuna_(colunas0, "ID") };
+    }
     const colunas = temCabecalho ? normalizarColunasDoCabecalho_(valores[0]) : RegistroRepo.obterColunasPadrao();
     const linhas = valores.slice(temCabecalho ? 1 : 0);
-    const filtradas = aplicarFiltros_(linhas, colunas, filtros || {});
-    const ordenadas = aplicarOrdenacao_(filtradas, colunas, ordenacao || { key: "", dir: "asc" });
-    return { columns: colunas, rows: ordenadas.slice(0, LIMITE_EXPORTACAO) };
+    const idIdx = indiceDaColuna_(colunas, "ID");
+    if (idIdx < 0) return { columns: colunas, rows: [], idColumnIndex: -1 };
+    const mapa = {};
+    for (let i = 0; i < linhas.length; i++) {
+      const idVal = String(linhas[i][idIdx] || "").trim();
+      if (idVal) mapa[idVal] = linhas[i];
+    }
+    const rows = [];
+    for (let j = 0; j < lista.length; j++) {
+      const row = mapa[lista[j]];
+      if (row) rows.push(row);
+    }
+    return { columns: colunas, rows: rows, idColumnIndex: idIdx };
+  }
+
+  function formatarLinhaTurmaExcluidaMsg_(curso, turma) {
+    return "Turma " + citarRotuloMsg_(turma) + " do curso " + citarRotuloMsg_(curso);
+  }
+
+  function excluirRegistroPorIdComDetalhe_(id) {
+    if (!id) throw new Error("ID obrigatório para exclusão.");
+    const indice = RegistroRepo.buscarIndiceLinhaPorId(id);
+    if (indice === -1) throw new Error("Registro não encontrado para exclusão.");
+    const linha = RegistroRepo.obterLinhaPorIndice(indice);
+    const dados = linhaParaDados_(linha);
+    const turma = String(dados.turma || "").trim();
+    const curso = String(dados.curso || "").trim();
+    AgendamentoService.excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro(id);
+    RegistroRepo.removerLinha(indice);
+    return { curso: curso, turma: turma };
+  }
+
+  function excluirRegistrosTurmaLote_(ids) {
+    const excluidos = [];
+    const falhas = [];
+    const vistos = {};
+    const entrada = (ids || []).map((x) => String(x || "").trim()).filter(Boolean);
+    for (let i = 0; i < entrada.length; i++) {
+      const id = entrada[i];
+      if (vistos[id]) continue;
+      vistos[id] = true;
+      try {
+        const d = excluirRegistroPorIdComDetalhe_(id);
+        excluidos.push({ id: id, curso: d.curso, turma: d.turma });
+      } catch (e) {
+        falhas.push({ id: id, mensagem: (e && e.message) ? e.message : String(e) });
+      }
+    }
+    const linhasEx = excluidos.map((x) => formatarLinhaTurmaExcluidaMsg_(x.curso, x.turma));
+    let tipo = "nenhuma";
+    let mensagemTopo = "";
+    if (excluidos.length && !falhas.length) {
+      tipo = "total";
+      mensagemTopo =
+        excluidos.length === 1
+          ? linhasEx[0] + " excluída com sucesso."
+          : "As seguintes turmas foram excluídas:\n" + linhasEx.join("\n");
+    } else if (excluidos.length && falhas.length) {
+      tipo = "parcial";
+      mensagemTopo =
+        "Apenas as seguintes turmas foram excluídas:\n" +
+        linhasEx.join("\n") +
+        "\n\nTente excluir as demais turmas restantes na tabela de resultados mais tarde.";
+    } else if (!excluidos.length && falhas.length) {
+      tipo = "falha_total";
+      mensagemTopo = "Não foi possível excluir as turmas selecionadas.";
+    }
+    return { excluidos: excluidos, falhas: falhas, tipo: tipo, mensagemTopo: mensagemTopo };
   }
 
   function cadastrarRegistro_(dados) {
@@ -252,21 +380,16 @@ const RegistroService = (() => {
   }
 
   function excluirRegistroPorId_(id) {
-    if (!id) throw new Error("ID obrigatório para exclusão.");
-    const indice = RegistroRepo.buscarIndiceLinhaPorId(id);
-    if (indice === -1) throw new Error("Registro não encontrado para exclusão.");
-    const linha = RegistroRepo.obterLinhaPorIndice(indice);
-    const dados = linhaParaDados_(linha);
-    const turma = String(dados.turma || "").trim();
-    const curso = String(dados.curso || "").trim();
-    AgendamentoService.excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro(id);
-    RegistroRepo.removerLinha(indice);
-    return "Turma " + citarRotuloMsg_(turma) + " do curso " + citarRotuloMsg_(curso) + " excluída com sucesso.";
+    const d = excluirRegistroPorIdComDetalhe_(id);
+    return formatarLinhaTurmaExcluidaMsg_(d.curso, d.turma) + " excluída com sucesso.";
   }
 
   return {
     buscarRegistrosComFiltros: buscarRegistrosComFiltros_,
     buscarRegistrosParaExportar: buscarRegistrosParaExportar_,
+    buscarRegistrosExcluirTurmaTela: buscarRegistrosExcluirTurmaTela_,
+    obterLinhasRegistroTurmaPorIdsNaOrdem: obterLinhasRegistroTurmaPorIdsNaOrdem_,
+    excluirRegistrosTurmaLote: excluirRegistrosTurmaLote_,
     cadastrarRegistro: cadastrarRegistro_,
     atualizarRegistroPorId: atualizarRegistroPorId_,
     obterRegistroPorIdServico: obterRegistroPorIdServico_,
@@ -281,3 +404,9 @@ function cadastrarRegistro(dados) { return RegistroService.cadastrarRegistro(dad
 function atualizarRegistroPorId(id, dados) { return RegistroService.atualizarRegistroPorId(id, dados); }
 function obterRegistroPorIdServico(id) { return RegistroService.obterRegistroPorIdServico(id); }
 function excluirRegistroPorId(id) { return RegistroService.excluirRegistroPorId(id); }
+function buscarRegistrosExcluirTurmaTela(filtros, ordenacao, paginacao) {
+  return RegistroService.buscarRegistrosExcluirTurmaTela(filtros, ordenacao, paginacao);
+}
+function obterLinhasRegistroTurmaPorIdsNaOrdem(ids) {
+  return RegistroService.obterLinhasRegistroTurmaPorIdsNaOrdem(ids);
+}

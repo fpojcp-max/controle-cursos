@@ -79,7 +79,7 @@
     menu.querySelectorAll(".app-menu-link").forEach(function(a) { a.classList.remove("is-active"); });
     menu.querySelectorAll(".app-menu-link-spa").forEach(function(a) { a.classList.remove("is-active"); });
     var group = null;
-    if (view === "consulta" || view === "cadastro") group = "turma";
+    if (view === "consulta" || view === "cadastro" || view === "turma-excluir") group = "turma";
     else if (
       view === "agendamento-incluir" ||
       view === "agendamento-consulta" ||
@@ -140,6 +140,8 @@
             try { window.AgendamentoConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (agendamentos): " + (err && err.message ? err.message : String(err))); }
           } else if (view === "agendamento-excluir" && typeof window.AgendamentoExcluirInit === "function") {
             try { window.AgendamentoExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de agendamentos: " + (err && err.message ? err.message : String(err))); }
+          } else if (view === "turma-excluir" && typeof window.TurmaExcluirInit === "function") {
+            try { window.TurmaExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de turmas: " + (err && err.message ? err.message : String(err))); }
           }
         } catch (err) {
           showError("Erro ao aplicar conteúdo: " + (err && err.message ? err.message : String(err)));

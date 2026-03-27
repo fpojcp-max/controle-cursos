@@ -73,6 +73,100 @@ function excluirRegistro(id) {
 }
 
 /**
+ * Listas para filtros da tela Turma >> Excluir (valores distintos na planilha).
+ * @returns {{ success: boolean, cursos?: string[], responsaveis?: string[], message?: string }}
+ */
+function obterOpcoesFiltroTurmaExcluir() {
+  try {
+    return {
+      success: true,
+      cursos: RegistroRepo.listarCursosDistintos(),
+      responsaveis: RegistroRepo.listarResponsaveisDistintos()
+    };
+  } catch (e) {
+    return {
+      success: false,
+      message: (e && e.message) ? e.message : String(e)
+    };
+  }
+}
+
+/**
+ * Turmas distintas na planilha para o curso (cadastro de turmas).
+ * @param {string} curso
+ * @returns {{ success: boolean, turmas?: string[], message?: string }}
+ */
+function obterTurmasPlanilhaPorCurso(curso) {
+  try {
+    return {
+      success: true,
+      turmas: RegistroRepo.listarTurmasDistintasPorCurso(curso || "")
+    };
+  } catch (e) {
+    return {
+      success: false,
+      message: (e && e.message) ? e.message : String(e)
+    };
+  }
+}
+
+/**
+ * Pesquisa paginada para exclusão de turmas + IDs de todo o conjunto filtrado (selecionar tudo).
+ */
+function pesquisarTurmasParaExcluir(filtros, ordenacao, paginacao) {
+  return RegistroService.buscarRegistrosExcluirTurmaTela(filtros, ordenacao, paginacao);
+}
+
+/**
+ * Linhas atuais da planilha para os IDs indicados (ordem preservada).
+ * @param {string[]} ids
+ * @returns {{ success: boolean, columns?: any[], rows?: any[][], message?: string }}
+ */
+function obterRegistrosTurmaPorIdsParaExcluir(ids) {
+  try {
+    const r = RegistroService.obterLinhasRegistroTurmaPorIdsNaOrdem(ids);
+    return {
+      success: true,
+      columns: r.columns,
+      rows: r.rows,
+      idColumnIndex: typeof r.idColumnIndex === "number" ? r.idColumnIndex : -1
+    };
+  } catch (e) {
+    return {
+      success: false,
+      message: (e && e.message) ? e.message : String(e)
+    };
+  }
+}
+
+/**
+ * Exclusão em lote de turmas por ID (com limpeza de agendamentos por turma).
+ * @param {string[]} ids
+ * @returns {{ success: boolean, tipo?: string, mensagemTopo?: string, excluidos?: Object[], falhas?: Object[], message?: string }}
+ */
+function excluirRegistrosTurmaLote(ids) {
+  try {
+    const lista = Array.isArray(ids) ? ids : [];
+    if (!lista.length) {
+      return { success: false, message: "Selecione ao menos uma turma." };
+    }
+    const r = RegistroService.excluirRegistrosTurmaLote(lista);
+    return {
+      success: true,
+      tipo: r.tipo,
+      mensagemTopo: r.mensagemTopo,
+      excluidos: r.excluidos,
+      falhas: r.falhas
+    };
+  } catch (e) {
+    return {
+      success: false,
+      message: (e && e.message) ? e.message : String(e)
+    };
+  }
+}
+
+/**
  * Retorna todos os registros (filtros + ordenação) para exportação CSV.
  * @param {Object} filtros
  * @param {{ key?: string, dir?: string, keys?: { key: string, dir: string }[] }} ordenacao

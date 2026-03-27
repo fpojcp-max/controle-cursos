@@ -175,6 +175,21 @@ const RegistroRepo = (() => {
     return Object.keys(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
   }
 
+  function listarResponsaveisDistintos_() {
+    const { valores, temCabecalho } = lerDadosPlanilha_();
+    if (!valores.length) return [];
+    const cabecalho = valores[0] || [];
+    const idx = indiceColunaPorLabel_(cabecalho, "Responsável");
+    if (idx < 0) return [];
+    const inicio = temCabecalho ? 1 : 0;
+    const set = {};
+    for (let i = inicio; i < valores.length; i++) {
+      const r = String(valores[i][idx] || "").trim();
+      if (r) set[r] = true;
+    }
+    return Object.keys(set).sort((a, b) => a.localeCompare(b, "pt-BR"));
+  }
+
   function listarTurmasDistintasPorCurso_(curso) {
     const cursoNorm = String(curso || "").trim();
     if (!cursoNorm) return [];
@@ -275,6 +290,7 @@ const RegistroRepo = (() => {
     indiceColunaId: indiceColunaId_,
     existeTurmaParaCurso: existeTurmaParaCurso_,
     listarCursosDistintos: listarCursosDistintos_,
+    listarResponsaveisDistintos: listarResponsaveisDistintos_,
     listarTurmasDistintasPorCurso: listarTurmasDistintasPorCurso_,
     buscarIdPorCursoTurma: buscarIdPorCursoTurma_
   };
@@ -293,5 +309,6 @@ function preencherColunaId() { return RegistroRepo.preencherColunaId(); }
 function indiceColunaId(cabecalho, ultimaColuna) { return RegistroRepo.indiceColunaId(cabecalho, ultimaColuna); }
 function existeTurmaParaCurso(curso, turma, excluirId) { return RegistroRepo.existeTurmaParaCurso(curso, turma, excluirId); }
 function listarCursosDistintosPlanilha() { return RegistroRepo.listarCursosDistintos(); }
+function listarResponsaveisDistintosPlanilha() { return RegistroRepo.listarResponsaveisDistintos(); }
 function listarTurmasDistintasPorCursoPlanilha(curso) { return RegistroRepo.listarTurmasDistintasPorCurso(curso); }
 function buscarIdRegistroPorCursoTurma(curso, turma) { return RegistroRepo.buscarIdPorCursoTurma(curso, turma); }
