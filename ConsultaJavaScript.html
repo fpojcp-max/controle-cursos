@@ -15,11 +15,6 @@ window.ConsultaInit = function() {
   let lastQuery = null;
   let currentPage = 1;
   let totalRecords = 0;
-  let selectedRowElement = null;
-  let selectedRowId = null;
-  let idColumnIndex = -1;
-  /** Mensagem de sucesso após excluir turma: reexibir ao fim da pesquisa (evita renderMessage("") apagar). */
-  let consultaMsgSucessoAposExclusao = "";
 
   function setConsultaResultadosBlockVisivel(visivel) {
     var el = document.getElementById("consultaResultadosBlock");
@@ -47,7 +42,6 @@ window.ConsultaInit = function() {
   function wireEvents() {
     document.getElementById("btnLimparFiltros").addEventListener("click", () => {
       document.getElementById("searchForm").reset();
-      consultaMsgSucessoAposExclusao = "";
       renderMessage("");
       clearTable();
       document.getElementById("resultsMeta").textContent = "";
@@ -56,7 +50,6 @@ window.ConsultaInit = function() {
       totalRecords = 0;
       lastQuery = null;
       document.getElementById("btnExportarCsv").disabled = true;
-      esconderBotaoEditar();
       setConsultaResultadosBlockVisivel(false);
       currentSort = ordenacaoPadraoConsulta();
     });
@@ -65,7 +58,6 @@ window.ConsultaInit = function() {
 
     document.getElementById("searchForm").addEventListener("submit", (e) => {
       e.preventDefault();
-      consultaMsgSucessoAposExclusao = "";
       currentPage = 1;
       pesquisar();
     });
@@ -83,85 +75,6 @@ window.ConsultaInit = function() {
       pesquisar();
     });
 
-    document.getElementById("btnExcluir").addEventListener("click", () => {
-      if (!selectedRowId) return;
-      mostrarModalConfirmarExclusao();
-    });
-
-    document.getElementById("modalBtnSim").addEventListener("click", () => {
-      esconderModalConfirmarExclusao();
-      if (!selectedRowId) return;
-      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
-      google.script.run
-        .withSuccessHandler(function(resp) {
-          if (endBusy) endBusy();
-          if (resp && String(resp).indexOf("Erro ao") === 0) {
-            renderMessage(resp, "danger");
-          } else {
-            consultaMsgSucessoAposExclusao = resp || "";
-            pesquisar();
-          }
-        })
-        .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
-          renderMessage("Erro ao excluir: " + err, "danger");
-        })
-        .excluirRegistro(selectedRowId);
-    });
-
-    document.getElementById("modalBtnNao").addEventListener("click", esconderModalConfirmarExclusao);
-
-    document.getElementById("modalConfirmarExclusao").addEventListener("click", function(e) {
-      if (e.target === this) esconderModalConfirmarExclusao();
-    });
-
-    document.getElementById("btnEditar").addEventListener("click", () => {
-      if (!selectedRowId) return;
-      if (typeof window.navigate === "function") {
-        window.navigate("cadastro", selectedRowId);
-        return;
-      }
-      google.script.run
-        .withSuccessHandler(function(baseUrl) {
-          var url = baseUrl + "&id=" + encodeURIComponent(selectedRowId);
-          try { window.top.location.href = url; } catch (_) { window.location.href = url; }
-        })
-        .obterUrlWebApp("cadastro");
-    });
-  }
-
-  function esconderBotaoEditar() {
-    const wrap = document.getElementById("wrapBtnEditar");
-    wrap.classList.remove("visivel");
-    wrap.style.display = "none";
-  }
-
-  function mostrarModalConfirmarExclusao() {
-    document.getElementById("modalConfirmarExclusao").classList.add("visivel");
-    document.getElementById("modalConfirmarExclusao").setAttribute("aria-hidden", "false");
-  }
-
-  function esconderModalConfirmarExclusao() {
-    document.getElementById("modalConfirmarExclusao").classList.remove("visivel");
-    document.getElementById("modalConfirmarExclusao").setAttribute("aria-hidden", "true");
-  }
-
-  function mostrarBotaoEditar(habilitado) {
-    const wrap = document.getElementById("wrapBtnEditar");
-    wrap.classList.add("visivel");
-    wrap.style.display = "flex";
-    document.getElementById("btnEditar").disabled = !habilitado;
-    document.getElementById("btnExcluir").disabled = !habilitado;
-  }
-
-  function indiceColunaId(columns) {
-    if (!columns || !columns.length) return -1;
-    const k = "id";
-    for (let i = 0; i < columns.length; i++) {
-      const label = (columns[i].label || columns[i].key || "").toString().trim().toLowerCase();
-      if (label === "id") return i;
-    }
-    return columns.length - 1;
   }
 
   /** Chaves padrão do servidor (RepositorioPlanilha.obterColunasPadrao_). */
@@ -302,21 +215,13 @@ window.ConsultaInit = function() {
         if (!resp || !resp.columns) {
           setConsultaResultadosBlockVisivel(false);
           clearTable();
-          consultaMsgSucessoAposExclusao = "";
           renderMessage("Resposta inválida do servidor.", "danger");
           return;
         }
-        var preservarNotificacaoTopo = false;
-        if (consultaMsgSucessoAposExclusao) {
-          renderMessage(consultaMsgSucessoAposExclusao, "success");
-          consultaMsgSucessoAposExclusao = "";
-          preservarNotificacaoTopo = true;
-        } else {
-          renderMessage("");
-        }
+        renderMessage("");
         totalRecords = resp.total || 0;
         setConsultaResultadosBlockVisivel(totalRecords > 0);
-        renderResults(resp, preservarNotificacaoTopo);
+        renderResults(resp);
         updatePaginationUI(resp);
       })
       .withFailureHandler(function(err) {
@@ -325,7 +230,6 @@ window.ConsultaInit = function() {
         totalRecords = 0;
         setConsultaResultadosBlockVisivel(false);
         clearTable();
-        consultaMsgSucessoAposExclusao = "";
         renderMessage("Erro na pesquisa: " + err, "danger");
       })
       .pesquisarRegistros(lastQuery.filtros, lastQuery.sort, lastQuery.page);
@@ -446,35 +350,22 @@ window.ConsultaInit = function() {
     consultaMostrarTabelaResultados();
   }
 
-  function renderResults(resp, preservarNotificacaoTopo) {
+  function renderResults(resp) {
     const columns = resp.columns || [];
     const rows = resp.rows || [];
     const total = resp.total || 0;
-
-    idColumnIndex = indiceColunaId(columns);
-    selectedRowElement = null;
-    selectedRowId = null;
 
     if (total === 0) {
       document.getElementById("resultsHead").innerHTML = "";
       document.getElementById("resultsBody").innerHTML = "";
       consultaOcultarTabelaResultados();
-      if (!preservarNotificacaoTopo) {
-        renderMessage(MSG_CONSULTA_SEM_RESULTADO_FILTROS, "info");
-      }
-      esconderBotaoEditar();
+      renderMessage(MSG_CONSULTA_SEM_RESULTADO_FILTROS, "info");
       return;
     }
 
     consultaMostrarTabelaResultados();
     renderHeader(columns);
     renderBody(columns, rows);
-
-    if (rows.length >= 1) {
-      mostrarBotaoEditar(false);
-    } else {
-      esconderBotaoEditar();
-    }
   }
 
   function renderHeader(columns) {
@@ -543,14 +434,6 @@ window.ConsultaInit = function() {
         const td = document.createElement("td");
         const v = row[idx];
         preencherCelulaConsulta(td, col, v);
-        td.addEventListener("click", () => {
-          if (selectedRowElement && selectedRowElement !== tr) selectedRowElement.classList.remove("row-selected");
-          selectedRowElement = tr;
-          tr.classList.add("row-selected");
-          selectedRowId = (idColumnIndex >= 0 && row[idColumnIndex] != null) ? String(row[idColumnIndex]) : null;
-          document.getElementById("btnEditar").disabled = !selectedRowId;
-          document.getElementById("btnExcluir").disabled = !selectedRowId;
-        });
         tr.appendChild(td);
       });
       tbody.appendChild(tr);

@@ -1,0 +1,276 @@
+<script>
+window.TurmaEditarInit = function() {
+  var msgEl = document.getElementById("msgTuEd");
+  var root = document.getElementById("turmaEditarRoot");
+  function attrOuPadrao(el, nome, padrao) {
+    if (!el) return padrao;
+    var v = el.getAttribute(nome);
+    v = v != null ? String(v).trim() : "";
+    return v || padrao;
+  }
+  var PLACEHOLDER = attrOuPadrao(root, "data-placeholder-curso-turma", "Selecione");
+
+  var columnsAtual = [];
+  var idColumnIndex = -1;
+  var selectedRowElement = null;
+  var selectedRowId = null;
+
+  function renderMsg(text, kind) {
+    msgEl.innerHTML = "";
+    if (!text) return;
+    var cls = "notification is-light";
+    if (kind === "success") cls = "notification is-success is-light";
+    else if (kind === "danger") cls = "notification is-danger is-light";
+    else if (kind === "info") cls = "notification is-info is-light";
+    else if (kind === "warning") cls = "notification is-warning is-light";
+    var div = document.createElement("div");
+    div.className = cls;
+    div.style.whiteSpace = "pre-line";
+    div.textContent = text;
+    msgEl.appendChild(div);
+    if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+      window.rolarParaVerMensagemNoTopo(msgEl);
+    }
+  }
+
+  function idColumnIndexDaResposta(resp) {
+    if (resp && typeof resp.idColumnIndex === "number" && resp.idColumnIndex >= 0) return resp.idColumnIndex;
+    return -1;
+  }
+
+  function preencherCursos(cursos) {
+    var sel = document.getElementById("teEdCurso");
+    sel.innerHTML = "";
+    sel.appendChild(new Option(PLACEHOLDER, ""));
+    (cursos || []).forEach(function(c) {
+      sel.appendChild(new Option(c, c));
+    });
+  }
+
+  function resetTurmaSelect() {
+    var sel = document.getElementById("teEdTurma");
+    sel.innerHTML = "";
+    sel.appendChild(new Option(PLACEHOLDER, ""));
+    sel.disabled = true;
+  }
+
+  function preencherTurmas(turmas) {
+    var sel = document.getElementById("teEdTurma");
+    sel.innerHTML = "";
+    sel.appendChild(new Option(PLACEHOLDER, ""));
+    (turmas || []).forEach(function(t) {
+      sel.appendChild(new Option(t, t));
+    });
+    sel.disabled = !(turmas && turmas.length);
+  }
+
+  function carregarTurmasParaCurso(curso) {
+    curso = String(curso || "").trim();
+    resetTurmaSelect();
+    if (!curso) return;
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        if (endBusy) endBusy();
+        if (!resp || !resp.success) {
+          renderMsg((resp && resp.message) || "Não foi possível carregar as turmas.", "danger");
+          return;
+        }
+        preencherTurmas(resp.turmas);
+      })
+      .withFailureHandler(function(err) {
+        if (endBusy) endBusy();
+        renderMsg("Erro ao carregar turmas: " + err, "danger");
+      })
+      .obterTurmasPlanilhaPorCurso(curso);
+  }
+
+  function limparSelecaoLinha() {
+    if (selectedRowElement) {
+      selectedRowElement.classList.remove("row-selected");
+      selectedRowElement = null;
+    }
+    selectedRowId = null;
+    document.getElementById("btnTeEdEditar").disabled = true;
+  }
+
+  function renderTable(columns, rows) {
+    var thead = document.getElementById("teEdHead");
+    var tbody = document.getElementById("teEdBody");
+    thead.innerHTML = "";
+    tbody.innerHTML = "";
+    limparSelecaoLinha();
+
+    var trh = document.createElement("tr");
+    (columns || []).forEach(function(col) {
+      var th = document.createElement("th");
+      th.textContent = col.label || col.key;
+      trh.appendChild(th);
+    });
+    thead.appendChild(trh);
+
+    if (!rows || !rows.length) {
+      var trE = document.createElement("tr");
+      var tdE = document.createElement("td");
+      tdE.colSpan = Math.max(1, (columns || []).length);
+      tdE.className = "has-text-centered muted";
+      tdE.style.padding = "18px";
+      tdE.textContent = "Nenhum registro.";
+      trE.appendChild(tdE);
+      tbody.appendChild(trE);
+      return;
+    }
+
+    rows.forEach(function(row) {
+      var idVal =
+        idColumnIndex >= 0 && row[idColumnIndex] != null ? String(row[idColumnIndex]).trim() : "";
+      var tr = document.createElement("tr");
+      tr.style.cursor = "pointer";
+      tr.setAttribute("tabindex", "0");
+      tr.setAttribute("role", "button");
+      function aplicarSelecao() {
+        if (!idVal) return;
+        if (selectedRowElement && selectedRowElement !== tr) selectedRowElement.classList.remove("row-selected");
+        selectedRowElement = tr;
+        tr.classList.add("row-selected");
+        selectedRowId = idVal;
+        document.getElementById("btnTeEdEditar").disabled = false;
+      }
+      tr.addEventListener("click", function(e) {
+        if (e.target.closest("a")) return;
+        aplicarSelecao();
+      });
+      tr.addEventListener("keydown", function(e) {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          aplicarSelecao();
+        }
+      });
+      (row || []).forEach(function(cell) {
+        var td = document.createElement("td");
+        var t = cell === null || cell === undefined ? "" : String(cell);
+        td.textContent = t;
+        td.title = t;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+  }
+
+  function aposPesquisaSucesso(resp) {
+    if (!resp || !resp.success) {
+      renderMsg((resp && resp.message) || "Não foi possível pesquisar.", "danger");
+      document.getElementById("teEdResultsBlock").style.display = "none";
+      return;
+    }
+    columnsAtual = resp.columns || [];
+    idColumnIndex = idColumnIndexDaResposta(resp);
+    var total = resp.total || 0;
+    var rows = resp.rows || [];
+
+    document.getElementById("teEdResultsBlock").style.display = "";
+    document.getElementById("teEdHintLinha").style.display = total > 0 ? "" : "none";
+
+    if (total === 0) {
+      renderMsg("Nenhum resultado encontrado para o curso e turma selecionados.", "info");
+      renderTable(columnsAtual, []);
+      return;
+    }
+
+    renderMsg("");
+    if (total > 1) {
+      renderMsg(
+        "Foram encontrados " +
+          total +
+          " registros para o mesmo curso e turma. Selecione a linha que deseja editar.",
+        "warning"
+      );
+    }
+    renderTable(columnsAtual, rows);
+  }
+
+  function pesquisar() {
+    var curso = String(document.getElementById("teEdCurso").value || "").trim();
+    var turma = String(document.getElementById("teEdTurma").value || "").trim();
+    if (!curso || !turma) {
+      renderMsg("Selecione curso e turma.", "danger");
+      return;
+    }
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        if (endBusy) endBusy();
+        aposPesquisaSucesso(resp);
+      })
+      .withFailureHandler(function(err) {
+        if (endBusy) endBusy();
+        renderMsg("Erro na pesquisa: " + err, "danger");
+        document.getElementById("teEdResultsBlock").style.display = "none";
+      })
+      .pesquisarTurmasParaEditar(curso, turma);
+  }
+
+  function wireEvents() {
+    document.getElementById("teEdCurso").addEventListener("change", function() {
+      carregarTurmasParaCurso(document.getElementById("teEdCurso").value);
+    });
+
+    document.getElementById("btnTeEdLimpar").addEventListener("click", function() {
+      document.getElementById("teEdFormFiltro").reset();
+      resetTurmaSelect();
+      renderMsg("");
+      document.getElementById("teEdResultsBlock").style.display = "none";
+      document.getElementById("teEdHintLinha").style.display = "none";
+      columnsAtual = [];
+      idColumnIndex = -1;
+      document.getElementById("teEdHead").innerHTML = "";
+      document.getElementById("teEdBody").innerHTML = "";
+      limparSelecaoLinha();
+    });
+
+    document.getElementById("teEdFormFiltro").addEventListener("submit", function(e) {
+      e.preventDefault();
+      pesquisar();
+    });
+
+    document.getElementById("btnTeEdEditar").addEventListener("click", function() {
+      if (!selectedRowId) return;
+      if (typeof window.navigate === "function") {
+        window.navigate("cadastro", selectedRowId);
+        return;
+      }
+      google.script.run
+        .withSuccessHandler(function(baseUrl) {
+          var url = baseUrl + "&id=" + encodeURIComponent(selectedRowId);
+          try {
+            window.top.location.href = url;
+          } catch (_) {
+            window.location.href = url;
+          }
+        })
+        .obterUrlWebApp("cadastro");
+    });
+  }
+
+  function carregarOpcoesIniciais() {
+    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        if (endBusy) endBusy();
+        if (!resp || !resp.success) {
+          renderMsg((resp && resp.message) || "Não foi possível carregar cursos.", "danger");
+          return;
+        }
+        preencherCursos(resp.cursos);
+      })
+      .withFailureHandler(function(err) {
+        if (endBusy) endBusy();
+        renderMsg("Erro ao carregar cursos: " + err, "danger");
+      })
+      .obterOpcoesFiltroTurmaEditar();
+  }
+
+  wireEvents();
+  carregarOpcoesIniciais();
+};
+</script>

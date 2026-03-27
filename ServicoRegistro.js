@@ -251,6 +251,37 @@ const RegistroService = (() => {
     };
   }
 
+  /**
+   * Turma >> Editar: filtro obrigatório curso + turma; retorno completo (sem paginação) + índice da coluna ID.
+   */
+  function pesquisarRegistrosTurmaEditarTela_(curso, turma) {
+    const filtros = {
+      curso: String(curso || "").trim(),
+      turma: String(turma || "").trim(),
+      status: "",
+      sala: "",
+      oferta: "",
+      responsavel: "",
+      inicioDe: "",
+      inicioAte: ""
+    };
+    const ordenacao = {
+      keys: [
+        { key: "Inicio", dir: "asc" },
+        { key: "Curso", dir: "asc" },
+        { key: "Turma", dir: "asc" }
+      ]
+    };
+    const { colunas, ordenadas } = obterColunasLinhasFiltradasOrdenadas_(filtros, ordenacao);
+    const idIdx = indiceDaColuna_(colunas, "ID");
+    return {
+      columns: colunas,
+      rows: ordenadas,
+      total: ordenadas.length,
+      idColumnIndex: idIdx
+    };
+  }
+
   function obterLinhasRegistroTurmaPorIdsNaOrdem_(ids) {
     const lista = (ids || []).map((x) => String(x || "").trim()).filter(Boolean);
     if (!lista.length) {
@@ -370,7 +401,15 @@ const RegistroService = (() => {
       id: linhaAtual[IDX_ID] || id
     };
     RegistroRepo.atualizarLinha(indice, dadosParaLinha_(dados, metadados));
-    return "Registro atualizado.";
+    const turma = String(dados.turma || "").trim();
+    const curso = String(dados.curso || "").trim();
+    return (
+      "O cadastro da turma " +
+      citarRotuloMsg_(turma) +
+      " do curso " +
+      citarRotuloMsg_(curso) +
+      " foi atualizado."
+    );
   }
 
   function obterRegistroPorIdServico_(id) {
@@ -388,6 +427,7 @@ const RegistroService = (() => {
     buscarRegistrosComFiltros: buscarRegistrosComFiltros_,
     buscarRegistrosParaExportar: buscarRegistrosParaExportar_,
     buscarRegistrosExcluirTurmaTela: buscarRegistrosExcluirTurmaTela_,
+    pesquisarRegistrosTurmaEditarTela: pesquisarRegistrosTurmaEditarTela_,
     obterLinhasRegistroTurmaPorIdsNaOrdem: obterLinhasRegistroTurmaPorIdsNaOrdem_,
     excluirRegistrosTurmaLote: excluirRegistrosTurmaLote_,
     cadastrarRegistro: cadastrarRegistro_,

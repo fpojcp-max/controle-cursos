@@ -92,6 +92,50 @@ function obterOpcoesFiltroTurmaExcluir() {
 }
 
 /**
+ * Listas para filtros da tela Turma >> Editar (apenas cursos; turmas por curso via obterTurmasPlanilhaPorCurso).
+ * @returns {{ success: boolean, cursos?: string[], message?: string }}
+ */
+function obterOpcoesFiltroTurmaEditar() {
+  try {
+    return { success: true, cursos: RegistroRepo.listarCursosDistintos() };
+  } catch (e) {
+    return {
+      success: false,
+      message: (e && e.message) ? e.message : String(e)
+    };
+  }
+}
+
+/**
+ * Pesquisa turma por curso + turma (edição individual); retorno alinhado ao uso na tela Editar.
+ * @param {string} curso
+ * @param {string} turma
+ * @returns {{ success: boolean, columns?: any[], rows?: any[][], total?: number, idColumnIndex?: number, message?: string }}
+ */
+function pesquisarTurmasParaEditar(curso, turma) {
+  try {
+    const c = String(curso || "").trim();
+    const t = String(turma || "").trim();
+    if (!c || !t) {
+      return { success: false, message: "Selecione curso e turma para pesquisar." };
+    }
+    const r = RegistroService.pesquisarRegistrosTurmaEditarTela(c, t);
+    return {
+      success: true,
+      columns: r.columns,
+      rows: r.rows,
+      total: r.total,
+      idColumnIndex: typeof r.idColumnIndex === "number" ? r.idColumnIndex : -1
+    };
+  } catch (e) {
+    return {
+      success: false,
+      message: (e && e.message) ? e.message : String(e)
+    };
+  }
+}
+
+/**
  * Turmas distintas na planilha para o curso (cadastro de turmas).
  * @param {string} curso
  * @returns {{ success: boolean, turmas?: string[], message?: string }}

@@ -28,6 +28,7 @@
         document.getElementById("msgAgendamento") ||
         document.getElementById("msgAgEx") ||
         document.getElementById("msgAgCo") ||
+        document.getElementById("msgTuEd") ||
         document.getElementById("msg");
       if (anchor && anchor.scrollIntoView) {
         try {
@@ -79,7 +80,7 @@
     menu.querySelectorAll(".app-menu-link").forEach(function(a) { a.classList.remove("is-active"); });
     menu.querySelectorAll(".app-menu-link-spa").forEach(function(a) { a.classList.remove("is-active"); });
     var group = null;
-    if (view === "consulta" || view === "cadastro" || view === "turma-excluir") group = "turma";
+    if (view === "consulta" || view === "cadastro" || view === "turma-editar" || view === "turma-excluir") group = "turma";
     else if (
       view === "agendamento-incluir" ||
       view === "agendamento-consulta" ||
@@ -114,10 +115,27 @@
     id = (id && String(id).trim()) ? String(id).trim() : "";
     mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
     var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
+    var busySafetyTimer = setTimeout(function() {
+      busySafetyTimer = null;
+      if (endBusy) {
+        endBusy();
+        endBusy = null;
+      }
+      showError(
+        "O servidor não respondeu a tempo ao carregar o conteúdo. Isto costuma ser intermitente no Apps Script. Atualize a página (F5) ou tente de novo em instantes."
+      );
+    }, 120000);
     setMenuActive(view, id);
     google.script.run
       .withSuccessHandler(function(data) {
-        if (endBusy) endBusy();
+        if (busySafetyTimer) {
+          clearTimeout(busySafetyTimer);
+          busySafetyTimer = null;
+        }
+        if (endBusy) {
+          endBusy();
+          endBusy = null;
+        }
         try {
           if (!data || typeof data.html === "undefined") {
             mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
@@ -142,13 +160,22 @@
             try { window.AgendamentoExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de agendamentos: " + (err && err.message ? err.message : String(err))); }
           } else if (view === "turma-excluir" && typeof window.TurmaExcluirInit === "function") {
             try { window.TurmaExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de turmas: " + (err && err.message ? err.message : String(err))); }
+          } else if (view === "turma-editar" && typeof window.TurmaEditarInit === "function") {
+            try { window.TurmaEditarInit(); } catch (err) { showError("Erro ao iniciar Edição de turmas: " + (err && err.message ? err.message : String(err))); }
           }
         } catch (err) {
           showError("Erro ao aplicar conteúdo: " + (err && err.message ? err.message : String(err)));
         }
       })
       .withFailureHandler(function(err) {
-        if (endBusy) endBusy();
+        if (busySafetyTimer) {
+          clearTimeout(busySafetyTimer);
+          busySafetyTimer = null;
+        }
+        if (endBusy) {
+          endBusy();
+          endBusy = null;
+        }
         showError("Erro ao carregar: " + String(err));
       })
       .getPageContent(view, id);

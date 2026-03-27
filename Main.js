@@ -67,13 +67,16 @@ function getMenuHtml(view, spa, cadastroId) {
   t.menuConsultaAtiva = v === "consulta" || (v === "cadastro" && idNorm.length > 0);
   t.menuInserirAtivo = v === "cadastro" && idNorm.length === 0;
   t.menuTurmaExcluirAtivo = v === "turma-excluir";
+  t.menuTurmaEditarAtivo = v === "turma-editar";
   t.urlConsulta = spa ? "#" : obterUrlWebApp("consulta");
   t.urlCadastroInserir = spa ? "#" : obterUrlWebApp("cadastro");
   t.urlAgendamentoIncluir = spa ? "#" : obterUrlWebApp("agendamento-incluir");
   t.urlAgendamentoConsulta = spa ? "#" : obterUrlWebApp("agendamento-consulta");
   t.urlAgendamentoExcluir = spa ? "#" : obterUrlWebApp("agendamento-excluir");
   t.urlTurmaExcluir = spa ? "#" : obterUrlWebApp("turma-excluir");
-  t.menuTurmaGrupoAtivo = v === "consulta" || v === "cadastro" || v === "turma-excluir";
+  t.urlTurmaEditar = spa ? "#" : obterUrlWebApp("turma-editar");
+  t.menuTurmaGrupoAtivo =
+    v === "consulta" || v === "cadastro" || v === "turma-editar" || v === "turma-excluir";
   t.menuAgendamentoAtivo =
     v === "agendamento-incluir" || v === "agendamento-consulta" || v === "agendamento-excluir";
   t.spa = spa === true;
@@ -158,6 +161,17 @@ function getPageContent(view, id) {
     return {
       html: t.evaluate().getContent(),
       script: HtmlService.createHtmlOutputFromFile("TurmaExcluirJavaScript").getContent()
+    };
+  }
+  if (view === "turma-editar") {
+    const t = HtmlService.createTemplateFromFile("TurmaEditarFragment");
+    t.id = id;
+    t.spa = true;
+    t.parentItem = "Turma";
+    t.subItem = "Editar";
+    return {
+      html: t.evaluate().getContent(),
+      script: HtmlService.createHtmlOutputFromFile("TurmaEditarJavaScript").getContent()
     };
   }
   return { html: "", script: "" };

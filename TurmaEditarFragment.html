@@ -1,0 +1,52 @@
+<div
+  class="form-content"
+  id="turmaEditarRoot"
+  data-placeholder-curso-turma="Selecione"
+>
+  <div id="msgTuEd" class="mb-3"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+    </div>
+  </div>
+
+  <h2 class="section-title">Filtro</h2>
+  <form id="teEdFormFiltro">
+    <div class="columns is-multiline">
+      <div class="column is-6">
+        <label class="label">Curso</label>
+        <div class="select is-fullwidth">
+          <select id="teEdCurso" required></select>
+        </div>
+      </div>
+      <div class="column is-6">
+        <label class="label">Turma</label>
+        <div class="select is-fullwidth">
+          <select id="teEdTurma" disabled required></select>
+        </div>
+      </div>
+    </div>
+    <div class="consulta-form-actions">
+      <button type="button" class="btn-custom btn-secondary" id="btnTeEdLimpar">Limpar</button>
+      <button type="submit" class="btn-custom" id="btnTeEdPesquisar">Pesquisar</button>
+    </div>
+  </form>
+
+  <div id="teEdResultsBlock" style="display: none;">
+    <div class="resultados-header">
+      <h2 class="section-title">Resultados</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="table is-striped is-hoverable is-fullwidth" id="teEdTable">
+        <thead id="teEdHead"></thead>
+        <tbody id="teEdBody"></tbody>
+      </table>
+    </div>
+    <p id="teEdHintLinha" class="is-size-7 muted mb-2" style="display: none;">
+      Clique na linha do registro que deseja editar.
+    </p>
+    <div class="consulta-form-actions">
+      <button type="button" class="btn-custom" id="btnTeEdEditar" disabled>Editar</button>
+    </div>
+  </div>
+</div>

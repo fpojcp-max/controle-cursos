@@ -15,21 +15,27 @@
   #appBusyBlocking.app-busy-visible {
     display: flex;
   }
-  /* Mesmo visual compacto nos dois modos; só muda máscara + bloqueio de interação. */
+  /* Painel central: contraste forte no modo leve (sem máscara escura), para não “sumir” no fundo claro. */
   #appBusyBlocking .app-busy-panel,
   #appBusyLite .app-busy-panel {
-    background: #fff;
+    background: #e8f2f0;
     border-radius: 10px;
-    box-shadow: 0 10px 32px rgba(0, 0, 0, 0.16);
-    padding: 14px 24px;
-    min-width: 220px;
+    border: 2px solid #2d4a46;
+    box-shadow:
+      0 0 0 1px rgba(255, 255, 255, 0.6) inset,
+      0 12px 36px rgba(0, 0, 0, 0.2);
+    padding: 16px 28px;
+    min-width: 240px;
     max-width: min(90vw, 360px);
+    box-sizing: border-box;
   }
   .app-busy-bar-wrap {
-    height: 9px;
-    border-radius: 5px;
+    height: 14px;
+    border-radius: 7px;
     overflow: hidden;
-    background: #dde8e6;
+    background: #b8cec9;
+    border: 2px solid #2d4a46;
+    box-sizing: border-box;
   }
   .app-busy-bar-indeterminate {
     height: 100%;
