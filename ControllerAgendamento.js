@@ -190,3 +190,37 @@ function excluirAgendamentosLote(payload) {
     };
   }
 }
+
+/**
+ * Dados para o formulário de edição (uma linha da planilha).
+ * @param {string} curso
+ * @param {string} turma
+ * @param {number} sheetRow
+ */
+function obterAgendamentoParaEditar(curso, turma, sheetRow) {
+  try {
+    const data = AgendamentoService.obterAgendamentoParaEditar(curso, turma, sheetRow);
+    return Object.assign({ success: true }, data);
+  } catch (e) {
+    return {
+      success: false,
+      message: e && e.message ? e.message : String(e)
+    };
+  }
+}
+
+/**
+ * Atualiza Calendar + linha da planilha (com rollback do Calendar se a planilha falhar).
+ * @param {{ curso: string, turma: string, turmaId?: string, sheetRow: number, data: string, horaInicio: string, horaFim: string, salaNome?: string, convidadosIncluir?: string, convidadosExcluir?: string }} payload
+ */
+function atualizarAgendamento(payload) {
+  try {
+    AgendamentoService.atualizarAgendamento(payload);
+    return { success: true, message: "Agendamento atualizado com sucesso." };
+  } catch (e) {
+    return {
+      success: false,
+      message: e && e.message ? e.message : String(e)
+    };
+  }
+}

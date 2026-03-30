@@ -382,6 +382,51 @@ const AgendamentoRepo = (() => {
     }
   }
 
+  /**
+   * Uma linha da aba (1-based, linha 1 = cabeçalho).
+   * @param {number} sheetRow1Based
+   * @returns {{ sheetRow: number, cells: string[], eventId: string } | null}
+   */
+  function obterLinhaAgPorSheetRow_(sheetRow1Based) {
+    const r = parseInt(sheetRow1Based, 10);
+    if (isNaN(r) || r < 2) return null;
+    const aba = obterAba_();
+    garantirCabecalho_(aba);
+    const esperado = Configuracoes.CABECALHOS_AGENDAMENTO || [];
+    const numCols = esperado.length;
+    if (numCols < 1) return null;
+    const lastRow = aba.getLastRow();
+    if (r > lastRow) return null;
+    const row = aba.getRange(r, 1, 1, numCols).getValues()[0];
+    const linha = normalizarLinhaAg_(row);
+    while (linha.length < numCols) linha.push("");
+    const eventId = String(linha[COL_AG_.ID_GOOGLE] || "").trim();
+    return {
+      sheetRow: r,
+      cells: linha.slice(0, numCols),
+      eventId: eventId
+    };
+  }
+
+  /**
+   * Sobrescreve colunas da linha (mesma largura que cells).
+   * @param {number} sheetRow1Based
+   * @param {string[]} cells
+   */
+  function atualizarLinhaCompletaAg_(sheetRow1Based, cells) {
+    const r = parseInt(sheetRow1Based, 10);
+    if (isNaN(r) || r < 2) {
+      throw new Error("Linha da planilha inválida.");
+    }
+    if (!cells || !cells.length) {
+      throw new Error("Dados da linha inválidos.");
+    }
+    const aba = obterAba_();
+    garantirCabecalho_(aba);
+    const numCols = cells.length;
+    aba.getRange(r, 1, 1, numCols).setValues([cells]);
+  }
+
   return {
     appendEventosNaPlanilha: appendEventosNaPlanilha_,
     rollbackEventosCalendario: rollbackEventosCalendario_,
@@ -394,6 +439,8 @@ const AgendamentoRepo = (() => {
     listarTodosEventIdsPorIdTurma: listarTodosEventIdsPorIdTurma_,
     excluirLinhasPorNumeros: excluirLinhasPorNumeros_,
     atualizarIdGoogleNaLinha: atualizarIdGoogleNaLinha_,
+    obterLinhaAgPorSheetRow: obterLinhaAgPorSheetRow_,
+    atualizarLinhaCompletaAg: atualizarLinhaCompletaAg_,
     COL_AG: COL_AG_
   };
 })();

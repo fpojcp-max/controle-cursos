@@ -99,13 +99,15 @@
 
       /* Formulário bloqueado após salvar (edição): campos somente leitura, texto mais claro */
       .formulario-bloqueado .input,
-      .formulario-bloqueado .select select {
+      .formulario-bloqueado .select select,
+      .formulario-bloqueado .textarea {
         background-color: #f5f9f8 !important;
         color: #7a8d89 !important;
         cursor: not-allowed;
       }
       .formulario-bloqueado input[readonly],
-      .formulario-bloqueado select:disabled {
+      .formulario-bloqueado select:disabled,
+      .formulario-bloqueado textarea[readonly] {
         pointer-events: none;
       }
       .actions-row {

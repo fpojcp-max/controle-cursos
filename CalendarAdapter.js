@@ -13,7 +13,9 @@ const CalendarAdapter = (() => {
         Calendar.Freebusy &&
         typeof Calendar.Freebusy.query === "function" &&
         Calendar.Events &&
-        typeof Calendar.Events.insert === "function"
+        typeof Calendar.Events.insert === "function" &&
+        typeof Calendar.Events.get === "function" &&
+        typeof Calendar.Events.patch === "function"
       ) {
         return;
       }
@@ -33,7 +35,9 @@ const CalendarAdapter = (() => {
       return (
         typeof Calendar !== "undefined" &&
         Calendar.Events &&
-        typeof Calendar.Events.insert === "function"
+        typeof Calendar.Events.insert === "function" &&
+        typeof Calendar.Events.get === "function" &&
+        typeof Calendar.Events.patch === "function"
       );
     } catch (e) {
       return false;
@@ -57,6 +61,33 @@ const CalendarAdapter = (() => {
     } catch (e) {
       /* rollback: melhor esforço */
     }
+  }
+
+  /**
+   * Evento no calendário primário (organizador).
+   * @param {string} eventId
+   * @returns {Object}
+   */
+  function eventsGetPrimary(eventId) {
+    garantirCalendar_();
+    const id = String(eventId || "").trim();
+    if (!id) throw new Error("ID do evento inválido.");
+    return Calendar.Events.get("primary", id);
+  }
+
+  /**
+   * Atualiza evento no primário (campos parciais). sendUpdates padrão: all.
+   * @param {string} eventId
+   * @param {Object} resource
+   * @param {{ sendUpdates?: string }=} optionalArgs
+   */
+  function eventsPatchPrimary(eventId, resource, optionalArgs) {
+    garantirCalendar_();
+    const id = String(eventId || "").trim();
+    if (!id) throw new Error("ID do evento inválido.");
+    const opts = optionalArgs && typeof optionalArgs === "object" ? Object.assign({}, optionalArgs) : {};
+    if (!opts.sendUpdates) opts.sendUpdates = "all";
+    return Calendar.Events.patch(resource, "primary", id, opts);
   }
 
   /**
@@ -92,6 +123,8 @@ const CalendarAdapter = (() => {
     freeBusyQuery: freeBusyQuery,
     eventsInsertPrimary: eventsInsertPrimary,
     eventsRemovePrimary: eventsRemovePrimary,
-    eventsRemovePrimaryIdempotent: eventsRemovePrimaryIdempotent
+    eventsRemovePrimaryIdempotent: eventsRemovePrimaryIdempotent,
+    eventsGetPrimary: eventsGetPrimary,
+    eventsPatchPrimary: eventsPatchPrimary
   };
 })();

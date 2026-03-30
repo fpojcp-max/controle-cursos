@@ -13,6 +13,9 @@
       return "'" + String(texto != null ? texto : "").trim() + "'";
     }
     var PLACEHOLDER = attrOuPadrao(root, "data-placeholder-curso-turma", "Selecione");
+    var PLACEHOLDER_SALA = attrOuPadrao(root, "data-placeholder-sala", "\u2014 Sem sala \u2014");
+
+    var formEdicaoLocked = false;
 
     var currentPage = 1;
     var totalRecords = 0;
@@ -93,6 +96,108 @@
 
     function updateEditarButton() {
       document.getElementById("btnAgEdEditar").disabled = selectedSheetRow == null;
+    }
+
+    function normalizarHoraParaTimeInput(h) {
+      h = String(h != null ? h : "").trim();
+      var m = /^(\d{1,2}):(\d{2})$/.exec(h);
+      if (!m) return h;
+      var hh = ("0" + parseInt(m[1], 10)).slice(-2);
+      return hh + ":" + m[2];
+    }
+
+    function ymdMaiorOuIgual(a, b) {
+      return String(a || "") >= String(b || "");
+    }
+
+    function preencherSelectSalasEdicao(salas) {
+      var sel = document.getElementById("agEdFormSala");
+      if (!sel) return;
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER_SALA, ""));
+      (salas || []).forEach(function(s) {
+        var opt = document.createElement("option");
+        opt.value = s.nome;
+        opt.textContent = s.nome + (s.configurada ? "" : " (sem ID — verifique o catálogo de recursos)");
+        sel.appendChild(opt);
+      });
+      var help = document.getElementById("agEdFormSalaHelp");
+      if (help) help.textContent = "";
+    }
+
+    function aplicarLimitesDataEdicao(hojeYmd, vigIni, vigFim) {
+      var inp = document.getElementById("agEdFormData");
+      if (!inp || !hojeYmd || !vigIni || !vigFim) return;
+      var min = ymdMaiorOuIgual(hojeYmd, vigIni) ? hojeYmd : vigIni;
+      inp.setAttribute("min", min);
+      inp.setAttribute("max", vigFim);
+    }
+
+    function setFormEdicaoLocked(lock) {
+      formEdicaoLocked = !!lock;
+      ["agEdFormData", "agEdFormHoraIni", "agEdFormHoraFim", "agEdFormSala", "agEdFormConvIncluir", "agEdFormConvExcluir"].forEach(
+        function(id) {
+          var el = document.getElementById(id);
+          if (el) el.disabled = formEdicaoLocked;
+        }
+      );
+      var btn = document.getElementById("btnAgEdSalvar");
+      if (btn) btn.disabled = formEdicaoLocked;
+      updateEditarButton();
+    }
+
+    function preencherCursoTurmaFormEdicaoBloqueados(curso, turma) {
+      var selC = document.getElementById("agEdFormCurso");
+      var selT = document.getElementById("agEdFormTurma");
+      if (!selC || !selT) return;
+      selC.innerHTML = "";
+      selT.innerHTML = "";
+      var c = String(curso != null ? curso : "").trim();
+      var t = String(turma != null ? turma : "").trim();
+      selC.appendChild(new Option(c || PLACEHOLDER, c));
+      selT.appendChild(new Option(t || PLACEHOLDER, t));
+      selC.selectedIndex = 0;
+      selT.selectedIndex = 0;
+    }
+
+    function mostrarPassoFormulario(resp) {
+      document.getElementById("agEdStepBusca").style.display = "none";
+      document.getElementById("agEdStepForm").style.display = "";
+      document.getElementById("agEdFormEventId").value = resp.eventId || "";
+      document.getElementById("agEdFormSheetRow").value = String(resp.sheetRow != null ? resp.sheetRow : "");
+      document.getElementById("agEdFormTurmaId").value = resp.idTurma || "";
+      preencherCursoTurmaFormEdicaoBloqueados(resp.curso, resp.turma);
+      document.getElementById("agEdFormData").value = resp.data || "";
+      document.getElementById("agEdFormHoraIni").value = normalizarHoraParaTimeInput(resp.horaInicio);
+      document.getElementById("agEdFormHoraFim").value = normalizarHoraParaTimeInput(resp.horaFim);
+      preencherSelectSalasEdicao(resp.salas);
+      var salaSel = document.getElementById("agEdFormSala");
+      var sn = String(resp.salaNome || "").trim();
+      if (salaSel && sn) {
+        var found = false;
+        for (var i = 0; i < salaSel.options.length; i++) {
+          if (salaSel.options[i].value === sn) {
+            salaSel.selectedIndex = i;
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          var o = document.createElement("option");
+          o.value = sn;
+          o.textContent = sn + " (não listada no catálogo)";
+          salaSel.appendChild(o);
+          salaSel.value = sn;
+        }
+      } else if (salaSel) {
+        salaSel.selectedIndex = 0;
+      }
+      document.getElementById("agEdFormConvAtuais").value = resp.convidadosAtuais || "";
+      document.getElementById("agEdFormConvIncluir").value = "";
+      document.getElementById("agEdFormConvExcluir").value = "";
+      aplicarLimitesDataEdicao(resp.hojeYmd, resp.vigenciaInicioYmd, resp.vigenciaFimYmd);
+      setFormEdicaoLocked(false);
+      renderMsg("");
     }
 
     function clearSelectionVisual() {
@@ -315,6 +420,11 @@
       document.getElementById("agEdPaginationBar").style.display = "none";
       var hintL = document.getElementById("agEdHintLinha");
       if (hintL) hintL.style.display = "none";
+      var stepForm = document.getElementById("agEdStepForm");
+      var stepBusca = document.getElementById("agEdStepBusca");
+      if (stepForm) stepForm.style.display = "none";
+      if (stepBusca) stepBusca.style.display = "";
+      setFormEdicaoLocked(false);
       updateEditarButton();
     }
 
@@ -348,6 +458,83 @@
 
     document.getElementById("btnAgEdEditar").addEventListener("click", function() {
       if (selectedSheetRow == null) return;
+      var curso = String(document.getElementById("agEdCurso").value || "").trim();
+      var turma = String(document.getElementById("agEdTurma").value || "").trim();
+      if (!curso || !turma) {
+        renderMsg("Selecione curso e turma.", "danger");
+        return;
+      }
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Não foi possível carregar o agendamento.", "danger");
+            return;
+          }
+          mostrarPassoFormulario(resp);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          renderMsg("Erro: " + err, "danger");
+        })
+        .obterAgendamentoParaEditar(curso, turma, selectedSheetRow);
+    });
+
+    document.getElementById("btnAgEdSalvar").addEventListener("click", function() {
+      if (formEdicaoLocked) return;
+      var curso = String(lastCurso || "").trim();
+      var turma = String(lastTurma || "").trim();
+      if (!curso || !turma) {
+        curso = String(document.getElementById("agEdCurso").value || "").trim();
+        turma = String(document.getElementById("agEdTurma").value || "").trim();
+      }
+      var payload = {
+        curso: curso,
+        turma: turma,
+        turmaId: String(document.getElementById("agEdFormTurmaId").value || "").trim(),
+        sheetRow: parseInt(document.getElementById("agEdFormSheetRow").value, 10),
+        data: String(document.getElementById("agEdFormData").value || "").trim(),
+        horaInicio: String(document.getElementById("agEdFormHoraIni").value || "").trim(),
+        horaFim: String(document.getElementById("agEdFormHoraFim").value || "").trim(),
+        salaNome: String(document.getElementById("agEdFormSala").value || "").trim(),
+        convidadosIncluir: document.getElementById("agEdFormConvIncluir").value,
+        convidadosExcluir: document.getElementById("agEdFormConvExcluir").value
+      };
+      if (!payload.data || !payload.horaInicio || !payload.horaFim) {
+        renderMsg("Preencha data, hora início e hora fim.", "danger");
+        return;
+      }
+      if (isNaN(payload.sheetRow) || payload.sheetRow < 2) {
+        renderMsg("Dados da linha inválidos. Volte à pesquisa e selecione novamente.", "danger");
+        return;
+      }
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Não foi possível salvar.", "danger");
+            return;
+          }
+          renderMsg(resp.message || "Agendamento atualizado com sucesso.", "success");
+          document.getElementById("agEdFormConvIncluir").value = "";
+          document.getElementById("agEdFormConvExcluir").value = "";
+          setFormEdicaoLocked(true);
+          google.script.run
+            .withSuccessHandler(function(r2) {
+              if (r2 && r2.success && r2.convidadosAtuais != null) {
+                document.getElementById("agEdFormConvAtuais").value = r2.convidadosAtuais;
+              }
+            })
+            .withFailureHandler(function() {})
+            .obterAgendamentoParaEditar(payload.curso, payload.turma, payload.sheetRow);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          renderMsg("Erro: " + err, "danger");
+        })
+        .atualizarAgendamento(payload);
     });
 
     var endInit = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;

@@ -256,6 +256,33 @@ const RegistroService = (() => {
     }
   }
 
+  const MSG_AGENDAMENTOS_FORA_VIGENCIA_TURMA_ =
+    "A turma possui agendamentos fora do período de vigência desejado. Antes de alterar a vigência da turma, garanta que todos os seus agendamentos estejam dentro desse período.";
+
+  /**
+   * Impede estreitar (ou deslocar) a vigência da turma se existir agendamento com data fora de [inicioYmd, fimYmd].
+   * @param {string} idTurma - UUID da linha da turma (coluna ID / ID_REGISTRO_TURMA nos agendamentos).
+   * @param {string} inicioYmd
+   * @param {string} fimYmd
+   */
+  function validarAgendamentosDentroNovaVigenciaTurma_(idTurma, inicioYmd, fimYmd) {
+    const idNorm = String(idTurma || "").trim();
+    if (!idNorm) return;
+    const linhas = AgendamentoRepo.listarLinhasAgendamentoPorIdTurmaCompleto(idNorm);
+    if (!linhas || !linhas.length) return;
+    const C = AgendamentoRepo.COL_AG;
+    for (let i = 0; i < linhas.length; i++) {
+      const cells = linhas[i].cells || [];
+      const dataStr = String(cells[C.DATA] != null ? cells[C.DATA] : "").trim();
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(dataStr)) {
+        throw new Error(MSG_AGENDAMENTOS_FORA_VIGENCIA_TURMA_);
+      }
+      if (dataStr < inicioYmd || dataStr > fimYmd) {
+        throw new Error(MSG_AGENDAMENTOS_FORA_VIGENCIA_TURMA_);
+      }
+    }
+  }
+
   function obterColunasLinhasFiltradasOrdenadas_(filtros, ordenacao) {
     const { valores, temCabecalho } = RegistroRepo.lerDadosPlanilha();
     if (!valores.length) {
@@ -449,6 +476,7 @@ const RegistroService = (() => {
     validarMinimo_(dados);
     const ymdsEd = extrairDatasTurmaNormalizadas_(dados);
     validarCoerenciaDatasTurma_(ymdsEd.inicioYmd, ymdsEd.fimYmd, ymdsEd.fimInscYmd);
+    validarDatasTurmaCadastroSemPassado_(ymdsEd.inicioYmd, ymdsEd.fimYmd, ymdsEd.fimInscYmd);
     if (RegistroRepo.existeTurmaParaCurso(dados.curso, dados.turma, id))
       throw new Error(
         "Já existe a turma " + citarRotuloMsg_(dados.turma) + " para o curso " + citarRotuloMsg_(dados.curso) + "."
@@ -456,6 +484,13 @@ const RegistroService = (() => {
     const indice = RegistroRepo.buscarIndiceLinhaPorId(id);
     if (indice === -1) throw new Error("Registro não encontrado para atualização.");
     const linhaAtual = RegistroRepo.obterLinhaPorIndice(indice);
+    const ymdsVelho = extrairDatasTurmaNormalizadas_(linhaParaDados_(linhaAtual));
+    const vigenciaMudou =
+      ymdsVelho.inicioYmd !== ymdsEd.inicioYmd || ymdsVelho.fimYmd !== ymdsEd.fimYmd;
+    if (vigenciaMudou) {
+      const idTurma = String(linhaAtual[IDX_ID] != null ? linhaAtual[IDX_ID] : "").trim();
+      validarAgendamentosDentroNovaVigenciaTurma_(idTurma, ymdsEd.inicioYmd, ymdsEd.fimYmd);
+    }
     const metadados = {
       dataCadastro: linhaAtual[IDX_DATA_CADASTRO] || null,
       emailUsuario: linhaAtual[IDX_EMAIL_USUARIO] || null,

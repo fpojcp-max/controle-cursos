@@ -2,6 +2,7 @@
   class="form-content"
   id="agendamentoEditarRoot"
   data-placeholder-curso-turma="Selecione"
+  data-placeholder-sala="— Sem sala —"
 >
   <div id="msgAgEd" class="mb-3"></div>
   <div class="actions-row">
@@ -10,51 +11,124 @@
     </div>
   </div>
 
-  <h2 class="section-title">Filtro</h2>
-  <form id="agEdFormFiltro">
-    <div class="columns is-multiline">
-      <div class="column is-6">
-        <label class="label">Curso</label>
-        <div class="select is-fullwidth">
-          <select id="agEdCurso" required></select>
+  <div id="agEdStepBusca">
+    <h2 class="section-title">Filtro</h2>
+    <form id="agEdFormFiltro">
+      <div class="columns is-multiline">
+        <div class="column is-6">
+          <label class="label">Curso</label>
+          <div class="select is-fullwidth">
+            <select id="agEdCurso" required></select>
+          </div>
+        </div>
+        <div class="column is-6">
+          <label class="label">Turma</label>
+          <div class="select is-fullwidth">
+            <select id="agEdTurma" disabled required></select>
+          </div>
         </div>
       </div>
-      <div class="column is-6">
-        <label class="label">Turma</label>
-        <div class="select is-fullwidth">
-          <select id="agEdTurma" disabled required></select>
-        </div>
+      <div class="consulta-form-actions">
+        <button type="button" class="btn-custom btn-secondary" id="btnAgEdLimparTudo">Limpar filtro</button>
+        <button type="submit" class="btn-custom" id="btnAgEdPesquisar">Pesquisar</button>
       </div>
-    </div>
-    <div class="consulta-form-actions">
-      <button type="button" class="btn-custom btn-secondary" id="btnAgEdLimparTudo">Limpar filtro</button>
-      <button type="submit" class="btn-custom" id="btnAgEdPesquisar">Pesquisar</button>
-    </div>
-  </form>
+    </form>
 
-  <div id="agEdResultsBlock" style="display: none;">
-    <div class="resultados-header">
-      <h2 class="section-title">Resultados</h2>
-    </div>
-    <div class="table-wrap">
-      <table class="table is-striped is-hoverable is-fullwidth ag-ed-tabela" id="agEdTable">
-        <thead id="agEdHead"></thead>
-        <tbody id="agEdBody"></tbody>
-      </table>
-    </div>
-    <div id="agEdPaginationBar" class="pagination-bar" style="display: none;">
-      <span class="pagination-info muted is-size-7" id="agEdMeta"></span>
-      <div class="pagination-controls">
-        <button type="button" id="btnAgEdAnt">Anterior</button>
-        <span class="pagination-info muted is-size-7" id="agEdPagLabel"></span>
-        <button type="button" id="btnAgEdProx">Próxima</button>
+    <div id="agEdResultsBlock" style="display: none;">
+      <div class="resultados-header">
+        <h2 class="section-title">Resultados</h2>
+      </div>
+      <div class="table-wrap">
+        <table class="table is-striped is-hoverable is-fullwidth ag-ed-tabela" id="agEdTable">
+          <thead id="agEdHead"></thead>
+          <tbody id="agEdBody"></tbody>
+        </table>
+      </div>
+      <div id="agEdPaginationBar" class="pagination-bar" style="display: none;">
+        <span class="pagination-info muted is-size-7" id="agEdMeta"></span>
+        <div class="pagination-controls">
+          <button type="button" id="btnAgEdAnt">Anterior</button>
+          <span class="pagination-info muted is-size-7" id="agEdPagLabel"></span>
+          <button type="button" id="btnAgEdProx">Próxima</button>
+        </div>
+      </div>
+      <p id="agEdHintLinha" class="is-size-7 muted mb-2 mt-5" style="display: none;">
+        Selecione o agendamento que deseja editar.
+      </p>
+      <div class="ag-excluir-actions">
+        <button type="button" class="btn-custom" id="btnAgEdEditar" disabled>Editar</button>
       </div>
     </div>
-    <p id="agEdHintLinha" class="is-size-7 muted mb-2 mt-5" style="display: none;">
-      Selecione o agendamento que deseja editar.
-    </p>
-    <div class="ag-excluir-actions">
-      <button type="button" class="btn-custom" id="btnAgEdEditar" disabled>Editar</button>
+  </div>
+
+  <div id="agEdStepForm" style="display: none;">
+    <input type="hidden" id="agEdFormEventId" />
+    <input type="hidden" id="agEdFormSheetRow" />
+    <input type="hidden" id="agEdFormTurmaId" />
+
+    <div id="agEdFormTurmaSection" class="formulario-bloqueado">
+      <h2 class="section-title">Turma</h2>
+      <div class="columns is-multiline">
+        <div class="column is-6">
+          <label class="label">Curso</label>
+          <div class="select is-fullwidth">
+            <select id="agEdFormCurso" disabled></select>
+          </div>
+        </div>
+        <div class="column is-6">
+          <label class="label">Turma</label>
+          <div class="select is-fullwidth">
+            <select id="agEdFormTurma" disabled></select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="section-title">Data e horários</h2>
+    <div class="columns is-multiline">
+      <div class="column is-4">
+        <label class="label">Data</label>
+        <input class="input" type="date" id="agEdFormData" />
+      </div>
+    </div>
+    <div class="columns is-multiline">
+      <div class="column is-3">
+        <label class="label">Hora início</label>
+        <input class="input" type="time" id="agEdFormHoraIni" step="60" />
+      </div>
+      <div class="column is-3">
+        <label class="label">Hora fim</label>
+        <input class="input" type="time" id="agEdFormHoraFim" step="60" />
+      </div>
+      <div class="column is-6">
+        <label class="label">Sala (opcional)</label>
+        <div class="select is-fullwidth">
+          <select id="agEdFormSala"></select>
+        </div>
+        <p class="help" id="agEdFormSalaHelp"></p>
+      </div>
+    </div>
+
+    <h2 class="section-title">Convidados</h2>
+    <div id="agEdFormConvAtuaisWrap" class="formulario-bloqueado">
+      <div class="field">
+        <label class="label">Convidados atuais</label>
+        <textarea class="textarea" id="agEdFormConvAtuais" rows="3" readonly></textarea>
+      </div>
+    </div>
+    <div class="field mt-4">
+      <label class="label">Convidados a incluir</label>
+      <textarea class="textarea" id="agEdFormConvIncluir" rows="2" placeholder="opcional"></textarea>
+      <p class="help is-size-7 muted">Separar e-mails por vírgula ou ponto e vírgula</p>
+    </div>
+    <div class="field">
+      <label class="label">Convidados a excluir</label>
+      <textarea class="textarea" id="agEdFormConvExcluir" rows="2" placeholder="opcional"></textarea>
+      <p class="help is-size-7 muted">Separar e-mails por vírgula ou ponto e vírgula</p>
+    </div>
+
+    <div class="ag-agendar-row">
+      <button type="button" class="btn-custom" id="btnAgEdSalvar">Salvar</button>
     </div>
   </div>
 </div>

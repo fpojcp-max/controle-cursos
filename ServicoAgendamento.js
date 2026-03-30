@@ -939,6 +939,9 @@ const AgendamentoService = (() => {
   const MSG_EXCLUSAO_AGENDAMENTOS_LOTE_FALHOU =
     "Não foi possível concluir a exclusão. Tente novamente mais tarde.";
 
+  const MSG_EDITAR_AGENDAMENTO_FALHOU =
+    "Não foi possível editar o agendamento. Tente novamente mais tarde.";
+
   function uniqueEventIdsOrderedParaExclusaoTurma_(linhas) {
     const seen = {};
     const out = [];
@@ -1182,6 +1185,358 @@ const AgendamentoService = (() => {
     };
   }
 
+  /** E-mails válidos, dedupe; não aplica limite global (usa-se na edição antes da lista final). */
+  function parseListaEmailsTextoSemLimite_(texto) {
+    const raw = String(texto || "")
+      .split(/[;,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const seen = {};
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+      if (!EMAIL_REGEX.test(raw[i])) {
+        throw new Error("E-mail inválido: " + raw[i]);
+      }
+      const e = raw[i].toLowerCase();
+      if (seen[e]) continue;
+      seen[e] = true;
+      out.push(raw[i]);
+    }
+    return out;
+  }
+
+  function parseEmailsOrdemPlanilhaAtuais_(texto) {
+    const raw = String(texto || "")
+      .split(/[;,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const seen = {};
+    const out = [];
+    for (let i = 0; i < raw.length; i++) {
+      if (!EMAIL_REGEX.test(raw[i])) continue;
+      const e = raw[i].toLowerCase();
+      if (seen[e]) continue;
+      seen[e] = true;
+      out.push(raw[i]);
+    }
+    return out;
+  }
+
+  function validarNovaDataEdicaoAgendamento_(ymd, curso, turma) {
+    const hoje = dataCivilHojeYmd_();
+    if (ymd < hoje) {
+      throw new Error("Datas passadas não são permitidas");
+    }
+    const dt = parseYmd_(ymd);
+    const dow = dt.getDay();
+    if (dow === 0 || dow === 6) {
+      throw new Error("Não são permitidos agendamentos para sábados e domingos.");
+    }
+    const vig = obterVigenciaTurmaOuErro_(curso, turma);
+    if (ymd < vig.inicioYmd || ymd > vig.fimYmd) {
+      throw new Error("A nova data de agendamento está fora do período de vigência da turma");
+    }
+  }
+
+  function validarConflitoIncluirExcluirEdicao_(incluir, excluir) {
+    const exSet = {};
+    for (let i = 0; i < excluir.length; i++) {
+      exSet[excluir[i].toLowerCase()] = true;
+    }
+    for (let j = 0; j < incluir.length; j++) {
+      if (exSet[incluir[j].toLowerCase()]) {
+        throw new Error(
+          "Verifique se " +
+            citarRotuloMsg_(incluir[j]) +
+            " deverá de convidado ou excluído. Impossível satisfazer as duas condições."
+        );
+      }
+    }
+  }
+
+  function validarExclusoesSobreAtuaisEdicao_(excluir, atuaisLowerSet) {
+    for (let i = 0; i < excluir.length; i++) {
+      const e = excluir[i];
+      if (!atuaisLowerSet[e.toLowerCase()]) {
+        throw new Error(
+          citarRotuloMsg_(e) + " não pode ser excluído(a) do evento, pois não está convidado(a)"
+        );
+      }
+    }
+  }
+
+  function montarListaConvidadosPosEdicao_(atuais, excluir, incluir) {
+    const exSet = {};
+    for (let i = 0; i < excluir.length; i++) {
+      exSet[excluir[i].toLowerCase()] = true;
+    }
+    const rest = atuais.filter((e) => !exSet[e.toLowerCase()]);
+    const seen = {};
+    for (let r = 0; r < rest.length; r++) {
+      seen[rest[r].toLowerCase()] = true;
+    }
+    for (let j = 0; j < incluir.length; j++) {
+      const em = incluir[j];
+      const el = em.toLowerCase();
+      if (!seen[el]) {
+        rest.push(em);
+        seen[el] = true;
+      }
+    }
+    const lim = limiteConvidados_();
+    if (rest.length > lim) {
+      throw new Error("Máximo de " + lim + " convidados.");
+    }
+    return rest;
+  }
+
+  function resourceRevertCalendarDesdeSnapshot_(snap) {
+    const out = {};
+    if (snap.start) out.start = snap.start;
+    if (snap.end) out.end = snap.end;
+    if (snap.attendees !== undefined) out.attendees = snap.attendees;
+    if (snap.summary !== undefined) out.summary = snap.summary;
+    return out;
+  }
+
+  function obterAgendamentoParaEditar_(curso, turma, sheetRow) {
+    const c = String(curso || "").trim();
+    const t = String(turma || "").trim();
+    const r = parseInt(sheetRow, 10);
+    if (!c || !t) {
+      throw new Error("Selecione curso e turma.");
+    }
+    if (isNaN(r) || r < 2) {
+      throw new Error("Linha do agendamento inválida.");
+    }
+    const idTurma = RegistroRepo.buscarIdPorCursoTurma(c, t);
+    if (!idTurma) {
+      throw new Error(
+        "Não existe registro na planilha de turmas para o curso " +
+          citarRotuloMsg_(c) +
+          " e a turma " +
+          citarRotuloMsg_(t) +
+          "."
+      );
+    }
+    const linha = AgendamentoRepo.obterLinhaAgPorSheetRow(r);
+    if (!linha) {
+      throw new Error("Agendamento não encontrado na planilha.");
+    }
+    const cells = linha.cells;
+    const C = AgendamentoRepo.COL_AG;
+    if (String(cells[C.CURSO] || "").trim() !== c) {
+      throw new Error("O agendamento selecionado não pertence ao curso informado.");
+    }
+    if (String(cells[C.TURMA] || "").trim() !== t) {
+      throw new Error("O agendamento selecionado não pertence à turma informada.");
+    }
+    if (String(cells[C.ID_REGISTRO_TURMA] || "").trim() !== idTurma) {
+      throw new Error(
+        "Dados da turma não conferem com o registro selecionado. Recarregue a tela e tente novamente."
+      );
+    }
+    const eventId = String(linha.eventId || "").trim();
+    if (!eventId) {
+      throw new Error("Agendamento sem ID do Google Calendar na planilha.");
+    }
+    const vig = obterVigenciaTurmaOuErro_(c, t);
+    const dadosIncluir = obterDadosIncluir_();
+    return {
+      curso: c,
+      turma: t,
+      idTurma: idTurma,
+      sheetRow: r,
+      eventId: eventId,
+      tituloEvento: montarTitulo_(t, c),
+      data: String(cells[C.DATA] || "").trim(),
+      horaInicio: String(cells[C.HORA_INI] || "").trim(),
+      horaFim: String(cells[C.HORA_FIM] || "").trim(),
+      salaNome: String(cells[C.NOME_SALA] || "").trim(),
+      convidadosAtuais: String(cells[C.CONVIDADOS] || "").trim(),
+      salas: dadosIncluir.salas,
+      hojeYmd: dadosIncluir.hojeYmd,
+      vigenciaInicioYmd: vig.inicioYmd,
+      vigenciaFimYmd: vig.fimYmd,
+      timezone: dadosIncluir.timezone
+    };
+  }
+
+  function atualizarAgendamento_(payload) {
+    if (!payload || typeof payload !== "object") {
+      throw new Error("Dados inválidos.");
+    }
+    const curso = String(payload.curso || "").trim();
+    const turma = String(payload.turma || "").trim();
+    const turmaIdCliente = String(payload.turmaId || "").trim();
+    const sheetRow = parseInt(payload.sheetRow, 10);
+    if (!curso || !turma) {
+      throw new Error("Selecione curso e turma.");
+    }
+    if (isNaN(sheetRow) || sheetRow < 2) {
+      throw new Error("Linha do agendamento inválida.");
+    }
+    const idTurma = RegistroRepo.buscarIdPorCursoTurma(curso, turma);
+    if (!idTurma) {
+      throw new Error(
+        "Não existe registro na planilha de turmas para o curso " +
+          citarRotuloMsg_(curso) +
+          " e a turma " +
+          citarRotuloMsg_(turma) +
+          "."
+      );
+    }
+    if (turmaIdCliente && turmaIdCliente !== idTurma) {
+      throw new Error(
+        "Dados da turma não conferem com o registro selecionado. Recarregue a tela e tente novamente."
+      );
+    }
+    const linha = AgendamentoRepo.obterLinhaAgPorSheetRow(sheetRow);
+    if (!linha) {
+      throw new Error("Agendamento não encontrado na planilha.");
+    }
+    const cells = linha.cells;
+    const C = AgendamentoRepo.COL_AG;
+    if (String(cells[C.CURSO] || "").trim() !== curso) {
+      throw new Error("O agendamento selecionado não pertence ao curso informado.");
+    }
+    if (String(cells[C.TURMA] || "").trim() !== turma) {
+      throw new Error("O agendamento selecionado não pertence à turma informada.");
+    }
+    if (String(cells[C.ID_REGISTRO_TURMA] || "").trim() !== idTurma) {
+      throw new Error(
+        "Dados da turma não conferem com o registro selecionado. Recarregue a tela e tente novamente."
+      );
+    }
+    const eventId = String(linha.eventId || "").trim();
+    if (!eventId) {
+      throw new Error("Agendamento sem ID do Google Calendar na planilha.");
+    }
+
+    const dataYmd = String(payload.data || "").trim();
+    parseYmd_(dataYmd);
+    const horaInicio = validarHora_(payload.horaInicio, "Hora início");
+    const horaFim = validarHora_(payload.horaFim, "Hora fim");
+    const tIni = horaInicio.split(":");
+    const tFim = horaFim.split(":");
+    const minIni = parseInt(tIni[0], 10) * 60 + parseInt(tIni[1], 10);
+    const minFim = parseInt(tFim[0], 10) * 60 + parseInt(tFim[1], 10);
+    if (minFim <= minIni) {
+      throw new Error("Hora fim deve ser posterior à hora início.");
+    }
+
+    validarNovaDataEdicaoAgendamento_(dataYmd, curso, turma);
+
+    const incluir = parseListaEmailsTextoSemLimite_(payload.convidadosIncluir || "");
+    const excluir = parseListaEmailsTextoSemLimite_(payload.convidadosExcluir || "");
+
+    const atuais = parseEmailsOrdemPlanilhaAtuais_(cells[C.CONVIDADOS]);
+    const atuaisLowerSet = {};
+    for (let a = 0; a < atuais.length; a++) {
+      atuaisLowerSet[atuais[a].toLowerCase()] = true;
+    }
+
+    validarConflitoIncluirExcluirEdicao_(incluir, excluir);
+    validarExclusoesSobreAtuaisEdicao_(excluir, atuaisLowerSet);
+
+    const emailsFinais = montarListaConvidadosPosEdicao_(atuais, excluir, incluir);
+
+    const salaNome = String(payload.salaNome || "").trim();
+    const mapa = mapaIdentificadorCalendarioPorRotulo_();
+    let salaId = "";
+    if (salaNome) {
+      if (!Object.prototype.hasOwnProperty.call(mapa, salaNome)) {
+        throw new Error("Sala não reconhecida: " + salaNome);
+      }
+      salaId = mapa[salaNome];
+      if (!salaId) {
+        throw new Error(
+          'Sala "' +
+            salaNome +
+            '" sem identificador de calendário no catálogo (Configuracoes.CATALOGO_RECURSOS_SALA).'
+        );
+      }
+    }
+
+    const oldData = String(cells[C.DATA] || "").trim();
+    const oldHi = String(cells[C.HORA_INI] || "").trim();
+    const oldHf = String(cells[C.HORA_FIM] || "").trim();
+    const oldSalaNome = String(cells[C.NOME_SALA] || "").trim();
+    const oldSalaId = String(cells[C.ID_SALA] || "").trim();
+    const slotIgual =
+      dataYmd === oldData &&
+      horaInicio === oldHi &&
+      horaFim === oldHf &&
+      salaNome === oldSalaNome &&
+      (salaId || "") === (oldSalaId || "");
+
+    const periodos = [
+      {
+        startMs: parseDataHoraLocalMsLivre_(dataYmd, horaInicio),
+        endMs: parseDataHoraLocalMsLivre_(dataYmd, horaFim)
+      }
+    ];
+
+    if (salaId && !slotIgual) {
+      try {
+        checarSalaLivrePeriodos_(salaId, periodos);
+      } catch (_) {
+        throw new Error(
+          "A " + citarRotuloMsg_(salaNome) + " está ocupada. Tente outra sala ou outro horário"
+        );
+      }
+    }
+
+    const startIso = isoLocalSemValidar_(dataYmd, horaInicio);
+    const endIso = isoLocalSemValidar_(dataYmd, horaFim);
+    const attendees = [];
+    for (let g = 0; g < emailsFinais.length; g++) {
+      attendees.push({ email: emailsFinais[g] });
+    }
+    if (salaId) {
+      attendees.push({ email: salaId, resource: true });
+    }
+    const patchBody = {
+      start: { dateTime: startIso, timeZone: tz_() },
+      end: { dateTime: endIso, timeZone: tz_() },
+      attendees: attendees
+    };
+
+    let snapshot = null;
+    try {
+      snapshot = CalendarAdapter.eventsGetPrimary(eventId);
+    } catch (e) {
+      throw new Error(MSG_EDITAR_AGENDAMENTO_FALHOU);
+    }
+
+    try {
+      CalendarAdapter.eventsPatchPrimary(eventId, patchBody);
+    } catch (e) {
+      throw new Error(MSG_EDITAR_AGENDAMENTO_FALHOU);
+    }
+
+    const convidadosPlanilha = emailsFinais.length ? emailsFinais.join("; ") : "";
+    const newRow = cells.slice();
+    newRow[C.DATA] = dataYmd;
+    newRow[C.NOME_SALA] = salaNome || "";
+    newRow[C.HORA_INI] = horaInicio;
+    newRow[C.HORA_FIM] = horaFim;
+    newRow[C.CONVIDADOS] = convidadosPlanilha;
+    newRow[C.ID_SALA] = salaId || "";
+
+    try {
+      AgendamentoRepo.atualizarLinhaCompletaAg(sheetRow, newRow);
+    } catch (sheetErr) {
+      try {
+        CalendarAdapter.eventsPatchPrimary(
+          eventId,
+          resourceRevertCalendarDesdeSnapshot_(snapshot)
+        );
+      } catch (_) {}
+      throw new Error(MSG_EDITAR_AGENDAMENTO_FALHOU);
+    }
+  }
+
   return {
     criarEventos: criarEventos_,
     obterDadosIncluir: obterDadosIncluir_,
@@ -1191,7 +1546,9 @@ const AgendamentoService = (() => {
     obterAgendamentosConsultaParaExportar: obterAgendamentosConsultaParaExportar_,
     obterTodosEventIdsExcluir: obterTodosEventIdsExcluir_,
     excluirAgendamentosLote: excluirAgendamentosLote_,
-    excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro: excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro_
+    excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro: excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro_,
+    obterAgendamentoParaEditar: obterAgendamentoParaEditar_,
+    atualizarAgendamento: atualizarAgendamento_
   };
 })();
 
