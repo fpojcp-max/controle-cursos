@@ -7,7 +7,7 @@
  */
 
 const RegistroRepo = (() => {
-  const HEADER_HINT_REGEX = /(curso|turma|status|respons[aá]vel|oferta|sala)/i;
+  const HEADER_HINT_REGEX = /(curso|turma|status|respons[aá]vel|oferta)/i;
   const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   function obterAba_() {
@@ -90,7 +90,6 @@ const RegistroRepo = (() => {
       { key: "Turma", label: "Turma" },
       { key: "Inicio", label: "Início" },
       { key: "Fim", label: "Fim" },
-      { key: "Sala", label: "Sala" },
       { key: "Oferta", label: "Oferta" },
       { key: "Responsavel", label: "Responsável" },
       { key: "Prioridade", label: "Prioridade" },

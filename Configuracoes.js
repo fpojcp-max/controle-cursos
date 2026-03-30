@@ -59,8 +59,9 @@ const Configuracoes = {
 };
 
 /**
- * Retorna as opções para os campos do formulário (cursos, turmas, salas, etc.).
- * @returns {Object} Objeto com CURSOS, TURMAS, SALAS, OFERTAS, RESPONSAVEIS, PRIORIDADES, STATUS, BOOLEANOS
+ * Retorna as opções para os campos do formulário (cursos, turmas, etc.).
+ * Salas por agendamento: catálogo em Configuracoes.CATALOGO_RECURSOS_SALA (telas de agendamento).
+ * @returns {Object} Objeto com CURSOS, TURMAS, OFERTAS, RESPONSAVEIS, PRIORIDADES, STATUS, BOOLEANOS
  */
 function obterOpcoesFormulario() {
   return {
@@ -101,7 +102,6 @@ function obterOpcoesFormulario() {
       "830 - Oficina de CNV", "902 - PDG - Desafios, Riscos e Crises - Estratégias para Gestão", "903 - PDG - Palestra - O Papel dos Gestores na Sustentação da Excelência da Unicamp"
     ],
     TURMAS: ["2601", "2602", "2603", "2604", "2605", "2606", "2607", "2608", "2609", "2610", "2611", "2612", "2613", "2614", "2615", "2616", "2617", "2618", "2619", "2620"],
-    SALAS: listarRotulosCatalogoRecursosSala(),
     OFERTAS: ["Assíncrono", "Síncrono", "Híbrido", "Presencial"],
     RESPONSAVEIS: ["Alexandre Fagiani", "Carlos", "Cecília", "Cirlene", "Denilson", "Elson", "Kitaka", "Márcia", "Raquel", "Valéria"],
     PRIORIDADES: ["Baixa", "Média", "Alta", "Urgente"],

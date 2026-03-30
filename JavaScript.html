@@ -1,6 +1,6 @@
 <script>
   const CAMPOS_FORM = [
-    "curso", "turma", "inicio", "fim", "sala", "oferta", "responsavel", "prioridade",
+    "curso", "turma", "inicio", "fim", "oferta", "responsavel", "prioridade",
     "fimInscricoes", "status", "linkFSA", "tr", "termo", "plataformas", "coffee",
     "agendarSala", "qrInscricao", "linkInscricao", "qrFrequencia", "frequencia",
     "codVerificacao", "qrAvaliacao", "avaliacaoReacao", "prepDivulgacao", "divulgacao", "linkPagina"
@@ -85,7 +85,7 @@
 
   function popularCampos(config) {
     const idsMapeados = {
-      'curso': config.CURSOS, 'turma': config.TURMAS, 'sala': config.SALAS,
+      'curso': config.CURSOS, 'turma': config.TURMAS,
       'oferta': config.OFERTAS, 'responsavel': config.RESPONSAVEIS,
       'prioridade': config.PRIORIDADES, 'status': config.STATUS,
       'tr': config.BOOLEANOS, 'termo': config.BOOLEANOS, 'plataformas': config.BOOLEANOS,

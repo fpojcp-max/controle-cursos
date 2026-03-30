@@ -4,7 +4,7 @@
 
 /**
  * Retorna a configuração do formulário (listas para selects).
- * @returns {Object} CURSOS, TURMAS, SALAS, OFERTAS, RESPONSAVEIS, PRIORIDADES, STATUS, BOOLEANOS
+ * @returns {Object} CURSOS, TURMAS, OFERTAS, RESPONSAVEIS, PRIORIDADES, STATUS, BOOLEANOS
  */
 function obterConfiguracaoFormulario() {
   return obterOpcoesFormulario();

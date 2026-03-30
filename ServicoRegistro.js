@@ -10,7 +10,7 @@ const RegistroService = (() => {
 
   // Schema: define ordem/índices (A..Z) dos campos editáveis no formulário
   const CAMPOS_EDITAVEIS = [
-    "curso", "turma", "inicio", "fim", "sala", "oferta", "responsavel", "prioridade",
+    "curso", "turma", "inicio", "fim", "oferta", "responsavel", "prioridade",
     "fimInscricoes", "status", "linkFSA", "tr", "termo", "plataformas", "coffee",
     "agendarSala", "qrInscricao", "linkInscricao", "qrFrequencia", "frequencia",
     "codVerificacao", "qrAvaliacao", "avaliacaoReacao", "prepDivulgacao", "divulgacao", "linkPagina"
@@ -77,7 +77,7 @@ const RegistroService = (() => {
       if (String(colunas[i].key).trim().toLowerCase() === k) return i;
     }
     const aliases = {
-      "curso": "Curso", "turma": "Turma", "status": "Status", "sala": "Sala",
+      "curso": "Curso", "turma": "Turma", "status": "Status",
       "responsavel": "Responsável", "oferta": "Oferta", "datacadastro": "Data Cadastro",
       "inicio": "Início", "id": "ID"
     };
@@ -102,7 +102,6 @@ const RegistroService = (() => {
     const idxCurso = indiceDaColuna_(colunas, "Curso");
     const idxTurma = indiceDaColuna_(colunas, "Turma");
     const idxStatus = indiceDaColuna_(colunas, "Status");
-    const idxSala = indiceDaColuna_(colunas, "Sala");
     const idxResp = indiceDaColuna_(colunas, "Responsável");
     const idxOferta = indiceDaColuna_(colunas, "Oferta");
     const idxInicio = indiceDaColuna_(colunas, "Início");
@@ -110,7 +109,6 @@ const RegistroService = (() => {
     const curso = (filtros.curso || "").toString().trim();
     const turma = (filtros.turma || "").toString().trim();
     const status = (filtros.status || "").toString().trim();
-    const sala = (filtros.sala || "").toString().trim();
     const responsavel = (filtros.responsavel || "").toString().trim();
     const oferta = (filtros.oferta || "").toString().trim();
     const inicioDe = interpretarDataIso_(filtros.inicioDe);
@@ -120,7 +118,6 @@ const RegistroService = (() => {
       if (curso && idxCurso >= 0 && String(r[idxCurso] || "") !== curso) return false;
       if (turma && idxTurma >= 0 && String(r[idxTurma] || "") !== turma) return false;
       if (status && idxStatus >= 0 && String(r[idxStatus] || "") !== status) return false;
-      if (sala && idxSala >= 0 && String(r[idxSala] || "") !== sala) return false;
       if (responsavel && idxResp >= 0 && String(r[idxResp] || "") !== responsavel) return false;
       if (oferta && idxOferta >= 0 && String(r[idxOferta] || "") !== oferta) return false;
       if ((inicioDe || inicioAte) && idxInicio >= 0) {
@@ -195,7 +192,7 @@ const RegistroService = (() => {
   }
 
   function validarMinimo_(dados) {
-    const obrigatorios = ["curso", "turma", "inicio", "fim", "sala", "oferta", "responsavel", "prioridade", "fimInscricoes", "status"];
+    const obrigatorios = ["curso", "turma", "inicio", "fim", "oferta", "responsavel", "prioridade", "fimInscricoes", "status"];
     const faltando = obrigatorios.filter(k => !(dados && String(dados[k] || "").trim()));
     if (faltando.length) throw new Error("Campos obrigatórios ausentes: " + faltando.join(", "));
   }
@@ -342,7 +339,6 @@ const RegistroService = (() => {
       curso: String(curso || "").trim(),
       turma: String(turma || "").trim(),
       status: "",
-      sala: "",
       oferta: "",
       responsavel: "",
       inicioDe: "",
