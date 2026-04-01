@@ -29,6 +29,7 @@ const AgendamentoController = (() => {
 })();
 
 function criarEventosAgendamentoController(request) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   return AgendamentoController.criarEventos(request);
 }
 
@@ -37,6 +38,7 @@ function criarEventosAgendamentoController(request) {
  * @returns {{ success: boolean, cursos?: string[], salas?: Object[], timezone?: string, message?: string }}
  */
 function obterDadosTelaAgendamentoIncluir() {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const dados = AgendamentoService.obterDadosIncluir();
     return {
@@ -60,6 +62,7 @@ function obterDadosTelaAgendamentoIncluir() {
  * @returns {{ success: boolean, turmas?: string[], message?: string }}
  */
 function obterTurmasAgendamentoPorCurso(curso) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const turmas = AgendamentoService.listarTurmasPorCursoIncluir(curso || "");
     return { success: true, turmas: turmas };
@@ -76,6 +79,7 @@ function obterTurmasAgendamentoPorCurso(curso) {
  * @returns {{ globalCalendarDefinido: boolean, usaServicoAvancado: boolean }}
  */
 function diagnosticarCalendarAgendamento() {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   let globalOk = false;
   try {
     globalOk = typeof Calendar !== "undefined";
@@ -89,11 +93,13 @@ function diagnosticarCalendarAgendamento() {
 }
 
 /**
- * Cria eventos no Calendar (um por ocorrência) e grava linhas na planilha de agendamentos.
+ * Cria eventos no Calendar do utilizador (serviço avançado, identidade = visitante da Web App)
+ * e grava linhas na planilha. Exige implantação como "Utilizador que acede"; sem OAuth Web/GIS.
  * @param {Object} payload
  * @returns {{ success: boolean, message?: string, ocorrencias?: number }}
  */
 function criarAgendamentos(payload) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const r = AgendamentoService.criarAgendamentos(payload);
     return { success: true, message: r.mensagem, ocorrencias: r.ocorrencias };
@@ -111,6 +117,7 @@ function criarAgendamentos(payload) {
  * sortCol -1 = data + hora início (padrão); 0..n-1 = índice da coluna no cabeçalho da planilha.
  */
 function pesquisarAgendamentosExcluir(payload) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const p = payload && typeof payload === "object" ? payload : {};
     const off = p.offset != null ? Number(p.offset) : 0;
@@ -144,6 +151,7 @@ function pesquisarAgendamentosExcluir(payload) {
  * @returns {{ columns: { key: string, label: string }[], rows: string[][] }}
  */
 function obterAgendamentosConsultaParaExportar(payload) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   const p = payload && typeof payload === "object" ? payload : {};
   let sortCol = -1;
   if (p.sortCol !== undefined && p.sortCol !== null && p.sortCol !== "") {
@@ -164,6 +172,7 @@ function obterAgendamentosConsultaParaExportar(payload) {
  * Todos os eventIds do filtro atual (para “Selecionar tudo”).
  */
 function obterTodosEventIdsAgendamentoExcluir(curso, turma) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     return AgendamentoService.obterTodosEventIdsExcluir(curso, turma);
   } catch (e) {
@@ -179,6 +188,7 @@ function obterTodosEventIdsAgendamentoExcluir(curso, turma) {
  * @param {{ curso: string, turma: string, sheetRows?: number[], eventIds?: string[] }} payload
  */
 function excluirAgendamentosLote(payload) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const p = payload && typeof payload === "object" ? payload : {};
     const r = AgendamentoService.excluirAgendamentosLote(p.curso, p.turma, p);
@@ -198,6 +208,7 @@ function excluirAgendamentosLote(payload) {
  * @param {number} sheetRow
  */
 function obterAgendamentoParaEditar(curso, turma, sheetRow) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const data = AgendamentoService.obterAgendamentoParaEditar(curso, turma, sheetRow);
     return Object.assign({ success: true }, data);
@@ -214,6 +225,7 @@ function obterAgendamentoParaEditar(curso, turma, sheetRow) {
  * @param {{ curso: string, turma: string, turmaId?: string, sheetRow: number, data: string, horaInicio: string, horaFim: string, salaNome?: string, convidadosIncluir?: string, convidadosExcluir?: string }} payload
  */
 function atualizarAgendamento(payload) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     AgendamentoService.atualizarAgendamento(payload);
     return { success: true, message: "Agendamento atualizado com sucesso." };

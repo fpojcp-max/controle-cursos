@@ -672,6 +672,17 @@ const AgendamentoService = (() => {
       );
     }
 
+    const linhaTurma = RegistroRepo.buscarLinhaPorId(idTurma);
+    if (!linhaTurma) {
+      throw new Error("Registro da turma não encontrado.");
+    }
+    const emailCriadorTurma = RegistroRepo.extrairEmailUsuarioCriadorLinhaTurma(linhaTurma);
+    SessaoWebApp.garantirMesmoUsuarioQueEmailArmazenadoOuErro(
+      emailCriadorTurma,
+      SessaoWebApp.MSG_NAO_RESPONSAVEL,
+      SessaoWebApp.MSG_SEM_EMAIL_CRIADOR_TURMA
+    );
+
     const horaInicio = validarHora_(payload.horaInicio, "Hora início");
     const horaFim = validarHora_(payload.horaFim, "Hora fim");
     const tIni = horaInicio.split(":");
@@ -718,6 +729,7 @@ const AgendamentoService = (() => {
       checarSalaLivrePeriodos_(salaId, periodos);
     }
 
+    // Com Web App "Utilizador que acede", corresponde ao e-mail de quem está na sessão.
     const criadoPor = Session.getActiveUser().getEmail() || "";
     const criadoEm = formatarCriadoEm_();
     const convidadosPlanilha = emails.join("; ");
@@ -1161,6 +1173,15 @@ const AgendamentoService = (() => {
       }
     }
 
+    const Cdon = AgendamentoRepo.COL_AG;
+    for (let d = 0; d < selecionadas.length; d++) {
+      SessaoWebApp.garantirMesmoUsuarioQueEmailArmazenadoOuErro(
+        selecionadas[d].cells[Cdon.CRIADO_POR],
+        SessaoWebApp.MSG_NAO_RESPONSAVEL,
+        SessaoWebApp.MSG_SEM_EMAIL_CRIADOR_AG
+      );
+    }
+
     const calSeen = {};
     for (let idx = 0; idx < selecionadas.length; idx++) {
       const ev = String(selecionadas[idx].eventId || "").trim();
@@ -1340,6 +1361,11 @@ const AgendamentoService = (() => {
     if (!eventId) {
       throw new Error("Agendamento sem ID do Google Calendar na planilha.");
     }
+    SessaoWebApp.garantirMesmoUsuarioQueEmailArmazenadoOuErro(
+      cells[C.CRIADO_POR],
+      SessaoWebApp.MSG_NAO_RESPONSAVEL,
+      SessaoWebApp.MSG_SEM_EMAIL_CRIADOR_AG
+    );
     const vig = obterVigenciaTurmaOuErro_(c, t);
     const dadosIncluir = obterDadosIncluir_();
     return {
@@ -1412,6 +1438,11 @@ const AgendamentoService = (() => {
     if (!eventId) {
       throw new Error("Agendamento sem ID do Google Calendar na planilha.");
     }
+    SessaoWebApp.garantirMesmoUsuarioQueEmailArmazenadoOuErro(
+      cells[C.CRIADO_POR],
+      SessaoWebApp.MSG_NAO_RESPONSAVEL,
+      SessaoWebApp.MSG_SEM_EMAIL_CRIADOR_AG
+    );
 
     const dataYmd = String(payload.data || "").trim();
     parseYmd_(dataYmd);

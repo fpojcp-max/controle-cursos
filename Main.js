@@ -11,10 +11,17 @@
 function doGet(e) {
   const view = (e && e.parameter && e.parameter.view) ? String(e.parameter.view) : "home";
   const id = (e && e.parameter && e.parameter.id) ? String(e.parameter.id) : "";
+  let sessaoWebAppOk = false;
+  try {
+    const em = Session.getActiveUser().getEmail();
+    sessaoWebAppOk = !!(em && String(em).trim());
+  } catch (errSessao) {
+    sessaoWebAppOk = false;
+  }
   const template = HtmlService.createTemplateFromFile("Shell");
   template.initialView = view;
   template.initialId = id;
-  template.menuHtml = getMenuHtml(view, true, id);
+  template.menuHtml = getMenuHtml(view, true, id, sessaoWebAppOk);
   return template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -35,20 +42,19 @@ function doGet(e) {
  *
  * @param {Object} e - e.postData.contents contém o JSON do request.
  * @returns {GoogleAppsScript.Content.TextOutput}
+ *
+ * O POST direto à URL está desativado (não há identidade de visitante em chamadas HTTP anónimas).
+ * Use a interface Web ou `google.script.run`.
  */
 function doPost(e) {
-  let request = null;
-  const bodyText = (e && e.postData && e.postData.contents) ? String(e.postData.contents) : "";
-  try {
-    request = bodyText ? JSON.parse(bodyText) : {};
-  } catch (_) {
-    request = null;
-  }
-
-  const resp = criarEventosAgendamentoController(request);
-  return ContentService
-    .createTextOutput(JSON.stringify(resp))
-    .setMimeType(ContentService.MimeType.JSON);
+  const resp = {
+    status: "erro",
+    code: "ENDPOINT_DISABLED",
+    message:
+      "Endpoint HTTP desativado. Utilize a aplicação Web (interface) com sessão Google do domínio; não use POST direto à URL.",
+    details: []
+  };
+  return ContentService.createTextOutput(JSON.stringify(resp)).setMimeType(ContentService.MimeType.JSON);
 }
 
 /**
@@ -56,13 +62,16 @@ function doPost(e) {
  * @param {string} view - "home", "consulta" ou "cadastro".
  * @param {boolean} spa - Se true, menu para SPA (navegação client-side).
  * @param {string} [cadastroId] - id na URL quando view=cadastro (edição); vazio = inclusão.
+ * @param {boolean} [sessaoWebAppOk] - se false, o menu não oferece navegação (sem identidade na sessão).
  * @returns {string}
  */
-function getMenuHtml(view, spa, cadastroId) {
+function getMenuHtml(view, spa, cadastroId, sessaoWebAppOk) {
   const idNorm =
     cadastroId && String(cadastroId).trim() ? String(cadastroId).trim() : "";
   const v = view || "";
   const t = HtmlService.createTemplateFromFile("Menu");
+  t.sessaoWebAppOk = sessaoWebAppOk === true;
+  t.mensagemSemSessaoWebApp = SessaoWebApp.MSG_SEM_IDENTIDADE;
   t.view = v;
   t.menuConsultaAtiva = v === "consulta" || (v === "cadastro" && idNorm.length > 0);
   t.menuInserirAtivo = v === "cadastro" && idNorm.length === 0;
@@ -94,6 +103,7 @@ function getMenuHtml(view, spa, cadastroId) {
  * @returns {{ html: string, script: string }}
  */
 function getPageContent(view, id) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   view = view || "home";
   id = (id && String(id).trim()) ? String(id).trim() : "";
   if (view === "home") {
@@ -198,6 +208,7 @@ function getPageContent(view, id) {
  * @returns {string}
  */
 function obterUrlWebApp(visualizacao) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   const base = ScriptApp.getService().getUrl();
   if (!visualizacao || String(visualizacao) === "home") return base;
   return base + "?view=" + encodeURIComponent(String(visualizacao));

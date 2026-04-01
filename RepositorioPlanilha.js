@@ -146,6 +146,15 @@ const RegistroRepo = (() => {
     return false;
   }
 
+  /** Índice 0-based do e-mail do criador na linha da aba de turmas (alinhar a `ServicoRegistro` / `dadosParaLinha_`). */
+  const INDICE_EMAIL_USUARIO_TURMA_ = 26;
+
+  function extrairEmailUsuarioCriadorLinhaTurma_(linha) {
+    if (!linha || !linha.length) return "";
+    const v = linha[INDICE_EMAIL_USUARIO_TURMA_];
+    return String(v != null ? v : "").trim();
+  }
+
   function buscarLinhaPorId_(id) {
     if (!id) return null;
     const { valores, temCabecalho } = lerDadosPlanilha_();
@@ -308,6 +317,8 @@ const RegistroRepo = (() => {
   }
 
   return {
+    INDICE_EMAIL_USUARIO_TURMA: INDICE_EMAIL_USUARIO_TURMA_,
+    extrairEmailUsuarioCriadorLinhaTurma: extrairEmailUsuarioCriadorLinhaTurma_,
     lerDadosPlanilha: lerDadosPlanilha_,
     inserirLinha: inserirLinha_,
     obterColunasPadrao: obterColunasPadrao_,

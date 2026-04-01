@@ -1,3 +1,4 @@
+<? if (sessaoWebAppOk) { ?>
 <nav class="app-menu" role="navigation" aria-label="Menu principal">
   <ul class="app-menu-list">
     <li class="app-menu-item app-menu-item-dropdown <?= menuTurmaGrupoAtivo ? 'is-active' : '' ?>" data-dropdown="turma">
@@ -114,3 +115,8 @@
   });
 })();
 </script>
+<? } else { ?>
+<div class="notification is-warning is-light" role="alert" style="margin:0.75rem 0;">
+  <p class="mb-0"><?= mensagemSemSessaoWebApp ?></p>
+</div>
+<? } ?>

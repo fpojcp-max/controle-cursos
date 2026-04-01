@@ -1,5 +1,13 @@
 /**
  * Camada Data – Configurações e listas estáticas (sem lógica).
+ *
+ * Web App (alinhamento com appsscript.json):
+ * - Executar como: utilizador que acede à aplicação → Calendar e Sheets correm com a conta
+ *   de quem usa o link; eventos ficam na agenda desse utilizador. Não é necessário cliente
+ *   OAuth Web, GIS nem origens na Cloud Console.
+ * - Acesso: utilizadores do domínio (Workspace) → ajuste em Implantação se precisar de outro.
+ * - Partilhe a planilha de turmas e a de agendamentos com o domínio (p.ex. edição) para cada
+ *   utilizador conseguir abrir via SpreadsheetApp ao executar o script em nome dele.
  */
 
 const Configuracoes = {

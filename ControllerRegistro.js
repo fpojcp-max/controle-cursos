@@ -7,6 +7,7 @@
  * @returns {Object} CURSOS, TURMAS, OFERTAS, RESPONSAVEIS, PRIORIDADES, STATUS, BOOLEANOS
  */
 function obterConfiguracaoFormulario() {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   return obterOpcoesFormulario();
 }
 
@@ -18,6 +19,7 @@ function obterConfiguracaoFormulario() {
  * @returns {{ columns: any[], rows: any[][], total: number, truncated: boolean }}
  */
 function pesquisarRegistros(filtros, ordenacao, paginacao) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   return RegistroService.buscarRegistrosComFiltros(filtros, ordenacao, paginacao);
 }
 
@@ -27,6 +29,7 @@ function pesquisarRegistros(filtros, ordenacao, paginacao) {
  * @returns {{ success: boolean, message: string }}
  */
 function salvarRegistro(dados) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const message = RegistroService.cadastrarRegistro(dados);
     return { success: true, message: message };
@@ -42,6 +45,7 @@ function salvarRegistro(dados) {
  * @returns {{ success: boolean, message: string }}
  */
 function atualizarRegistro(id, dados) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const message = RegistroService.atualizarRegistroPorId(id, dados);
     return { success: true, message: message };
@@ -56,6 +60,7 @@ function atualizarRegistro(id, dados) {
  * @returns {Object|null} Objeto com campos do registro ou null.
  */
 function obterRegistroPorId(id) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   return RegistroService.obterRegistroPorIdServico(id);
 }
 
@@ -65,6 +70,7 @@ function obterRegistroPorId(id) {
  * @returns {string} Mensagem de sucesso ou erro.
  */
 function excluirRegistro(id) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     return RegistroService.excluirRegistroPorId(id);
   } catch (e) {
@@ -77,6 +83,7 @@ function excluirRegistro(id) {
  * @returns {{ success: boolean, cursos?: string[], responsaveis?: string[], message?: string }}
  */
 function obterOpcoesFiltroTurmaExcluir() {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     return {
       success: true,
@@ -96,6 +103,7 @@ function obterOpcoesFiltroTurmaExcluir() {
  * @returns {{ success: boolean, cursos?: string[], message?: string }}
  */
 function obterOpcoesFiltroTurmaEditar() {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     return { success: true, cursos: RegistroRepo.listarCursosDistintos() };
   } catch (e) {
@@ -113,6 +121,7 @@ function obterOpcoesFiltroTurmaEditar() {
  * @returns {{ success: boolean, columns?: any[], rows?: any[][], total?: number, idColumnIndex?: number, message?: string }}
  */
 function pesquisarTurmasParaEditar(curso, turma) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const c = String(curso || "").trim();
     const t = String(turma || "").trim();
@@ -141,6 +150,7 @@ function pesquisarTurmasParaEditar(curso, turma) {
  * @returns {{ success: boolean, turmas?: string[], message?: string }}
  */
 function obterTurmasPlanilhaPorCurso(curso) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     return {
       success: true,
@@ -158,6 +168,7 @@ function obterTurmasPlanilhaPorCurso(curso) {
  * Pesquisa paginada para exclusão de turmas + IDs de todo o conjunto filtrado (selecionar tudo).
  */
 function pesquisarTurmasParaExcluir(filtros, ordenacao, paginacao) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   return RegistroService.buscarRegistrosExcluirTurmaTela(filtros, ordenacao, paginacao);
 }
 
@@ -167,6 +178,7 @@ function pesquisarTurmasParaExcluir(filtros, ordenacao, paginacao) {
  * @returns {{ success: boolean, columns?: any[], rows?: any[][], message?: string }}
  */
 function obterRegistrosTurmaPorIdsParaExcluir(ids) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const r = RegistroService.obterLinhasRegistroTurmaPorIdsNaOrdem(ids);
     return {
@@ -189,6 +201,7 @@ function obterRegistrosTurmaPorIdsParaExcluir(ids) {
  * @returns {{ success: boolean, tipo?: string, mensagemTopo?: string, excluidos?: Object[], falhas?: Object[], message?: string }}
  */
 function excluirRegistrosTurmaLote(ids) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   try {
     const lista = Array.isArray(ids) ? ids : [];
     if (!lista.length) {
@@ -217,6 +230,7 @@ function excluirRegistrosTurmaLote(ids) {
  * @returns {{ columns: any[], rows: any[][] }}
  */
 function obterRegistrosParaExportar(filtros, ordenacao) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   return RegistroService.buscarRegistrosParaExportar(filtros, ordenacao);
 }
 
@@ -225,5 +239,6 @@ function obterRegistrosParaExportar(filtros, ordenacao) {
  * @returns {{ ok: boolean, message: string }}
  */
 function executarMigracaoIds() {
+  SessaoWebApp.exigirParaGoogleScriptRun();
   return RegistroRepo.preencherColunaId();
 }

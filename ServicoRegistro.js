@@ -398,11 +398,21 @@ const RegistroService = (() => {
     return "Turma " + citarRotuloMsg_(turma) + " do curso " + citarRotuloMsg_(curso);
   }
 
+  function garantirUsuarioDonoTurmaPorLinha_(linha) {
+    const emailArm = String(linha[IDX_EMAIL_USUARIO] != null ? linha[IDX_EMAIL_USUARIO] : "").trim();
+    SessaoWebApp.garantirMesmoUsuarioQueEmailArmazenadoOuErro(
+      emailArm,
+      SessaoWebApp.MSG_NAO_RESPONSAVEL,
+      SessaoWebApp.MSG_SEM_EMAIL_CRIADOR_TURMA
+    );
+  }
+
   function excluirRegistroPorIdComDetalhe_(id) {
     if (!id) throw new Error("ID obrigatório para exclusão.");
     const indice = RegistroRepo.buscarIndiceLinhaPorId(id);
     if (indice === -1) throw new Error("Registro não encontrado para exclusão.");
     const linha = RegistroRepo.obterLinhaPorIndice(indice);
+    garantirUsuarioDonoTurmaPorLinha_(linha);
     const dados = linhaParaDados_(linha);
     const turma = String(dados.turma || "").trim();
     const curso = String(dados.curso || "").trim();
@@ -450,6 +460,7 @@ const RegistroService = (() => {
   }
 
   function cadastrarRegistro_(dados) {
+    SessaoWebApp.obterEmailAtivoNormalizado();
     validarMinimo_(dados);
     const ymdsCad = extrairDatasTurmaNormalizadas_(dados);
     validarCoerenciaDatasTurma_(ymdsCad.inicioYmd, ymdsCad.fimYmd, ymdsCad.fimInscYmd);
@@ -458,6 +469,7 @@ const RegistroService = (() => {
       throw new Error(
         "Já existe a turma " + citarRotuloMsg_(dados.turma) + " para o curso " + citarRotuloMsg_(dados.curso) + "."
       );
+    // Com Web App «Utilizador que acede», o e-mail gravado é o do visitante autenticado.
     const emailUsuario = Session.getActiveUser().getEmail();
     const dataAtual = new Date();
     const id = Utilities.getUuid();
@@ -480,6 +492,7 @@ const RegistroService = (() => {
     const indice = RegistroRepo.buscarIndiceLinhaPorId(id);
     if (indice === -1) throw new Error("Registro não encontrado para atualização.");
     const linhaAtual = RegistroRepo.obterLinhaPorIndice(indice);
+    garantirUsuarioDonoTurmaPorLinha_(linhaAtual);
     const ymdsVelho = extrairDatasTurmaNormalizadas_(linhaParaDados_(linhaAtual));
     const vigenciaMudou =
       ymdsVelho.inicioYmd !== ymdsEd.inicioYmd || ymdsVelho.fimYmd !== ymdsEd.fimYmd;
@@ -507,7 +520,9 @@ const RegistroService = (() => {
   function obterRegistroPorIdServico_(id) {
     if (!id) return null;
     const linha = RegistroRepo.buscarLinhaPorId(id);
-    return linha ? linhaParaDados_(linha) : null;
+    if (!linha) return null;
+    garantirUsuarioDonoTurmaPorLinha_(linha);
+    return linhaParaDados_(linha);
   }
 
   function excluirRegistroPorId_(id) {

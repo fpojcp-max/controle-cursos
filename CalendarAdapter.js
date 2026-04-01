@@ -25,7 +25,7 @@ const CalendarAdapter = (() => {
     throw new Error(
       "Google Calendar API (serviço avançado) não está disponível nesta execução. " +
         "No editor: Serviços (+) → Google Calendar API → Salvar. " +
-        "Depois: Implantação da Web App → Nova versão → Implantar. " +
+        "Implantação da Web App: Executar como «Utilizador que acede à aplicação», nova versão, Implantar. " +
         "Se usar clasp push, abra o projeto no Google e confira se o serviço Calendar ainda aparece em Serviços."
     );
   }
