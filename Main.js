@@ -58,6 +58,29 @@ function doPost(e) {
 }
 
 /**
+ * Verificação antecipada: planilha associada ao script acessível pelo utilizador da Web App.
+ * @returns {{ ok: true } | { ok: false, code: string, message: string }}
+ */
+function verificarAcessoPlanilhaWebApp() {
+  SessaoWebApp.exigirParaGoogleScriptRun();
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    if (!ss) {
+      return {
+        ok: false,
+        code: "NO_SPREADSHEET",
+        message: "Não há planilha associada a este projeto Apps Script."
+      };
+    }
+    ss.getName();
+    return { ok: true };
+  } catch (err) {
+    const raw = err && err.message ? String(err.message) : String(err);
+    return { ok: false, code: "SPREADSHEET_ACCESS", message: raw };
+  }
+}
+
+/**
  * Retorna o HTML do menu principal. Se spa=true, links usam data-view e href="#".
  * @param {string} view - "home", "consulta" ou "cadastro".
  * @param {boolean} spa - Se true, menu para SPA (navegação client-side).

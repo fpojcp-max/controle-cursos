@@ -84,6 +84,12 @@
         })
         .withFailureHandler(function(err) {
           if (endBusy) endBusy();
+          if (
+            typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
+            window.tratarErroInfraestruturaSpaSeAplicavel(err)
+          ) {
+            return;
+          }
           renderMsg("Erro ao carregar turmas: " + err, "danger");
         })
         .obterTurmasAgendamentoPorCurso(curso);
@@ -236,6 +242,12 @@
         })
         .withFailureHandler(function(err) {
           if (endBusy) endBusy();
+          if (
+            typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
+            window.tratarErroInfraestruturaSpaSeAplicavel(err)
+          ) {
+            return;
+          }
           renderMsg("Erro: " + err, "danger");
         })
         .pesquisarAgendamentosExcluir({
@@ -304,6 +316,12 @@
         .withFailureHandler(function(err) {
           if (endBusy) endBusy();
           btn.disabled = false;
+          if (
+            typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
+            window.tratarErroInfraestruturaSpaSeAplicavel(err)
+          ) {
+            return;
+          }
           renderMsg("Erro ao exportar: " + err, "danger");
         })
         .obterAgendamentosConsultaParaExportar(lastExportQuery);
@@ -375,6 +393,12 @@
       })
       .withFailureHandler(function(err) {
         if (endInit) endInit();
+        if (
+          typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
+          window.tratarErroInfraestruturaSpaSeAplicavel(err)
+        ) {
+          return;
+        }
         renderMsg("Erro: " + err, "danger");
       })
       .obterDadosTelaAgendamentoIncluir();

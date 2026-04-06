@@ -55,6 +55,24 @@ const Configuracoes = {
   /**
    * Catálogo único: `rotulo` = texto em selects e planilhas; `identificadorCalendario` = recurso no Google Calendar.
    */
+  /**
+   * Pasta do Drive onde ficam as cópias de backup (ID na URL: /folders/ID).
+   * A conta que corre o trigger diário precisa de criar/apagar ficheiros nesta pasta.
+   */
+  BACKUP_DRIVE_FOLDER_ID: "1P3fmLpgjbuZNINSHpJtSZpjLBkuCMbye",
+
+  /** E-mail para alertas de falha de backup. Vazio = e-mail do utilizador ativo (ex.: quem corre o trigger). */
+  BACKUP_EMAIL_ALERTA: "fpojcp@unicamp.br",
+
+  /** Prefixo dos nomes de ficheiro de backup (só estes entram na rotação). */
+  BACKUP_PREFIXO_NOME_ARQUIVO: "BACKUP_SGC_",
+
+  /** Máximo de cópias na pasta; a partir daí remove-se a mais antiga. */
+  BACKUP_MAX_COPIAS: 30,
+
+  /** Fuso para data do nome do ficheiro e “um backup por dia”. */
+  BACKUP_TIMEZONE: "America/Sao_Paulo",
+
   CATALOGO_RECURSOS_SALA: [
     { rotulo: "(EDUCORP)-Auditório", identificadorCalendario: "c_188fsj4m0hnfii6qgjn69muavm51g@resource.calendar.google.com" },
     { rotulo: "(EDUCORP)-Idiomas", identificadorCalendario: "c_188akjbiofvveiatinhe5dd2oclmi@resource.calendar.google.com" },

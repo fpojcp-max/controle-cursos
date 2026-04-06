@@ -50,6 +50,34 @@
       }
     }, 0);
   };
+
+  /**
+   * Erros de permissão Drive/Sheets (e similares) — mensagem única para o ecrã central.
+   * @param {string} err
+   * @returns {string|null} texto amigável ou null se não for caso conhecido
+   */
+  window.resolverMensagemErroInfraestruturaSpa = function(err) {
+    var s = String(err || "");
+    if (
+      /Você não tem permissão para acessar o documento solicitado/i.test(s) ||
+      /não tem permissão para aceder o documento/i.test(s) ||
+      /não tem permissão para acessar o documento/i.test(s) ||
+      /You do not have permission to access the requested document/i.test(s) ||
+      /permission to access/i.test(s)
+    ) {
+      return (
+        "Não tem permissão para aceder à planilha utilizada por esta aplicação. " +
+        "Peça ao administrador que partilhe o ficheiro com o seu utilizador ou inicie sessão com a conta correta."
+      );
+    }
+    if (/Não foi possível identificar o seu utilizador/i.test(s)) {
+      return (
+        "Não foi possível identificar o seu utilizador. " +
+        "Aceda já autenticado com a conta do domínio (Web App como «quem acede»)."
+      );
+    }
+    return null;
+  };
     </script>
     <script>
 (function() {
@@ -105,11 +133,69 @@
     if (link) link.classList.add("is-active");
   }
 
-  function showError(msg) {
-    mainContent.innerHTML = "<div class=\"main-placeholder\" style=\"display:flex;align-items:center;justify-content:center;color:#b71c1c;padding:24px;\">" + String(msg).replace(/</g, "&lt;") + "</div>";
+  function escHtmlSpa_(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function showBloqueioCentral(mensagemUsuario) {
+    window.__spaAcessoPlanilhaOk = false;
+    window.__spaAcessoPlanilhaMsg = mensagemUsuario;
+    var corpo = escHtmlSpa_(mensagemUsuario);
+    mainContent.innerHTML =
+      '<div class="spa-bloqueio-sistema" role="alert">' +
+      '<div class="spa-bloqueio-box">' +
+      '<p class="spa-bloqueio-titulo">Indisponível</p>' +
+      '<p class="spa-bloqueio-texto">' +
+      corpo +
+      "</p></div></div>";
     if (typeof window.rolarParaVerMensagemNoTopo === "function") {
       window.rolarParaVerMensagemNoTopo(mainContent);
     }
+  }
+
+  window.mostrarBloqueioCentralSpa = showBloqueioCentral;
+
+  window.tratarErroInfraestruturaSpaSeAplicavel = function(err) {
+    var friendly =
+      typeof window.resolverMensagemErroInfraestruturaSpa === "function"
+        ? window.resolverMensagemErroInfraestruturaSpa(String(err))
+        : null;
+    if (friendly) {
+      showBloqueioCentral(friendly);
+      return true;
+    }
+    return false;
+  };
+
+  function showError(msg) {
+    var s = String(msg);
+    if (typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" && window.tratarErroInfraestruturaSpaSeAplicavel(s)) {
+      return;
+    }
+    mainContent.innerHTML =
+      "<div class=\"main-placeholder\" style=\"display:flex;align-items:center;justify-content:center;color:#b71c1c;padding:24px;\">" +
+      escHtmlSpa_(s) +
+      "</div>";
+    if (typeof window.rolarParaVerMensagemNoTopo === "function") {
+      window.rolarParaVerMensagemNoTopo(mainContent);
+    }
+  }
+
+  function mapearRespostaVerificacaoAcesso_(res) {
+    if (res && res.ok) return null;
+    var raw =
+      res && res.message
+        ? String(res.message)
+        : "Não foi possível aceder à planilha.";
+    if (typeof window.resolverMensagemErroInfraestruturaSpa === "function") {
+      var friendly = window.resolverMensagemErroInfraestruturaSpa(raw);
+      if (friendly) return friendly;
+    }
+    return raw;
   }
 
   function navigate(view, id) {
@@ -202,12 +288,23 @@
         })
         .withFailureHandler(function(err) {
           limparTimerNavegacao();
+          var errStr = String(err);
+          if (
+            typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
+            window.tratarErroInfraestruturaSpaSeAplicavel(errStr)
+          ) {
+            if (endBusy) {
+              endBusy();
+              endBusy = null;
+            }
+            return;
+          }
           if (tentativaCarregar >= MAX_TENTATIVAS) {
             if (endBusy) {
               endBusy();
               endBusy = null;
             }
-            showError("Erro ao carregar: " + String(err));
+            showError("Erro ao carregar: " + errStr);
             return;
           }
           tentativaCarregar++;
@@ -216,8 +313,56 @@
         .getPageContent(view, id);
     }
 
+    function iniciarNavegacaoOuVerificacao() {
+      if (window.__spaAcessoPlanilhaOk === false) {
+        encerrarOcupadoNavegacao();
+        showBloqueioCentral(
+          window.__spaAcessoPlanilhaMsg ||
+            "Esta aplicação não consegue aceder aos dados. Atualize a página (F5) após resolver o problema."
+        );
+        return;
+      }
+      if (window.__spaAcessoPlanilhaOk === true) {
+        pedirPagina();
+        return;
+      }
+      google.script.run
+        .withSuccessHandler(function(res) {
+          if (!res || !res.ok) {
+            if (endBusy) {
+              endBusy();
+              endBusy = null;
+            }
+            var failMsg = mapearRespostaVerificacaoAcesso_(res);
+            window.__spaAcessoPlanilhaOk = false;
+            window.__spaAcessoPlanilhaMsg = failMsg;
+            showBloqueioCentral(failMsg);
+            return;
+          }
+          window.__spaAcessoPlanilhaOk = true;
+          window.__spaAcessoPlanilhaMsg = "";
+          pedirPagina();
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) {
+            endBusy();
+            endBusy = null;
+          }
+          var raw = String(err);
+          var failMsg =
+            typeof window.resolverMensagemErroInfraestruturaSpa === "function"
+              ? window.resolverMensagemErroInfraestruturaSpa(raw)
+              : null;
+          failMsg = failMsg || raw || "Não foi possível validar o acesso à planilha.";
+          window.__spaAcessoPlanilhaOk = false;
+          window.__spaAcessoPlanilhaMsg = failMsg;
+          showBloqueioCentral(failMsg);
+        })
+        .verificarAcessoPlanilhaWebApp();
+    }
+
     setMenuActive(view, id);
-    pedirPagina();
+    iniciarNavegacaoOuVerificacao();
   }
 
   window.navigate = navigate;
