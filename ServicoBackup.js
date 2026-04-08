@@ -7,6 +7,8 @@
 
 const BackupService = (() => {
   const PROP_ULTIMO_SUCESSO_YMD = "backupDiarioUltimoSucessoYmd";
+  const DRIVE_V3_BASE = "https://www.googleapis.com/drive/v3/files";
+  const MIME_SHEETS = "application/vnd.google-apps.spreadsheet";
 
   function tz_() {
     return (Configuracoes.BACKUP_TIMEZONE || Configuracoes.TIMEZONE_AGENDAMENTO || "America/Sao_Paulo");
@@ -53,53 +55,101 @@ const BackupService = (() => {
     return String(nomeArquivo || "").indexOf(prefixo_()) === 0;
   }
 
-  function listarBackupsNaPasta_(pasta) {
-    const out = [];
-    const it = pasta.getFiles();
-    while (it.hasNext()) {
-      const f = it.next();
-      if (f.getMimeType() !== MimeType.GOOGLE_SHEETS) continue;
-      if (!nomeEhBackupNosso_(f.getName())) continue;
-      out.push(f);
+  function driveApiRequest_(method, url, payloadObj) {
+    const token = ScriptApp.getOAuthToken();
+    const opts = {
+      method: method,
+      muteHttpExceptions: true,
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    };
+    if (payloadObj !== undefined) {
+      opts.contentType = "application/json";
+      opts.payload = JSON.stringify(payloadObj);
     }
+    const resp = UrlFetchApp.fetch(url, opts);
+    const code = resp.getResponseCode();
+    const body = resp.getContentText() || "";
+    if (code >= 200 && code < 300) {
+      return body ? JSON.parse(body) : {};
+    }
+    const msg = "Drive API " + method + " " + url + " -> HTTP " + code + ": " + body;
+    throw new Error(msg);
+  }
+
+  function validarPastaAcessivel_(folderId) {
+    const url = DRIVE_V3_BASE + "/" + encodeURIComponent(folderId) + "?fields=id,name,mimeType&supportsAllDrives=true";
+    const meta = driveApiRequest_("get", url);
+    if (!meta || meta.mimeType !== "application/vnd.google-apps.folder") {
+      throw new Error("ID não corresponde a pasta do Drive: " + folderId);
+    }
+  }
+
+  function listarBackupsNaPasta_(folderId) {
+    const out = [];
+    const q = "'" + String(folderId).replace(/'/g, "\\'") + "' in parents and trashed=false and mimeType='" + MIME_SHEETS + "'";
+    let pageToken = "";
+    do {
+      const url =
+        DRIVE_V3_BASE +
+        "?supportsAllDrives=true&includeItemsFromAllDrives=true&corpora=allDrives" +
+        "&q=" + encodeURIComponent(q) +
+        "&fields=nextPageToken,files(id,name,createdTime,mimeType)" +
+        "&pageSize=200" +
+        (pageToken ? "&pageToken=" + encodeURIComponent(pageToken) : "");
+      const data = driveApiRequest_("get", url);
+      const files = (data && data.files) || [];
+      files.forEach(function (f) {
+        if (!f || f.mimeType !== MIME_SHEETS) return;
+        if (!nomeEhBackupNosso_(f.name)) return;
+        out.push({
+          id: f.id,
+          name: f.name,
+          createdTime: f.createdTime
+        });
+      });
+      pageToken = (data && data.nextPageToken) || "";
+    } while (pageToken);
     return out;
   }
 
-  function arquivoBackupDoDiaJaExiste_(pasta, ymd) {
+  function arquivoBackupDoDiaJaExiste_(folderId, ymd) {
     const pref = prefixo_() + ymd + "_";
-    const it = pasta.getFiles();
-    while (it.hasNext()) {
-      const f = it.next();
-      if (f.getMimeType() !== MimeType.GOOGLE_SHEETS) continue;
-      const n = String(f.getName());
+    const files = listarBackupsNaPasta_(folderId);
+    for (let i = 0; i < files.length; i++) {
+      const n = String(files[i].name || "");
       if (n.indexOf(pref) === 0) return true;
     }
     return false;
   }
 
-  function moverCopiaParaPasta_(fileId, pastaDestino) {
-    const file = DriveApp.getFileById(fileId);
-    pastaDestino.addFile(file);
-    const manterId = pastaDestino.getId();
-    const parents = file.getParents();
-    while (parents.hasNext()) {
-      const p = parents.next();
-      if (p.getId() !== manterId) {
-        p.removeFile(file);
-      }
-    }
+  function moverCopiaParaPasta_(fileId, folderId) {
+    const getUrl = DRIVE_V3_BASE + "/" + encodeURIComponent(fileId) + "?fields=parents&supportsAllDrives=true";
+    const meta = driveApiRequest_("get", getUrl);
+    const parents = Array.isArray(meta.parents) ? meta.parents : [];
+    const removeParents = parents.filter(function (p) { return p !== folderId; }).join(",");
+    const patchUrl =
+      DRIVE_V3_BASE +
+      "/" +
+      encodeURIComponent(fileId) +
+      "?supportsAllDrives=true&addParents=" +
+      encodeURIComponent(folderId) +
+      (removeParents ? "&removeParents=" + encodeURIComponent(removeParents) : "");
+    driveApiRequest_("patch", patchUrl, {});
   }
 
-  function rotacionarSeNecessario_(pasta) {
+  function rotacionarSeNecessario_(folderId) {
     const lim = maxCopias_();
-    const files = listarBackupsNaPasta_(pasta);
+    const files = listarBackupsNaPasta_(folderId);
     if (files.length <= lim) return;
     files.sort(function (a, b) {
-      return a.getDateCreated().getTime() - b.getDateCreated().getTime();
+      return new Date(a.createdTime).getTime() - new Date(b.createdTime).getTime();
     });
     const excedente = files.length - lim;
     for (let i = 0; i < excedente; i++) {
-      files[i].setTrashed(true);
+      const trashUrl = DRIVE_V3_BASE + "/" + encodeURIComponent(files[i].id) + "?supportsAllDrives=true";
+      driveApiRequest_("patch", trashUrl, { trashed: true });
     }
   }
 
@@ -127,9 +177,8 @@ const BackupService = (() => {
       return { skipped: true, reason: "ja_executado_hoje" };
     }
 
-    let pasta;
     try {
-      pasta = DriveApp.getFolderById(folderId);
+      validarPastaAcessivel_(folderId);
     } catch (e1) {
       const msg = e1 && e1.message ? e1.message : String(e1);
       enviarEmailFalha_(
@@ -139,8 +188,8 @@ const BackupService = (() => {
       throw e1;
     }
 
-    if (arquivoBackupDoDiaJaExiste_(pasta, hoje)) {
-      rotacionarSeNecessario_(pasta);
+    if (arquivoBackupDoDiaJaExiste_(folderId, hoje)) {
+      rotacionarSeNecessario_(folderId);
       props.setProperty(PROP_ULTIMO_SUCESSO_YMD, hoje);
       return { skipped: true, reason: "arquivo_ja_existia", message: "Marcado como concluído (cópia do dia já na pasta)." };
     }
@@ -151,15 +200,16 @@ const BackupService = (() => {
     let copia;
     try {
       copia = ss.copy(nomeCopia);
-      moverCopiaParaPasta_(copia.getId(), pasta);
-      rotacionarSeNecessario_(pasta);
+      moverCopiaParaPasta_(copia.getId(), folderId);
+      rotacionarSeNecessario_(folderId);
       props.setProperty(PROP_ULTIMO_SUCESSO_YMD, hoje);
     } catch (e2) {
       const msg = e2 && e2.message ? e2.message : String(e2);
       enviarEmailFalha_("[SGC] Backup: falha ao copiar ou arquivar", msg);
       try {
         if (copia && copia.getId) {
-          DriveApp.getFileById(copia.getId()).setTrashed(true);
+          const trashUrl = DRIVE_V3_BASE + "/" + encodeURIComponent(copia.getId()) + "?supportsAllDrives=true";
+          driveApiRequest_("patch", trashUrl, { trashed: true });
         }
       } catch (e3) {
         // ignora limpeza
