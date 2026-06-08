@@ -11,30 +11,46 @@
 function doGet(e) {
   const view = (e && e.parameter && e.parameter.view) ? String(e.parameter.view) : "home";
   const id = (e && e.parameter && e.parameter.id) ? String(e.parameter.id) : "";
-  let sessaoWebAppOk = false;
+  let sessaoIdentificada = false;
   let acessoSistemaOk = false;
   let mensagemSemAcessoSistema = "";
+  let podeGerirPermissoesInicial = false;
   try {
     const em = Session.getActiveUser().getEmail();
-    sessaoWebAppOk = !!(em && String(em).trim());
-    if (sessaoWebAppOk) {
-      const perm = PermissaoRepo.obterPermissaoPorEmail(String(em).trim().toLowerCase());
-      if (perm) {
-        acessoSistemaOk = true;
-      } else {
-        mensagemSemAcessoSistema = PermissaoService.MSG_SEM_CADASTRO;
+    sessaoIdentificada = !!(em && String(em).trim());
+    if (sessaoIdentificada) {
+      try {
+        const perm = PermissaoRepo.obterPermissaoPorEmail(String(em).trim().toLowerCase());
+        if (perm) {
+          acessoSistemaOk = true;
+          try {
+            podeGerirPermissoesInicial = PermissaoService.usuarioPodeGerirPermissoes();
+          } catch (eAdmin) {
+            podeGerirPermissoesInicial = false;
+          }
+        } else {
+          mensagemSemAcessoSistema = PermissaoService.MSG_SEM_CADASTRO;
+        }
+      } catch (errPlan) {
+        acessoSistemaOk = false;
+        mensagemSemAcessoSistema =
+          errPlan && errPlan.message
+            ? String(errPlan.message)
+            : "Não foi possível aceder à planilha.";
       }
     }
   } catch (errSessao) {
-    sessaoWebAppOk = false;
+    sessaoIdentificada = false;
     acessoSistemaOk = false;
   }
   const template = HtmlService.createTemplateFromFile("Shell");
   template.initialView = view;
   template.initialId = id;
+  template.sessaoIdentificada = sessaoIdentificada;
   template.acessoSistemaOk = acessoSistemaOk;
   template.mensagemSemAcessoSistema = mensagemSemAcessoSistema;
-  template.menuHtml = getMenuHtml(view, true, id, sessaoWebAppOk, acessoSistemaOk);
+  template.podeGerirPermissoesInicial = podeGerirPermissoesInicial;
+  template.menuHtml = getMenuHtml(view, true, id, sessaoIdentificada, acessoSistemaOk);
   return template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -74,6 +90,24 @@ function doPost(e) {
  * Verificação antecipada: planilha associada ao script acessível pelo utilizador da Web App.
  * @returns {{ ok: true } | { ok: false, code: string, message: string }}
  */
+/**
+ * Gate da UI (passo 1): há e-mail de sessão identificável na Web App.
+ * @returns {{ ok: boolean, message?: string }}
+ */
+function obterEstadoGateSessaoExecucaoWebApp() {
+  let email = "";
+  try {
+    email = Session.getActiveUser().getEmail();
+  } catch (errSessao) {
+    email = "";
+  }
+  email = String(email || "").trim();
+  if (!email) {
+    return { ok: false, message: SessaoWebApp.MSG_SEM_IDENTIDADE };
+  }
+  return { ok: true };
+}
+
 function verificarAcessoPlanilhaWebApp() {
   let email = "";
   try {
@@ -170,6 +204,11 @@ function getPageContent(view, id) {
   SessaoWebApp.exigirParaGoogleScriptRun();
   view = view || "home";
   id = (id && String(id).trim()) ? String(id).trim() : "";
+  if (view === "permissoes-incluir" || view === "permissoes-consultar") {
+    if (!PermissaoService.usuarioPodeGerirPermissoes()) {
+      throw new Error(PermissaoService.MSG_NEGADO_GERIR);
+    }
+  }
   if (view === "home") {
     const t = HtmlService.createTemplateFromFile("HomeFragment");
     return { html: t.evaluate().getContent(), script: "" };
@@ -299,11 +338,72 @@ function obterUrlWebApp(visualizacao) {
 }
 
 /**
- * Dados de sessão para renderização do cabeçalho (conta ativa + URL de saída).
- * @returns {{ email: string, logoutUrl: string }}
+ * Identidade e capacidades do visitante (passo 2 do gate da UI).
+ * Não lança erro quando o utilizador não está na aba Permissoes — devolve flags.
+ * @returns {{
+ *   email: string,
+ *   logoutUrl: string,
+ *   acessoSistemaOk: boolean,
+ *   podeGerirPermissoes: boolean,
+ *   perfil: string,
+ *   mensagemSemAcesso: string
+ * }}
  */
 function obterIdentidadeCabecalhoWebApp() {
-  const email = SessaoWebApp.obterEmailAtivoNormalizado();
   const logoutUrl = String(Configuracoes.URL_LOGOUT_SSO || "").trim();
-  return { email: email, logoutUrl: logoutUrl };
+  let email = "";
+  try {
+    email = Session.getActiveUser().getEmail();
+  } catch (errSessao) {
+    email = "";
+  }
+  email = String(email || "").trim().toLowerCase();
+  if (!email) {
+    return {
+      email: "",
+      logoutUrl: logoutUrl,
+      acessoSistemaOk: false,
+      podeGerirPermissoes: false,
+      perfil: "",
+      mensagemSemAcesso: SessaoWebApp.MSG_SEM_IDENTIDADE
+    };
+  }
+  let perm = null;
+  try {
+    perm = PermissaoRepo.obterPermissaoPorEmail(email);
+  } catch (errPlan) {
+    return {
+      email: email,
+      logoutUrl: logoutUrl,
+      acessoSistemaOk: false,
+      podeGerirPermissoes: false,
+      perfil: "",
+      mensagemSemAcesso:
+        errPlan && errPlan.message ? String(errPlan.message) : "Não foi possível aceder à planilha."
+    };
+  }
+  if (!perm) {
+    return {
+      email: email,
+      logoutUrl: logoutUrl,
+      acessoSistemaOk: false,
+      podeGerirPermissoes: false,
+      perfil: "",
+      mensagemSemAcesso: PermissaoService.MSG_SEM_CADASTRO
+    };
+  }
+  let podeGerir = false;
+  try {
+    podeGerir = PermissaoService.usuarioPodeGerirPermissoes();
+  } catch (eGerir) {
+    podeGerir = false;
+  }
+  return {
+    email: email,
+    logoutUrl: logoutUrl,
+    acessoSistemaOk: true,
+    podeGerirPermissoes: podeGerir,
+    perfil: String(perm.perfil || "").trim(),
+    mensagemSemAcesso: ""
+  };
 }

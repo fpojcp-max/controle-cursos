@@ -7,6 +7,13 @@
     <?!= HtmlService.createHtmlOutputFromFile('ShellViewStyles').getContent(); ?>
   </head>
   <body data-initial-view="<?= initialView ?>" data-initial-id="<?= initialId ? String(initialId).replace(/&/g,'&amp;').replace(/"/g,'&quot;') : '' ?>">
+    <script>
+      window.__sgcGateSessaoOk = null;
+      window.__sgcAcessoSistemaOk = <?= acessoSistemaOk ? 'true' : 'false' ?>;
+      window.__sgcPodeGerirPermissoes = <?= podeGerirPermissoesInicial ? 'true' : 'false' ?>;
+      window.__sgcMensagemSemAcesso = <?!= JSON.stringify(String(mensagemSemAcessoSistema || '')) ?>;
+      window.__sgcSessaoIdentificada = <?= sessaoIdentificada ? 'true' : 'false' ?>;
+    </script>
     <?!= HtmlService.createHtmlOutputFromFile('AppOcupado').getContent(); ?>
     <div class="form-container">
       <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
@@ -77,6 +84,9 @@
       );
     }
     if (/não está cadastrado na aba Permissoes/i.test(s) || /Acesso negado\. O seu e-mail não está cadastrado/i.test(s)) {
+      return s;
+    }
+    if (/Apenas administradores podem gerir permissões/i.test(s)) {
       return s;
     }
     return null;
@@ -203,9 +213,83 @@
     return raw;
   }
 
+  function viewEhPermissoesAdmin_(view) {
+    return view === "permissoes-incluir" || view === "permissoes-consultar";
+  }
+
+  function resolverViewPermitida_(view) {
+    view = view || "home";
+    if (viewEhPermissoesAdmin_(view) && window.__sgcPodeGerirPermissoes !== true) {
+      return "home";
+    }
+    return view;
+  }
+
+  function definirTextoHome_(texto) {
+    var p = document.getElementById("sgcHomeMensagemPrincipal");
+    if (p) p.textContent = texto;
+  }
+
+  function definirMenuVisivelArranque_(mostrar) {
+    var menu = document.querySelector(".app-menu");
+    if (!menu) return;
+    menu.classList.toggle("sgc-menu-aguardando-gate", !mostrar);
+    if (mostrar) {
+      menu.removeAttribute("aria-hidden");
+    } else {
+      menu.setAttribute("aria-hidden", "true");
+    }
+  }
+
+  function sgcMostrarAvisoSemAcesso_(mensagem) {
+    var aviso = document.getElementById("sgcAvisoSemAcesso");
+    if (!aviso) return;
+    var p = aviso.querySelector("p");
+    if (p) p.textContent = mensagem || "";
+    aviso.style.display = mensagem ? "" : "none";
+  }
+
+  window.sgcAplicarIdentidadeCabecalho = function(data) {
+    var emailEl = document.getElementById("headerUserEmail");
+    var logoutEl = document.getElementById("headerLogoutLink");
+    var permLi = document.getElementById("sgcMenuPermissoes");
+    if (data && typeof data.acessoSistemaOk !== "undefined") {
+      window.__sgcAcessoSistemaOk = !!data.acessoSistemaOk;
+    }
+    if (data && typeof data.podeGerirPermissoes !== "undefined") {
+      window.__sgcPodeGerirPermissoes = !!data.podeGerirPermissoes;
+    }
+    if (data && data.mensagemSemAcesso) {
+      window.__sgcMensagemSemAcesso = String(data.mensagemSemAcesso);
+    }
+    if (permLi) {
+      permLi.style.display = data && data.podeGerirPermissoes ? "" : "none";
+    }
+    if (!emailEl || !logoutEl) return;
+    if (data && data.email) {
+      emailEl.innerHTML =
+        '<span class="header-session-label">Conta</span>: ' +
+        String(data.email).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    } else {
+      emailEl.innerHTML = '<span class="header-session-label">Conta</span>: não identificada';
+    }
+    var url = data && data.logoutUrl ? String(data.logoutUrl).trim() : "";
+    if (url) {
+      logoutEl.href = url;
+      logoutEl.removeAttribute("aria-disabled");
+    } else {
+      logoutEl.href = "#";
+      logoutEl.setAttribute("aria-disabled", "true");
+    }
+  };
+
   function navigate(view, id) {
     view = view || "home";
     id = (id && String(id).trim()) ? String(id).trim() : "";
+    if (window.__sgcGateSessaoOk !== true && view !== "home") {
+      return;
+    }
+    view = resolverViewPermitida_(view);
     mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
     var MS_POR_TENTATIVA = 55000;
     var MAX_TENTATIVAS = 2;
@@ -270,6 +354,9 @@
             }
             mainContent.innerHTML = html;
             if (data.script && data.script.trim()) runScript(data.script);
+            if (view === "home") {
+              definirTextoHome_("Seja bem-vindo ao Sistema de Gestão de Cursos e Turmas!");
+            }
             if (view === "consulta" && typeof window.ConsultaInit === "function") {
               try { window.ConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (turmas): " + (err && err.message ? err.message : String(err))); }
             } else if (view === "cadastro" && typeof window.CadastroInit === "function") {
@@ -298,6 +385,14 @@
         .withFailureHandler(function(err) {
           limparTimerNavegacao();
           var errStr = String(err);
+          if (/Apenas administradores podem gerir permissões/i.test(errStr) && viewEhPermissoesAdmin_(view)) {
+            if (endBusy) {
+              endBusy();
+              endBusy = null;
+            }
+            navigate("home", "");
+            return;
+          }
           if (
             typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
             window.tratarErroInfraestruturaSpaSeAplicavel(errStr)
@@ -323,16 +418,16 @@
     }
 
     function iniciarNavegacaoOuVerificacao() {
+      if (window.__sgcGateSessaoOk !== true) {
+        encerrarOcupadoNavegacao();
+        return;
+      }
       if (window.__spaAcessoPlanilhaOk === false) {
         encerrarOcupadoNavegacao();
         showBloqueioCentral(
           window.__spaAcessoPlanilhaMsg ||
             "Esta aplicação não consegue aceder aos dados. Atualize a página (F5) após resolver o problema."
         );
-        return;
-      }
-      if (window.__spaAcessoPlanilhaOk === true) {
-        pedirPagina();
         return;
       }
       google.script.run
@@ -345,6 +440,9 @@
             var failMsg = mapearRespostaVerificacaoAcesso_(res);
             window.__spaAcessoPlanilhaOk = false;
             window.__spaAcessoPlanilhaMsg = failMsg;
+            window.__sgcAcessoSistemaOk = false;
+            definirMenuVisivelArranque_(false);
+            sgcMostrarAvisoSemAcesso_(failMsg);
             showBloqueioCentral(failMsg);
             return;
           }
@@ -365,6 +463,9 @@
           failMsg = failMsg || raw || "Não foi possível validar o acesso à planilha.";
           window.__spaAcessoPlanilhaOk = false;
           window.__spaAcessoPlanilhaMsg = failMsg;
+          window.__sgcAcessoSistemaOk = false;
+          definirMenuVisivelArranque_(false);
+          sgcMostrarAvisoSemAcesso_(failMsg);
           showBloqueioCentral(failMsg);
         })
         .verificarAcessoPlanilhaWebApp();
@@ -379,6 +480,11 @@
   document.body.addEventListener("click", function(e) {
     var el = e.target.closest("[data-view]");
     if (el && el.getAttribute("data-view")) {
+      if (window.__sgcGateSessaoOk !== true) {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+      }
       e.preventDefault();
       e.stopPropagation();
       closeMenuDropdowns();
@@ -391,46 +497,92 @@
     if (e.key !== "Enter" && e.key !== " ") return;
     var el = e.target.closest("[data-view]");
     if (el && el.getAttribute("data-view")) {
+      if (window.__sgcGateSessaoOk !== true) {
+        e.preventDefault();
+        return;
+      }
       e.preventDefault();
       closeMenuDropdowns();
       navigate(el.getAttribute("data-view"), el.getAttribute("data-id") || "");
     }
   }, true);
 
-  var initialView = document.body.getAttribute("data-initial-view") || "home";
-  var initialId = document.body.getAttribute("data-initial-id") || "";
-  navigate(initialView, initialId);
-})();
-    </script>
-    <script>
-(function() {
-  var emailEl = document.getElementById("headerUserEmail");
-  var logoutEl = document.getElementById("headerLogoutLink");
-  if (!emailEl || !logoutEl) return;
+  function sgcGateFalha_(mensagem) {
+    var msg =
+      mensagem ||
+      "Não foi possível validar a sessão. Tente novamente mais tarde.";
+    window.__sgcGateSessaoOk = false;
+    window.__spaAcessoPlanilhaOk = false;
+    window.__spaAcessoPlanilhaMsg = msg;
+    definirMenuVisivelArranque_(false);
+    sgcMostrarAvisoSemAcesso_(msg);
+    showBloqueioCentral(msg);
+  }
 
-  google.script.run
-    .withSuccessHandler(function(data) {
-      if (data && data.email) {
-        emailEl.innerHTML =
-          '<span class="header-session-label">Conta</span>: ' + String(data.email).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-      } else {
-        emailEl.innerHTML = '<span class="header-session-label">Conta</span>: não identificada';
-      }
-      var url = data && data.logoutUrl ? String(data.logoutUrl).trim() : "";
-      if (url) {
-        logoutEl.href = url;
-        logoutEl.removeAttribute("aria-disabled");
-      } else {
-        logoutEl.href = "#";
-        logoutEl.setAttribute("aria-disabled", "true");
-      }
-    })
-    .withFailureHandler(function() {
-      emailEl.innerHTML = '<span class="header-session-label">Conta</span>: não identificada';
-      logoutEl.href = "#";
-      logoutEl.setAttribute("aria-disabled", "true");
-    })
-    .obterIdentidadeCabecalhoWebApp();
+  function sgcGatePronto_(data) {
+    if (typeof window.sgcAplicarIdentidadeCabecalho === "function") {
+      window.sgcAplicarIdentidadeCabecalho(data);
+    }
+    if (!data || data.acessoSistemaOk !== true) {
+      var msgSem =
+        (data && data.mensagemSemAcesso) ||
+        window.__sgcMensagemSemAcesso ||
+        "Acesso negado.";
+      window.__sgcGateSessaoOk = false;
+      window.__spaAcessoPlanilhaOk = false;
+      window.__spaAcessoPlanilhaMsg = msgSem;
+      definirMenuVisivelArranque_(false);
+      sgcMostrarAvisoSemAcesso_(msgSem);
+      showBloqueioCentral(msgSem);
+      return;
+    }
+    window.__sgcGateSessaoOk = true;
+    window.__spaAcessoPlanilhaOk = null;
+    window.__spaAcessoPlanilhaMsg = "";
+    definirMenuVisivelArranque_(true);
+    sgcMostrarAvisoSemAcesso_("");
+    var initialView = document.body.getAttribute("data-initial-view") || "home";
+    var initialId = document.body.getAttribute("data-initial-id") || "";
+    initialView = resolverViewPermitida_(initialView);
+    navigate(initialView, initialId);
+  }
+
+  function sgcIniciarGateArranque_() {
+    window.__sgcGateSessaoOk = null;
+    window.__spaAcessoPlanilhaOk = null;
+    definirMenuVisivelArranque_(false);
+    mainContent.innerHTML =
+      '<div class="main-placeholder sgc-home-placeholder">' +
+      '<p class="sgc-home-mensagem" id="sgcHomeMensagemPrincipal">Validando a sessão…</p></div>';
+    if (typeof google === "undefined" || !google.script || typeof google.script.run !== "object") {
+      sgcGateFalha_("Não foi possível contactar o servidor. Abra esta página pelo link publicado do Web App.");
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(function(rGate) {
+        if (!rGate || rGate.ok !== true) {
+          sgcGateFalha_(
+            (rGate && rGate.message) ||
+              "Não foi possível identificar o seu utilizador. Aceda já autenticado com a conta do domínio."
+          );
+          return;
+        }
+        google.script.run
+          .withSuccessHandler(function(data) {
+            sgcGatePronto_(data);
+          })
+          .withFailureHandler(function() {
+            sgcGateFalha_("Não foi possível validar a sessão. Tente novamente mais tarde.");
+          })
+          .obterIdentidadeCabecalhoWebApp();
+      })
+      .withFailureHandler(function() {
+        sgcGateFalha_("Não foi possível validar a sessão. Tente novamente mais tarde.");
+      })
+      .obterEstadoGateSessaoExecucaoWebApp();
+  }
+
+  sgcIniciarGateArranque_();
 })();
     </script>
   </body>
