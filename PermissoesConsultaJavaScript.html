@@ -1,0 +1,229 @@
+<script>
+(function() {
+  var PAGE_SIZE = 50;
+  var MSG_SEM_RESULTADO = "Nenhum resultado encontrado para os filtros selecionados.";
+  var MSG_MODAL_EXCLUSAO = "Confirma a exclusão da permissão?\nA operação não poderá ser revertida.";
+  var currentSort = { key: "nome", dir: "asc" };
+  var lastQuery = null;
+  var currentPage = 1;
+  var totalRecords = 0;
+  var colunasAtuais = [];
+  var sheetRowsPagina = [];
+  var linhaSelecionadaIndex = -1;
+  var trSelecionado = null;
+
+  function renderMsg(text, type) {
+    var el = document.getElementById("msgPermConsulta");
+    if (!el) return;
+    if (!text) { el.innerHTML = ""; return; }
+    var cls = type === "danger" ? "is-danger" : type === "success" ? "is-success" : "is-info";
+    el.innerHTML = '<div class="notification ' + cls + ' is-light">' + String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</div>";
+    if (typeof window.rolarParaVerMensagemNoTopo === "function") window.rolarParaVerMensagemNoTopo(el);
+  }
+
+  function fillSelect(id, items) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = "";
+    el.appendChild(new Option("Todos", ""));
+    (items || []).forEach(function(item) { el.appendChild(new Option(item, item)); });
+  }
+
+  function getFilters() {
+    return {
+      nome: document.getElementById("permConsultaFiltroNome").value || "",
+      email: document.getElementById("permConsultaFiltroEmail").value || "",
+      perfil: document.getElementById("permConsultaFiltroPerfil").value || ""
+    };
+  }
+
+  function limparSelecao() {
+    if (trSelecionado) trSelecionado.classList.remove("consulta-tr-selecionada");
+    trSelecionado = null;
+    linhaSelecionadaIndex = -1;
+    var btnE = document.getElementById("btnPermConsultaExcluir");
+    if (btnE) btnE.disabled = true;
+  }
+
+  function setResultadosVisivel(v) {
+    var el = document.getElementById("permConsultaResultadosBlock");
+    if (el) el.style.display = v ? "" : "none";
+  }
+
+  function renderTabela(columns, rows) {
+    var head = document.getElementById("permConsultaResultsHead");
+    var body = document.getElementById("permConsultaResultsBody");
+    if (!head || !body) return;
+    head.innerHTML = "";
+    var trh = document.createElement("tr");
+    (columns || []).forEach(function(col) {
+      var th = document.createElement("th");
+      th.textContent = col.label || col.key || "";
+      trh.appendChild(th);
+    });
+    head.appendChild(trh);
+    body.innerHTML = "";
+    (rows || []).forEach(function(row, ix) {
+      var tr = document.createElement("tr");
+      tr.style.cursor = "pointer";
+      (row || []).forEach(function(cell) {
+        var td = document.createElement("td");
+        td.textContent = cell == null ? "" : String(cell);
+        tr.appendChild(td);
+      });
+      tr.addEventListener("click", function() {
+        if (linhaSelecionadaIndex === ix) { limparSelecao(); return; }
+        limparSelecao();
+        trSelecionado = tr;
+        linhaSelecionadaIndex = ix;
+        tr.classList.add("consulta-tr-selecionada");
+        var btnE = document.getElementById("btnPermConsultaExcluir");
+        if (btnE) btnE.disabled = false;
+      });
+      body.appendChild(tr);
+    });
+  }
+
+  function atualizarPaginacao() {
+    var bar = document.getElementById("permConsultaPaginationBar");
+    var meta = document.getElementById("permConsultaResultsMeta");
+    var label = document.getElementById("permConsultaPaginationLabel");
+    if (!bar) return;
+    if (totalRecords <= PAGE_SIZE) {
+      bar.style.display = "none";
+      if (meta) meta.textContent = totalRecords ? "Total: " + totalRecords : "";
+      return;
+    }
+    bar.style.display = "";
+    var totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+    if (meta) meta.textContent = "Total: " + totalRecords;
+    if (label) label.textContent = "Página " + currentPage + " de " + totalPages;
+    var btnA = document.getElementById("btnPermConsultaPagAnterior");
+    var btnP = document.getElementById("btnPermConsultaPagProxima");
+    if (btnA) btnA.disabled = currentPage <= 1;
+    if (btnP) btnP.disabled = currentPage >= totalPages;
+  }
+
+  function pesquisar(manterMsg) {
+    if (!manterMsg) renderMsg("");
+    limparSelecao();
+    lastQuery = getFilters();
+    currentPage = 1;
+    executarPesquisa();
+  }
+
+  function executarPesquisa() {
+    var offset = (currentPage - 1) * PAGE_SIZE;
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        if (resp && resp.erro) {
+          renderMsg(resp.erro, "danger");
+          setResultadosVisivel(false);
+          return;
+        }
+        colunasAtuais = resp.columns || [];
+        totalRecords = resp.total || 0;
+        sheetRowsPagina = resp.sheetRows || [];
+        if (!totalRecords) {
+          renderMsg(MSG_SEM_RESULTADO, "info");
+          setResultadosVisivel(false);
+          return;
+        }
+        setResultadosVisivel(true);
+        renderTabela(colunasAtuais, resp.rows || []);
+        atualizarPaginacao();
+        var btnCsv = document.getElementById("btnPermConsultaExportarCsv");
+        if (btnCsv) btnCsv.disabled = false;
+      })
+      .withFailureHandler(function(err) {
+        renderMsg("Erro: " + (err && err.message ? err.message : String(err)), "danger");
+      })
+      .pesquisarPermissoesConsulta(lastQuery, currentSort, { offset: offset, limit: PAGE_SIZE });
+  }
+
+  function carregarFiltros() {
+    google.script.run
+      .withSuccessHandler(function(config) {
+        if (config && config.erro) {
+          renderMsg(config.erro, "danger");
+          return;
+        }
+        fillSelect("permConsultaFiltroPerfil", (config && config.perfis) || []);
+      })
+      .withFailureHandler(function(err) {
+        renderMsg("Erro ao carregar filtros: " + (err && err.message ? err.message : String(err)), "danger");
+      })
+      .obterOpcoesFiltroPermissoesConsulta();
+  }
+
+  window.PermissoesConsultaInit = function() {
+    var form = document.getElementById("permConsultaSearchForm");
+    if (!form || form._permWired) {
+      carregarFiltros();
+      return;
+    }
+    form._permWired = true;
+    form.addEventListener("submit", function(ev) {
+      ev.preventDefault();
+      pesquisar(false);
+    });
+    document.getElementById("btnPermConsultaLimpar").addEventListener("click", function() {
+      form.reset();
+      setResultadosVisivel(false);
+      limparSelecao();
+      renderMsg("");
+    });
+    document.getElementById("btnPermConsultaPagAnterior").addEventListener("click", function() {
+      if (currentPage > 1) { currentPage--; executarPesquisa(); }
+    });
+    document.getElementById("btnPermConsultaPagProxima").addEventListener("click", function() {
+      var totalPages = Math.max(1, Math.ceil(totalRecords / PAGE_SIZE));
+      if (currentPage < totalPages) { currentPage++; executarPesquisa(); }
+    });
+    document.getElementById("btnPermConsultaExcluir").addEventListener("click", function() {
+      if (linhaSelecionadaIndex < 0 || !sheetRowsPagina[linhaSelecionadaIndex]) return;
+      if (!window.confirm(MSG_MODAL_EXCLUSAO)) return;
+      var sr = sheetRowsPagina[linhaSelecionadaIndex];
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Não foi possível excluir.", "danger");
+            return;
+          }
+          renderMsg(resp.message || "Permissão excluída.", "success");
+          executarPesquisa();
+        })
+        .withFailureHandler(function(err) {
+          renderMsg("Erro: " + (err && err.message ? err.message : String(err)), "danger");
+        })
+        .excluirPermissaoConsulta(sr);
+    });
+    document.getElementById("btnPermConsultaExportarCsv").addEventListener("click", function() {
+      if (!lastQuery) return;
+      google.script.run
+        .withSuccessHandler(function(data) {
+          if (data && data.erro) {
+            renderMsg(data.erro, "danger");
+            return;
+          }
+          var cols = data.columns || [];
+          var rows = data.rows || [];
+          var lines = [cols.map(function(c) { return '"' + String(c.label || "").replace(/"/g, '""') + '"'; }).join(";")];
+          rows.forEach(function(row) {
+            lines.push((row || []).map(function(c) { return '"' + String(c == null ? "" : c).replace(/"/g, '""') + '"'; }).join(";"));
+          });
+          var blob = new Blob(["\uFEFF" + lines.join("\r\n")], { type: "text/csv;charset=utf-8" });
+          var a = document.createElement("a");
+          a.href = URL.createObjectURL(blob);
+          a.download = "permissoes.csv";
+          a.click();
+        })
+        .withFailureHandler(function(err) {
+          renderMsg("Erro na exportação: " + (err && err.message ? err.message : String(err)), "danger");
+        })
+        .obterPermissoesConsultaParaExportar(lastQuery, currentSort);
+    });
+    carregarFiltros();
+  };
+})();
+</script>

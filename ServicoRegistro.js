@@ -399,12 +399,7 @@ const RegistroService = (() => {
   }
 
   function garantirUsuarioDonoTurmaPorLinha_(linha) {
-    const emailArm = String(linha[IDX_EMAIL_USUARIO] != null ? linha[IDX_EMAIL_USUARIO] : "").trim();
-    SessaoWebApp.garantirMesmoUsuarioQueEmailArmazenadoOuErro(
-      emailArm,
-      SessaoWebApp.MSG_NAO_RESPONSAVEL,
-      SessaoWebApp.MSG_SEM_EMAIL_CRIADOR_TURMA
-    );
+    PermissaoService.garantirPodeAlterarTurmaLinha(linha);
   }
 
   function excluirRegistroPorIdComDetalhe_(id) {

@@ -2,35 +2,27 @@
  * Camada Data – Configurações e listas estáticas (sem lógica).
  *
  * Web App (alinhamento com appsscript.json):
- * - Executar como: utilizador que acede à aplicação → Calendar e Sheets correm com a conta
- *   de quem usa o link; eventos ficam na agenda desse utilizador. Não é necessário cliente
- *   OAuth Web, GIS nem origens na Cloud Console.
- * - Acesso: utilizadores do domínio (Workspace) → ajuste em Implantação se precisar de outro.
- * - Partilhe a planilha de turmas e a de agendamentos com o domínio (p.ex. edição) para cada
- *   utilizador conseguir abrir via SpreadsheetApp ao executar o script em nome dele.
+ * - Executar como: utilizador que acede à aplicação → Sheets correm com a conta de quem usa o link.
+ * - Acesso: utilizadores do domínio (Workspace); apenas e-mails na aba Permissoes utilizam o sistema.
+ * - Planilha única (script associado): abas Turmas, Agendamentos e Permissoes.
  */
 
 const Configuracoes = {
   NOME_ABA: "Turmas",
   NOME_COLUNA_ID: "ID Turma",
 
-  // API de Agendamento (payload com spreadsheetId): aba na planilha informada.
-  // Se não existir, a repository faz fallback para a primeira aba.
-  NOME_ABA_AGENDAMENTO: "Turmas",
-
-  /**
-   * ID do arquivo no Google Sheets (trecho da URL entre /d/ e /edit).
-   * NÃO use o parâmetro gid= (esse é só o ID interno da aba).
-   */
-  PLANILHA_AGENDAMENTOS_ID: "1X64jQdAi39Efs0bq1fWbQlva9uqxuKOOzsCfGz7dRUo",
-
-  /** Nome exato da aba na planilha de agendamentos (case-sensitive). */
   NOME_ABA_AGENDAMENTOS: "Agendamentos",
 
-  /** Fuso usado na Calendar API e na expansão de datas (sem coluna de TZ na planilha). */
+  NOME_ABA_PERMISSOES: "Permissoes",
+
+  /** Perfis válidos na coluna Perfil (aba Permissoes). */
+  PERFIL_RESPONSAVEL: "Responsável",
+  PERFIL_ADMINISTRADOR: "Administrador",
+
+  /** Fuso usado na expansão de datas (sem coluna de TZ na planilha). */
   TIMEZONE_AGENDAMENTO: "America/Sao_Paulo",
 
-  /** Ordem das colunas A–L (contrato com o print acordado). */
+  /** Ordem das colunas A–J (aba Agendamentos). */
   CABECALHOS_AGENDAMENTO: [
     "Turma",
     "Curso",
@@ -38,62 +30,44 @@ const Configuracoes = {
     "Sala",
     "Hora Início",
     "Hora Fim",
-    "Convidados",
     "Criado em",
     "Criado por",
     "ID Agendamento",
-    "ID Turma",
-    "ID Sala"
+    "ID Turma"
   ],
-
-  /** Limite de convidados após normalização (evita limites da API). */
-  LIMITE_CONVIDADOS_AGENDAMENTO: 50,
 
   /** Máximo de agendamentos excluídos por operação (Web App). */
   LIMITE_EXCLUSAO_AGENDAMENTOS_LOTE: 100,
 
   /**
-   * Catálogo único: `rotulo` = texto em selects e planilhas; `identificadorCalendario` = recurso no Google Calendar.
+   * Catálogo de salas: `rotulo` = texto em selects e coluna Sala da planilha.
    */
+  CATALOGO_RECURSOS_SALA: [
+    { rotulo: "(EDUCORP)-Auditório" },
+    { rotulo: "(EDUCORP)-Idiomas" },
+    { rotulo: "(EDUCORP)-Lab. 01" },
+    { rotulo: "(EDUCORP)-Lab. 02" },
+    { rotulo: "(EDUCORP)-M1" },
+    { rotulo: "(EDUCORP)-M2" },
+    { rotulo: "Externo" }
+  ],
+
   /**
    * Pasta do Drive onde ficam as cópias de backup (ID na URL: /folders/ID).
-   * A conta que corre o trigger diário precisa de criar/apagar ficheiros nesta pasta.
    */
   BACKUP_DRIVE_FOLDER_ID: "1P3fmLpgjbuZNINSHpJtSZpjLBkuCMbye",
 
-  /** E-mail para alertas de falha de backup. Vazio = e-mail do utilizador ativo (ex.: quem corre o trigger). */
   BACKUP_EMAIL_ALERTA: "fpojcp@unicamp.br",
-
-  /** Prefixo dos nomes de ficheiro de backup (só estes entram na rotação). */
   BACKUP_PREFIXO_NOME_ARQUIVO: "BACKUP_SGC_",
-
-  /** Máximo de cópias na pasta; a partir daí remove-se a mais antiga. */
   BACKUP_MAX_COPIAS: 30,
-
-  /** Fuso para data do nome do ficheiro e “um backup por dia”. */
   BACKUP_TIMEZONE: "America/Sao_Paulo",
 
-  /**
-   * URL de saída institucional (SSO). O botão "Sair" no cabeçalho redireciona para este endereço.
-   * Pode apontar para a tela de autenticação central da Unicamp.
-   */
-  URL_LOGOUT_SSO: "https://accounts.google.com/Logout",
-
-  CATALOGO_RECURSOS_SALA: [
-    { rotulo: "(EDUCORP)-Auditório", identificadorCalendario: "c_188fsj4m0hnfii6qgjn69muavm51g@resource.calendar.google.com" },
-    { rotulo: "(EDUCORP)-Idiomas", identificadorCalendario: "c_188akjbiofvveiatinhe5dd2oclmi@resource.calendar.google.com" },
-    { rotulo: "(EDUCORP)-Lab. 01", identificadorCalendario: "c_188evr21m28u4h53guerh2v826efe@resource.calendar.google.com" },
-    { rotulo: "(EDUCORP)-Lab. 02", identificadorCalendario: "c_188djbpv265fqhjajsdtsmkagmgt4@resource.calendar.google.com" },
-    { rotulo: "(EDUCORP)-M1", identificadorCalendario: "c_188dal6k74eoij0mm2hqqq53bucps@resource.calendar.google.com" },
-    { rotulo: "(EDUCORP)-M2", identificadorCalendario: "c_1886ke3al9bb8g4ditrf4340nflb4@resource.calendar.google.com" },
-    { rotulo: "Externo", identificadorCalendario: "c_188b5jvdenpk4igdlbv99lsd1i52k@resource.calendar.google.com" }
-  ]
+  URL_LOGOUT_SSO: "https://accounts.google.com/Logout"
 };
 
 /**
  * Retorna as opções para os campos do formulário (cursos, turmas, etc.).
- * Salas por agendamento: catálogo em Configuracoes.CATALOGO_RECURSOS_SALA (telas de agendamento).
- * @returns {Object} Objeto com CURSOS, TURMAS, OFERTAS, RESPONSAVEIS, PRIORIDADES, STATUS, BOOLEANOS
+ * @returns {Object}
  */
 function obterOpcoesFormulario() {
   return {

@@ -76,6 +76,9 @@
         "Aceda já autenticado com a conta do domínio (Web App como «quem acede»)."
       );
     }
+    if (/não está cadastrado na aba Permissoes/i.test(s) || /Acesso negado\. O seu e-mail não está cadastrado/i.test(s)) {
+      return s;
+    }
     return null;
   };
     </script>
@@ -117,6 +120,8 @@
       view === "agendamento-excluir"
     )
       group = "agendamento";
+    else if (view === "permissoes-incluir" || view === "permissoes-consultar")
+      group = "permissoes";
     if (group) {
       var dd = menu.querySelector('.app-menu-item-dropdown[data-dropdown="' + group + '"]');
       if (dd) dd.classList.add("is-active");
@@ -281,6 +286,10 @@
               try { window.TurmaExcluirInit(); } catch (err) { showError("Erro ao iniciar Exclusão de turmas: " + (err && err.message ? err.message : String(err))); }
             } else if (view === "turma-editar" && typeof window.TurmaEditarInit === "function") {
               try { window.TurmaEditarInit(); } catch (err) { showError("Erro ao iniciar Edição de turmas: " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "permissoes-incluir" && typeof window.PermissoesIncluirInit === "function") {
+              try { window.PermissoesIncluirInit(); } catch (err) { showError("Erro ao iniciar Incluir permissões: " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "permissoes-consultar" && typeof window.PermissoesConsultaInit === "function") {
+              try { window.PermissoesConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar permissões: " + (err && err.message ? err.message : String(err))); }
             }
           } catch (err) {
             showError("Erro ao aplicar conteúdo: " + (err && err.message ? err.message : String(err)));

@@ -1,16 +1,14 @@
 /**
- * Camada Data – Catálogo único de recursos de sala (rótulo exibido + identificador no Google Calendar).
- * Consumido por formulários, filtros e resolução de recursos; nomes neutros em relação a telas específicas.
+ * Camada Data – Catálogo de salas (rótulo exibido em selects e na planilha).
  */
 
 /**
- * @returns {{ rotulo: string, identificadorCalendario: string }[]}
+ * @returns {{ rotulo: string }[]}
  */
 function obterEntradasCatalogoRecursosSala() {
   const lista = Configuracoes.CATALOGO_RECURSOS_SALA || [];
   return lista.map((e) => ({
-    rotulo: String(e && e.rotulo != null ? e.rotulo : "").trim(),
-    identificadorCalendario: String(e && e.identificadorCalendario != null ? e.identificadorCalendario : "").trim()
+    rotulo: String(e && e.rotulo != null ? e.rotulo : "").trim()
   }));
 }
 
@@ -30,13 +28,13 @@ function listarRotulosCatalogoRecursosSala() {
 }
 
 /**
- * Mapa rótulo → identificador de calendário (para APIs que precisam do ID do recurso).
- * @returns {Object<string, string>}
+ * Mapa rótulo → true (validação de sala reconhecida).
+ * @returns {Object<string, boolean>}
  */
-function montarMapaRotuloParaIdentificadorCalendario() {
-  const map = {};
-  obterEntradasCatalogoRecursosSala().forEach((e) => {
-    if (e.rotulo) map[e.rotulo] = e.identificadorCalendario;
+function montarConjuntoRotulosSalaValidos() {
+  const set = {};
+  listarRotulosCatalogoRecursosSala().forEach((r) => {
+    set[r] = true;
   });
-  return map;
+  return set;
 }

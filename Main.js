@@ -12,16 +12,29 @@ function doGet(e) {
   const view = (e && e.parameter && e.parameter.view) ? String(e.parameter.view) : "home";
   const id = (e && e.parameter && e.parameter.id) ? String(e.parameter.id) : "";
   let sessaoWebAppOk = false;
+  let acessoSistemaOk = false;
+  let mensagemSemAcessoSistema = "";
   try {
     const em = Session.getActiveUser().getEmail();
     sessaoWebAppOk = !!(em && String(em).trim());
+    if (sessaoWebAppOk) {
+      const perm = PermissaoRepo.obterPermissaoPorEmail(String(em).trim().toLowerCase());
+      if (perm) {
+        acessoSistemaOk = true;
+      } else {
+        mensagemSemAcessoSistema = PermissaoService.MSG_SEM_CADASTRO;
+      }
+    }
   } catch (errSessao) {
     sessaoWebAppOk = false;
+    acessoSistemaOk = false;
   }
   const template = HtmlService.createTemplateFromFile("Shell");
   template.initialView = view;
   template.initialId = id;
-  template.menuHtml = getMenuHtml(view, true, id, sessaoWebAppOk);
+  template.acessoSistemaOk = acessoSistemaOk;
+  template.mensagemSemAcessoSistema = mensagemSemAcessoSistema;
+  template.menuHtml = getMenuHtml(view, true, id, sessaoWebAppOk, acessoSistemaOk);
   return template
     .evaluate()
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL)
@@ -62,7 +75,16 @@ function doPost(e) {
  * @returns {{ ok: true } | { ok: false, code: string, message: string }}
  */
 function verificarAcessoPlanilhaWebApp() {
-  SessaoWebApp.exigirParaGoogleScriptRun();
+  let email = "";
+  try {
+    email = Session.getActiveUser().getEmail();
+  } catch (errSessao) {
+    email = "";
+  }
+  email = String(email || "").trim();
+  if (!email) {
+    return { ok: false, code: "NO_SESSION", message: SessaoWebApp.MSG_SEM_IDENTIDADE };
+  }
   try {
     const ss = SpreadsheetApp.getActiveSpreadsheet();
     if (!ss) {
@@ -73,11 +95,18 @@ function verificarAcessoPlanilhaWebApp() {
       };
     }
     ss.getName();
-    return { ok: true };
   } catch (err) {
     const raw = err && err.message ? String(err.message) : String(err);
     return { ok: false, code: "SPREADSHEET_ACCESS", message: raw };
   }
+  if (!PermissaoRepo.obterPermissaoPorEmail(email.toLowerCase())) {
+    return {
+      ok: false,
+      code: "NO_PERMISSAO",
+      message: PermissaoService.MSG_SEM_CADASTRO
+    };
+  }
+  return { ok: true };
 }
 
 /**
@@ -86,15 +115,26 @@ function verificarAcessoPlanilhaWebApp() {
  * @param {boolean} spa - Se true, menu para SPA (navegação client-side).
  * @param {string} [cadastroId] - id na URL quando view=cadastro (edição); vazio = inclusão.
  * @param {boolean} [sessaoWebAppOk] - se false, o menu não oferece navegação (sem identidade na sessão).
+ * @param {boolean} [acessoSistemaOk] - se false, utilizador sem linha na aba Permissoes.
  * @returns {string}
  */
-function getMenuHtml(view, spa, cadastroId, sessaoWebAppOk) {
+function getMenuHtml(view, spa, cadastroId, sessaoWebAppOk, acessoSistemaOk) {
   const idNorm =
     cadastroId && String(cadastroId).trim() ? String(cadastroId).trim() : "";
   const v = view || "";
   const t = HtmlService.createTemplateFromFile("Menu");
-  t.sessaoWebAppOk = sessaoWebAppOk === true;
-  t.mensagemSemSessaoWebApp = SessaoWebApp.MSG_SEM_IDENTIDADE;
+  t.sessaoWebAppOk = sessaoWebAppOk === true && acessoSistemaOk === true;
+  t.mensagemSemSessaoWebApp = acessoSistemaOk === false && sessaoWebAppOk === true
+    ? PermissaoService.MSG_SEM_CADASTRO
+    : SessaoWebApp.MSG_SEM_IDENTIDADE;
+  t.exibirMenuPermissoes = false;
+  if (sessaoWebAppOk === true && acessoSistemaOk === true) {
+    try {
+      t.exibirMenuPermissoes = PermissaoService.usuarioPodeGerirPermissoes();
+    } catch (eMenu) {
+      t.exibirMenuPermissoes = false;
+    }
+  }
   t.view = v;
   t.menuConsultaAtiva = v === "consulta" || (v === "cadastro" && idNorm.length > 0);
   t.menuInserirAtivo = v === "cadastro" && idNorm.length === 0;
@@ -115,6 +155,7 @@ function getMenuHtml(view, spa, cadastroId, sessaoWebAppOk) {
     v === "agendamento-consulta" ||
     v === "agendamento-editar" ||
     v === "agendamento-excluir";
+  t.menuPermissoesAtivo = v === "permissoes-incluir" || v === "permissoes-consultar";
   t.spa = spa === true;
   return t.evaluate().getContent();
 }
@@ -220,6 +261,26 @@ function getPageContent(view, id) {
     return {
       html: t.evaluate().getContent(),
       script: HtmlService.createHtmlOutputFromFile("TurmaEditarJavaScript").getContent()
+    };
+  }
+  if (view === "permissoes-incluir") {
+    const t = HtmlService.createTemplateFromFile("PermissoesIncluirFragment");
+    t.spa = true;
+    t.parentItem = "Permissão";
+    t.subItem = "Incluir";
+    return {
+      html: t.evaluate().getContent(),
+      script: HtmlService.createHtmlOutputFromFile("PermissoesIncluirJavaScript").getContent()
+    };
+  }
+  if (view === "permissoes-consultar") {
+    const t = HtmlService.createTemplateFromFile("PermissoesConsultaFragment");
+    t.spa = true;
+    t.parentItem = "Permissão";
+    t.subItem = "Consultar";
+    return {
+      html: t.evaluate().getContent(),
+      script: HtmlService.createHtmlOutputFromFile("PermissoesConsultaJavaScript").getContent()
     };
   }
   return { html: "", script: "" };

@@ -1,0 +1,57 @@
+<div class="form-content" id="permissoesConsultaRoot">
+  <div id="msgPermConsulta" class="mb-3"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+    </div>
+  </div>
+
+  <h2 class="section-title">Filtros de pesquisa</h2>
+  <form id="permConsultaSearchForm">
+    <div class="columns is-multiline">
+      <div class="column is-6">
+        <label class="label" for="permConsultaFiltroNome">Nome</label>
+        <input class="input" type="text" id="permConsultaFiltroNome" placeholder="Texto completo ou parcial…">
+      </div>
+      <div class="column is-6">
+        <label class="label" for="permConsultaFiltroEmail">E-mail</label>
+        <input class="input" type="text" id="permConsultaFiltroEmail" placeholder="Texto completo ou parcial…" inputmode="email">
+      </div>
+      <div class="column is-6">
+        <label class="label" for="permConsultaFiltroPerfil">Perfil</label>
+        <div class="select is-fullwidth">
+          <select id="permConsultaFiltroPerfil"></select>
+        </div>
+      </div>
+    </div>
+    <div class="consulta-form-actions">
+      <button type="button" class="btn-custom btn-secondary" id="btnPermConsultaLimpar">Limpar filtros</button>
+      <button type="submit" class="btn-custom" id="btnPermConsultaPesquisar">Pesquisar</button>
+    </div>
+  </form>
+
+  <div id="permConsultaResultadosBlock" style="display: none;">
+    <div class="resultados-header">
+      <h2 class="section-title">Resultados</h2>
+      <button type="button" class="btn-custom" id="btnPermConsultaExportarCsv" disabled title="Exportar CSV">Exportar CSV</button>
+    </div>
+    <div class="table-wrap">
+      <table class="table is-striped is-hoverable is-fullwidth" id="permConsultaResultsTable">
+        <thead id="permConsultaResultsHead"></thead>
+        <tbody id="permConsultaResultsBody"></tbody>
+      </table>
+    </div>
+    <p class="is-size-7 muted mb-2 mt-3">Clique sobre uma linha da tabela para selecioná-la.</p>
+    <div id="permConsultaPaginationBar" class="pagination-bar" style="display: none;">
+      <span class="pagination-info muted is-size-7" id="permConsultaResultsMeta"></span>
+      <div class="pagination-controls">
+        <button type="button" id="btnPermConsultaPagAnterior">Anterior</button>
+        <span class="pagination-info muted is-size-7" id="permConsultaPaginationLabel"></span>
+        <button type="button" id="btnPermConsultaPagProxima">Próxima</button>
+      </div>
+    </div>
+    <div class="ag-excluir-actions mt-4">
+      <button type="button" class="btn-custom btn-secondary" id="btnPermConsultaExcluir" disabled style="color:#b71c1c;border-color:#e57373;">Excluir permissão</button>
+    </div>
+  </div>
+</div>

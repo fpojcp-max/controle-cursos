@@ -118,7 +118,7 @@
       (salas || []).forEach(function(s) {
         var opt = document.createElement("option");
         opt.value = s.nome;
-        opt.textContent = s.nome + (s.configurada ? "" : " (sem ID — verifique o catálogo de recursos)");
+        opt.textContent = s.nome;
         sel.appendChild(opt);
       });
       var help = document.getElementById("agEdFormSalaHelp");
@@ -135,7 +135,7 @@
 
     function setFormEdicaoLocked(lock) {
       formEdicaoLocked = !!lock;
-      ["agEdFormData", "agEdFormHoraIni", "agEdFormHoraFim", "agEdFormSala", "agEdFormConvIncluir", "agEdFormConvExcluir"].forEach(
+      ["agEdFormData", "agEdFormHoraIni", "agEdFormHoraFim", "agEdFormSala"].forEach(
         function(id) {
           var el = document.getElementById(id);
           if (el) el.disabled = formEdicaoLocked;
@@ -192,9 +192,6 @@
       } else if (salaSel) {
         salaSel.selectedIndex = 0;
       }
-      document.getElementById("agEdFormConvAtuais").value = resp.convidadosAtuais || "";
-      document.getElementById("agEdFormConvIncluir").value = "";
-      document.getElementById("agEdFormConvExcluir").value = "";
       aplicarLimitesDataEdicao(resp.hojeYmd, resp.vigenciaInicioYmd, resp.vigenciaFimYmd);
       setFormEdicaoLocked(false);
       renderMsg("");
@@ -497,9 +494,7 @@
         data: String(document.getElementById("agEdFormData").value || "").trim(),
         horaInicio: String(document.getElementById("agEdFormHoraIni").value || "").trim(),
         horaFim: String(document.getElementById("agEdFormHoraFim").value || "").trim(),
-        salaNome: String(document.getElementById("agEdFormSala").value || "").trim(),
-        convidadosIncluir: document.getElementById("agEdFormConvIncluir").value,
-        convidadosExcluir: document.getElementById("agEdFormConvExcluir").value
+        salaNome: String(document.getElementById("agEdFormSala").value || "").trim()
       };
       if (!payload.data || !payload.horaInicio || !payload.horaFim) {
         renderMsg("Preencha data, hora início e hora fim.", "danger");
@@ -518,17 +513,7 @@
             return;
           }
           renderMsg(resp.message || "Agendamento atualizado com sucesso.", "success");
-          document.getElementById("agEdFormConvIncluir").value = "";
-          document.getElementById("agEdFormConvExcluir").value = "";
           setFormEdicaoLocked(true);
-          google.script.run
-            .withSuccessHandler(function(r2) {
-              if (r2 && r2.success && r2.convidadosAtuais != null) {
-                document.getElementById("agEdFormConvAtuais").value = r2.convidadosAtuais;
-              }
-            })
-            .withFailureHandler(function() {})
-            .obterAgendamentoParaEditar(payload.curso, payload.turma, payload.sheetRow);
         })
         .withFailureHandler(function(err) {
           if (endBusy) endBusy();

@@ -51,8 +51,15 @@ const SessaoWebApp = (() => {
     MSG_NAO_RESPONSAVEL: MSG_NAO_RESPONSAVEL,
     MSG_SEM_EMAIL_CRIADOR_TURMA: MSG_SEM_EMAIL_CRIADOR_TURMA,
     MSG_SEM_EMAIL_CRIADOR_AG: MSG_SEM_EMAIL_CRIADOR_AG,
-    /** Primeira linha das funções expostas a `google.script.run`. */
-    exigirParaGoogleScriptRun: obterEmailAtivoNormalizado_,
+    /**
+     * Primeira linha das funções expostas a `google.script.run`.
+     * Exige e-mail de sessão e cadastro na aba Permissoes.
+     */
+    exigirParaGoogleScriptRun: function exigirParaGoogleScriptRun_() {
+      const email = obterEmailAtivoNormalizado_();
+      PermissaoService.exigirAcessoSistema();
+      return email;
+    },
     obterEmailAtivoNormalizado: obterEmailAtivoNormalizado_,
     garantirMesmoUsuarioQueEmailArmazenadoOuErro: garantirMesmoUsuarioQueEmailArmazenadoOuErro_
   };

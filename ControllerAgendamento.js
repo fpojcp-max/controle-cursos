@@ -75,26 +75,7 @@ function obterTurmasAgendamentoPorCurso(curso) {
 }
 
 /**
- * Rode no editor (Executar) ou via google.script.run na Web App.
- * @returns {{ globalCalendarDefinido: boolean, usaServicoAvancado: boolean }}
- */
-function diagnosticarCalendarAgendamento() {
-  SessaoWebApp.exigirParaGoogleScriptRun();
-  let globalOk = false;
-  try {
-    globalOk = typeof Calendar !== "undefined";
-  } catch (e) {
-    globalOk = false;
-  }
-  return {
-    globalCalendarDefinido: globalOk,
-    usaServicoAvancado: CalendarAdapter.usandoServicoAvancado()
-  };
-}
-
-/**
- * Cria eventos no Calendar do utilizador (serviço avançado, identidade = visitante da Web App)
- * e grava linhas na planilha. Exige implantação como "Utilizador que acede"; sem OAuth Web/GIS.
+ * Cria agendamentos na planilha interna (identidade = visitante da Web App).
  * @param {Object} payload
  * @returns {{ success: boolean, message?: string, ocorrencias?: number }}
  */
@@ -184,7 +165,7 @@ function obterTodosEventIdsAgendamentoExcluir(curso, turma) {
 }
 
 /**
- * Exclui agendamentos (Calendar + planilha), tudo ou nada por tentativa.
+ * Exclui agendamentos na planilha.
  * @param {{ curso: string, turma: string, sheetRows?: number[], eventIds?: string[] }} payload
  */
 function excluirAgendamentosLote(payload) {
@@ -221,8 +202,8 @@ function obterAgendamentoParaEditar(curso, turma, sheetRow) {
 }
 
 /**
- * Atualiza Calendar + linha da planilha (com rollback do Calendar se a planilha falhar).
- * @param {{ curso: string, turma: string, turmaId?: string, sheetRow: number, data: string, horaInicio: string, horaFim: string, salaNome?: string, convidadosIncluir?: string, convidadosExcluir?: string }} payload
+ * Atualiza linha do agendamento na planilha.
+ * @param {{ curso: string, turma: string, turmaId?: string, sheetRow: number, data: string, horaInicio: string, horaFim: string, salaNome?: string }} payload
  */
 function atualizarAgendamento(payload) {
   SessaoWebApp.exigirParaGoogleScriptRun();

@@ -1,0 +1,112 @@
+<script>
+(function() {
+  var permOpcoes = null;
+  var wired = false;
+
+  function renderMsg(text, type) {
+    var el = document.getElementById("msgPermIncluir");
+    if (!el) return;
+    if (!text) { el.innerHTML = ""; return; }
+    var cls = type === "danger" ? "is-danger" : type === "success" ? "is-success" : "is-info";
+    el.innerHTML = '<div class="notification ' + cls + ' is-light">' + String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</div>";
+    if (typeof window.rolarParaVerMensagemNoTopo === "function") window.rolarParaVerMensagemNoTopo(el);
+  }
+
+  function emailValido(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email || "").trim());
+  }
+
+  function preencherSelect(id, lista, placeholder) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.innerHTML = "";
+    var o0 = document.createElement("option");
+    o0.value = "";
+    o0.textContent = placeholder || "Selecione";
+    el.appendChild(o0);
+    (lista || []).forEach(function(v) {
+      var o = document.createElement("option");
+      o.value = v;
+      o.textContent = v;
+      el.appendChild(o);
+    });
+  }
+
+  function atualizarEstadoUi() {
+    var nome = String((document.getElementById("permNome") || {}).value || "").trim();
+    var email = String((document.getElementById("permEmail") || {}).value || "").trim();
+    var perfil = String((document.getElementById("permPerfil") || {}).value || "").trim();
+    var btn = document.getElementById("btnPermIncluirEnviar");
+    if (btn) btn.disabled = !(nome && emailValido(email) && perfil);
+  }
+
+  function carregarOpcoes() {
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        if (!resp || resp.erro) {
+          renderMsg((resp && resp.erro) || "Erro ao carregar opções.", "danger");
+          return;
+        }
+        permOpcoes = resp;
+        preencherSelect("permPerfil", resp.perfis || [], resp.labelPlaceholderSelect || "Selecione");
+        atualizarEstadoUi();
+      })
+      .withFailureHandler(function(err) {
+        renderMsg("Erro: " + (err && err.message ? err.message : String(err)), "danger");
+      })
+      .obterOpcoesCadastroPermissoes();
+  }
+
+  window.PermissoesIncluirInit = function() {
+    var form = document.getElementById("permissoesIncluirForm");
+    if (!form) return;
+    if (!wired) {
+      wired = true;
+      ["permNome", "permEmail", "permPerfil"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.addEventListener("input", atualizarEstadoUi);
+        el.addEventListener("change", atualizarEstadoUi);
+      });
+      var btnL = document.getElementById("btnPermIncluirLimpar");
+      if (btnL) {
+        btnL.addEventListener("click", function() {
+          form.reset();
+          atualizarEstadoUi();
+          renderMsg("");
+        });
+      }
+      form.addEventListener("submit", function(ev) {
+        ev.preventDefault();
+        atualizarEstadoUi();
+        var btn = document.getElementById("btnPermIncluirEnviar");
+        if (!btn || btn.disabled) return;
+        btn.disabled = true;
+        var payload = {
+          nome: String(document.getElementById("permNome").value || "").trim(),
+          email: String(document.getElementById("permEmail").value || "").trim(),
+          perfil: String(document.getElementById("permPerfil").value || "").trim()
+        };
+        google.script.run
+          .withSuccessHandler(function(resp) {
+            if (!resp || !resp.success) {
+              renderMsg((resp && resp.message) || "Não foi possível incluir.", "danger");
+              atualizarEstadoUi();
+              return;
+            }
+            renderMsg(resp.message || "Permissão cadastrada com sucesso.", "success");
+            form.reset();
+            atualizarEstadoUi();
+          })
+          .withFailureHandler(function(err) {
+            renderMsg("Erro: " + (err && err.message ? err.message : String(err)), "danger");
+            atualizarEstadoUi();
+          })
+          .incluirPermissaoCadastro(payload);
+      });
+    }
+    carregarOpcoes();
+    atualizarEstadoUi();
+  };
+})();
+</script>

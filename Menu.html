@@ -73,6 +73,30 @@
         </li>
       </ul>
     </li>
+    <? if (exibirMenuPermissoes) { ?>
+    <li class="app-menu-item app-menu-item-dropdown <?= menuPermissoesAtivo ? 'is-active' : '' ?>" data-dropdown="permissoes" id="sgcMenuPermissoes">
+      <button type="button" class="app-menu-trigger" aria-expanded="false" aria-controls="submenu-permissoes" id="menu-permissoes">
+        <span>Permissão</span>
+        <span class="app-menu-chevron" aria-hidden="true"></span>
+      </button>
+      <ul class="app-menu-sub" id="submenu-permissoes" role="menu" aria-labelledby="menu-permissoes">
+        <li role="none">
+          <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= view === 'permissoes-incluir' ? 'is-active' : '' ?>" data-view="permissoes-incluir" role="menuitem" tabindex="0">Incluir</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= view === 'permissoes-incluir' ? 'is-active' : '' ?>" href="#" role="menuitem">Incluir</a>
+          <? } ?>
+        </li>
+        <li role="none">
+          <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= view === 'permissoes-consultar' ? 'is-active' : '' ?>" data-view="permissoes-consultar" role="menuitem" tabindex="0">Consultar</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= view === 'permissoes-consultar' ? 'is-active' : '' ?>" href="#" role="menuitem">Consultar</a>
+          <? } ?>
+        </li>
+      </ul>
+    </li>
+    <? } ?>
   </ul>
 </nav>
 <script>

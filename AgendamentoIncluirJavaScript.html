@@ -55,7 +55,7 @@
       (salas || []).forEach(function(s) {
         var opt = document.createElement("option");
         opt.value = s.nome;
-        opt.textContent = s.nome + (s.configurada ? "" : " (sem ID — verifique o catálogo de recursos)");
+        opt.textContent = s.nome;
         sel.appendChild(opt);
       });
       document.getElementById("agSalaHelp").textContent = "";
@@ -206,8 +206,6 @@
       if (selSala) selSala.selectedIndex = 0;
       var help = document.getElementById("agSalaHelp");
       if (help) help.textContent = "";
-      var conv = document.getElementById("agConvidados");
-      if (conv) conv.value = "";
       aplicarMinDatasAgendamento_(agHojeYmd);
     }
 
@@ -268,8 +266,7 @@
         tipo: tipo,
         horaInicio: horaInicio,
         horaFim: horaFim,
-        salaNome: String(document.getElementById("agSala").value || "").trim(),
-        convidados: document.getElementById("agConvidados").value
+        salaNome: String(document.getElementById("agSala").value || "").trim()
       };
       if (turmaIdContexto) payload.turmaId = turmaIdContexto;
 

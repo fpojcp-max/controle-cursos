@@ -1,0 +1,32 @@
+<div class="form-content" id="permissoesIncluirRoot">
+  <div id="msgPermIncluir" class="mb-3"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+    </div>
+  </div>
+
+  <h2 class="section-title">Cadastro de permissões</h2>
+  <form id="permissoesIncluirForm">
+    <div class="columns is-multiline">
+      <div class="column is-6">
+        <label class="label" for="permNome">Nome*</label>
+        <input class="input" type="text" id="permNome" autocomplete="name">
+      </div>
+      <div class="column is-6">
+        <label class="label" for="permEmail">E-mail*</label>
+        <input class="input" type="text" id="permEmail" inputmode="email" autocomplete="email">
+      </div>
+      <div class="column is-6">
+        <label class="label" for="permPerfil">Perfil*</label>
+        <div class="select is-fullwidth">
+          <select id="permPerfil"></select>
+        </div>
+      </div>
+    </div>
+    <div class="consulta-form-actions">
+      <button type="button" class="btn-custom btn-secondary" id="btnPermIncluirLimpar">Limpar</button>
+      <button type="submit" class="btn-custom" id="btnPermIncluirEnviar" disabled>Enviar</button>
+    </div>
+  </form>
+</div>
