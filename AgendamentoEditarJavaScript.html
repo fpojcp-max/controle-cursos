@@ -344,6 +344,12 @@
       document.getElementById("agEdHintLinha").style.display = "";
     }
 
+    function setSearching(isSearching) {
+      if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+        window.sgcDefinirPesquisaOcupada("btnAgEdPesquisar", isSearching);
+      }
+    }
+
     function pesquisar(opts) {
       opts = opts || {};
       var limparSel = opts.limparSelecao !== false;
@@ -358,10 +364,10 @@
         clearSelectionVisual();
       }
       var offset = (currentPage - 1) * PAGE_SIZE;
-      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      setSearching(true);
       google.script.run
         .withSuccessHandler(function(resp) {
-          if (endBusy) endBusy();
+          setSearching(false);
           if (!resp || !resp.success) {
             renderMsg((resp && resp.message) || "Falha na pesquisa.", "danger");
             document.getElementById("agEdResultsBlock").style.display = "none";
@@ -372,7 +378,7 @@
           afterSearchSuccess(resp);
         })
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
+          setSearching(false);
           renderMsg("Erro: " + err, "danger");
         })
         .pesquisarAgendamentosExcluir({
@@ -449,10 +455,14 @@
         renderMsg("Selecione curso e turma.", "danger");
         return;
       }
-      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      if (typeof window.sgcDefinirBotaoOcupado === "function") {
+        window.sgcDefinirBotaoOcupado("btnAgEdEditar", true);
+      }
       google.script.run
         .withSuccessHandler(function(resp) {
-          if (endBusy) endBusy();
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado("btnAgEdEditar", false, { habilitar: selectedSheetRow != null });
+          }
           if (!resp || !resp.success) {
             renderMsg((resp && resp.message) || "Não foi possível carregar o agendamento.", "danger");
             return;
@@ -460,7 +470,9 @@
           mostrarPassoFormulario(resp);
         })
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado("btnAgEdEditar", false, { habilitar: selectedSheetRow != null });
+          }
           renderMsg("Erro: " + err, "danger");
         })
         .obterAgendamentoParaEditar(curso, turma, selectedSheetRow);
@@ -492,10 +504,14 @@
         renderMsg("Dados da linha inválidos. Volte à pesquisa e selecione novamente.", "danger");
         return;
       }
-      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      if (typeof window.sgcDefinirBotaoOcupado === "function") {
+        window.sgcDefinirBotaoOcupado("btnAgEdSalvar", true);
+      }
       google.script.run
         .withSuccessHandler(function(resp) {
-          if (endBusy) endBusy();
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado("btnAgEdSalvar", false, { habilitar: !formEdicaoLocked });
+          }
           if (!resp || !resp.success) {
             renderMsg((resp && resp.message) || "Não foi possível salvar.", "danger");
             return;
@@ -504,7 +520,9 @@
           setFormEdicaoLocked(true);
         })
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado("btnAgEdSalvar", false, { habilitar: !formEdicaoLocked });
+          }
           renderMsg("Erro: " + err, "danger");
         })
         .atualizarAgendamento(payload);

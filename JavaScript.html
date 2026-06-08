@@ -167,18 +167,27 @@
     const msg = document.getElementById('msg');
     const registroId = (document.getElementById('registroId').value || '').trim();
     
-    btn.disabled = true;
-    btn.setAttribute("aria-busy", "true");
-
-    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
+    if (typeof window.sgcDefinirBotaoOcupado === "function") {
+      window.sgcDefinirBotaoOcupado(btn, true);
+    }
+    var btnLimpar = document.getElementById("btnLimpar");
+    if (btnLimpar) btnLimpar.disabled = true;
 
     const dados = coletarDadosFormulario();
+
+    function liberarEnvioCadastro_(habilitarEnviar) {
+      if (typeof window.sgcDefinirBotaoOcupado === "function") {
+        window.sgcDefinirBotaoOcupado(btn, false, { habilitar: habilitarEnviar !== false });
+      }
+      if (btnLimpar && !document.getElementById("ticketForm").classList.contains("formulario-bloqueado")) {
+        btnLimpar.disabled = false;
+      }
+    }
 
     function sucessoCadastro(resp) {
       notificarNoElementoMsg(msg, resp || "", "success");
       btn.textContent = "Salvar";
-      btn.disabled = false;
-      btn.setAttribute("aria-busy", "false");
+      liberarEnvioCadastro_(true);
       document.getElementById('ticketForm').reset();
       document.getElementById('registroId').value = '';
       resetVisualStyles();
@@ -188,8 +197,7 @@
     function sucessoEdicao(resp) {
       notificarNoElementoMsg(msg, resp || "", "success");
       btn.textContent = "Salvar";
-      btn.disabled = false;
-      btn.setAttribute("aria-busy", "false");
+      liberarEnvioCadastro_(false);
       bloquearFormularioAposEdicao();
     }
 
@@ -200,12 +208,10 @@
       }
       notificarNoElementoMsg(msg, texto, "danger");
       btn.textContent = "Salvar";
-      btn.disabled = false;
-      btn.setAttribute("aria-busy", "false");
+      liberarEnvioCadastro_(true);
     }
 
     function onResult(resp) {
-      if (endBusy) endBusy();
       if (!resp || resp.success === false) {
         falhaMsg(resp ? resp.message : "Erro desconhecido.");
         return;
@@ -218,7 +224,6 @@
       google.script.run
         .withSuccessHandler(onResult)
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
           falhaMsg(err);
         })
         .atualizarRegistro(registroId, dados);
@@ -226,7 +231,6 @@
       google.script.run
         .withSuccessHandler(onResult)
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
           falhaMsg(err);
         })
         .salvarRegistro(dados);

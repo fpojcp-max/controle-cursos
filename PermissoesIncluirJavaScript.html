@@ -78,7 +78,9 @@
         atualizarEstadoUi();
         var btn = document.getElementById("btnPermIncluirEnviar");
         if (!btn || btn.disabled) return;
-        btn.disabled = true;
+        if (typeof window.sgcDefinirBotaoOcupado === "function") {
+          window.sgcDefinirBotaoOcupado(btn, true);
+        }
         var payload = {
           nome: String(document.getElementById("permNome").value || "").trim(),
           email: String(document.getElementById("permEmail").value || "").trim(),
@@ -86,6 +88,9 @@
         };
         google.script.run
           .withSuccessHandler(function(resp) {
+            if (typeof window.sgcDefinirBotaoOcupado === "function") {
+              window.sgcDefinirBotaoOcupado(btn, false);
+            }
             if (!resp || !resp.success) {
               renderMsg((resp && resp.message) || "Não foi possível incluir.", "danger");
               atualizarEstadoUi();
@@ -96,6 +101,9 @@
             atualizarEstadoUi();
           })
           .withFailureHandler(function(err) {
+            if (typeof window.sgcDefinirBotaoOcupado === "function") {
+              window.sgcDefinirBotaoOcupado(btn, false);
+            }
             renderMsg("Erro: " + (err && err.message ? err.message : String(err)), "danger");
             atualizarEstadoUi();
           })

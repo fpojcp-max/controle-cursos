@@ -323,6 +323,12 @@
       updateExcluirButton();
     }
 
+    function setSearching(isSearching) {
+      if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+        window.sgcDefinirPesquisaOcupada("btnAgExPesquisar", isSearching);
+      }
+    }
+
     function pesquisar(limparSelecao) {
       var curso = String(document.getElementById("agExCurso").value || "").trim();
       var turma = String(document.getElementById("agExTurma").value || "").trim();
@@ -334,10 +340,10 @@
         selectedSheetRows = {};
       }
       var offset = (currentPage - 1) * PAGE_SIZE;
-      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      setSearching(true);
       google.script.run
         .withSuccessHandler(function(resp) {
-          if (endBusy) endBusy();
+          setSearching(false);
           if (!resp || !resp.success) {
             limparSucessoPersistente();
             renderMsg((resp && resp.message) || "Falha na pesquisa.", "danger");
@@ -347,7 +353,7 @@
           afterSearchSuccess(resp);
         })
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
+          setSearching(false);
           renderMsg("Erro: " + err, "danger");
         })
         .pesquisarAgendamentosExcluir({
@@ -494,10 +500,14 @@
       if (!sheetRows.length) return;
       var curso = String(document.getElementById("agExCurso").value || "").trim();
       var turma = String(document.getElementById("agExTurma").value || "").trim();
-      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
+      if (typeof window.sgcDefinirBotaoOcupado === "function") {
+        window.sgcDefinirBotaoOcupado("btnAgExModalConfirmar", true);
+      }
       google.script.run
         .withSuccessHandler(function(resp) {
-          if (endBusy) endBusy();
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado("btnAgExModalConfirmar", false);
+          }
           if (!resp || !resp.success) {
             limparSucessoPersistente();
             renderMsg((resp && resp.message) || "Não foi possível concluir a exclusão. Tente novamente mais tarde.", "danger");
@@ -506,7 +516,9 @@
           resetTelaPosExclusaoSucesso(resp.message || "Concluído.");
         })
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado("btnAgExModalConfirmar", false);
+          }
           limparSucessoPersistente();
           renderMsg("Não foi possível concluir a exclusão. Tente novamente mais tarde.", "danger");
         })

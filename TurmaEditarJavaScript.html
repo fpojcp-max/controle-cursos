@@ -184,14 +184,20 @@ window.TurmaEditarInit = function() {
       renderMsg("Selecione curso e turma.", "danger");
       return;
     }
-    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+      window.sgcDefinirPesquisaOcupada("btnTeEdPesquisar", true);
+    }
     google.script.run
       .withSuccessHandler(function(resp) {
-        if (endBusy) endBusy();
+        if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+          window.sgcDefinirPesquisaOcupada("btnTeEdPesquisar", false);
+        }
         aposPesquisaSucesso(resp);
       })
       .withFailureHandler(function(err) {
-        if (endBusy) endBusy();
+        if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+          window.sgcDefinirPesquisaOcupada("btnTeEdPesquisar", false);
+        }
         renderMsg("Erro na pesquisa: " + err, "danger");
         document.getElementById("teEdResultsBlock").style.display = "none";
       })

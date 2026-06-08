@@ -369,20 +369,26 @@ window.TurmaExcluirInit = function() {
     updateExcluirButton();
   }
 
+  function setSearching(isSearching) {
+    if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+      window.sgcDefinirPesquisaOcupada("btnTuExPesquisar", isSearching);
+    }
+  }
+
   function pesquisar(limparSelecao) {
     if (limparSelecao !== false) {
       selectedIds = {};
     }
     var filtros = getFilters();
     var offset = (currentPage - 1) * PAGE_SIZE;
-    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    setSearching(true);
     google.script.run
       .withSuccessHandler(function(resp) {
-        if (endBusy) endBusy();
+        setSearching(false);
         afterSearchSuccess(resp);
       })
       .withFailureHandler(function(err) {
-        if (endBusy) endBusy();
+        setSearching(false);
         renderMsg("Erro na pesquisa: " + err, "danger");
         document.getElementById("tuExResultsBlock").style.display = "none";
       })
@@ -396,15 +402,17 @@ window.TurmaExcluirInit = function() {
     var btnConf = document.getElementById("btnTuExModalConfirmar");
     var btnVolt = document.getElementById("btnTuExModalVoltar");
     var btnX = document.getElementById("tuExModalFecharX");
-    if (btnConf) btnConf.disabled = true;
+    if (typeof window.sgcDefinirBotaoOcupado === "function") {
+      window.sgcDefinirBotaoOcupado(btnConf, true);
+    }
     if (btnVolt) btnVolt.disabled = true;
     if (btnX) btnX.disabled = true;
-    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
     google.script.run
       .withSuccessHandler(function(resp) {
-        if (endBusy) endBusy();
         tuExExclusaoEmProgresso = false;
-        if (btnConf) btnConf.disabled = false;
+        if (typeof window.sgcDefinirBotaoOcupado === "function") {
+          window.sgcDefinirBotaoOcupado(btnConf, false);
+        }
         if (btnVolt) btnVolt.disabled = false;
         if (btnX) btnX.disabled = false;
         esconderModal();
@@ -433,9 +441,10 @@ window.TurmaExcluirInit = function() {
         }
       })
       .withFailureHandler(function(err) {
-        if (endBusy) endBusy();
         tuExExclusaoEmProgresso = false;
-        if (btnConf) btnConf.disabled = false;
+        if (typeof window.sgcDefinirBotaoOcupado === "function") {
+          window.sgcDefinirBotaoOcupado(btnConf, false);
+        }
         if (btnVolt) btnVolt.disabled = false;
         if (btnX) btnX.disabled = false;
         esconderModal();

@@ -110,30 +110,42 @@
     executarPesquisa();
   }
 
+  function setSearching(isSearching) {
+    if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+      window.sgcDefinirPesquisaOcupada("btnPermConsultaPesquisar", isSearching);
+    }
+  }
+
   function executarPesquisa() {
     var offset = (currentPage - 1) * PAGE_SIZE;
+    setSearching(true);
     google.script.run
       .withSuccessHandler(function(resp) {
-        if (resp && resp.erro) {
-          renderMsg(resp.erro, "danger");
-          setResultadosVisivel(false);
-          return;
+        try {
+          if (resp && resp.erro) {
+            renderMsg(resp.erro, "danger");
+            setResultadosVisivel(false);
+            return;
+          }
+          colunasAtuais = resp.columns || [];
+          totalRecords = resp.total || 0;
+          sheetRowsPagina = resp.sheetRows || [];
+          if (!totalRecords) {
+            renderMsg(MSG_SEM_RESULTADO, "info");
+            setResultadosVisivel(false);
+            return;
+          }
+          setResultadosVisivel(true);
+          renderTabela(colunasAtuais, resp.rows || []);
+          atualizarPaginacao();
+          var btnCsv = document.getElementById("btnPermConsultaExportarCsv");
+          if (btnCsv) btnCsv.disabled = false;
+        } finally {
+          setSearching(false);
         }
-        colunasAtuais = resp.columns || [];
-        totalRecords = resp.total || 0;
-        sheetRowsPagina = resp.sheetRows || [];
-        if (!totalRecords) {
-          renderMsg(MSG_SEM_RESULTADO, "info");
-          setResultadosVisivel(false);
-          return;
-        }
-        setResultadosVisivel(true);
-        renderTabela(colunasAtuais, resp.rows || []);
-        atualizarPaginacao();
-        var btnCsv = document.getElementById("btnPermConsultaExportarCsv");
-        if (btnCsv) btnCsv.disabled = false;
       })
       .withFailureHandler(function(err) {
+        setSearching(false);
         renderMsg("Erro: " + (err && err.message ? err.message : String(err)), "danger");
       })
       .pesquisarPermissoesConsulta(lastQuery, currentSort, { offset: offset, limit: PAGE_SIZE });
@@ -160,13 +172,17 @@
     var btnConf = document.getElementById("btnPermConsultaExclusaoConfirmar");
     var btnVolt = document.getElementById("btnPermConsultaExclusaoVoltar");
     var btnX = document.getElementById("permConsultaExclusaoModalFecharX");
-    if (btnConf) btnConf.disabled = true;
+    if (typeof window.sgcDefinirBotaoOcupado === "function") {
+      window.sgcDefinirBotaoOcupado(btnConf, true);
+    }
     if (btnVolt) btnVolt.disabled = true;
     if (btnX) btnX.disabled = true;
     google.script.run
       .withSuccessHandler(function(resp) {
         permExclusaoEmProgresso = false;
-        if (btnConf) btnConf.disabled = false;
+        if (typeof window.sgcDefinirBotaoOcupado === "function") {
+          window.sgcDefinirBotaoOcupado(btnConf, false);
+        }
         if (btnVolt) btnVolt.disabled = false;
         if (btnX) btnX.disabled = false;
         fecharModalExclusaoPerm_();
@@ -179,7 +195,9 @@
       })
       .withFailureHandler(function(err) {
         permExclusaoEmProgresso = false;
-        if (btnConf) btnConf.disabled = false;
+        if (typeof window.sgcDefinirBotaoOcupado === "function") {
+          window.sgcDefinirBotaoOcupado(btnConf, false);
+        }
         if (btnVolt) btnVolt.disabled = false;
         if (btnX) btnX.disabled = false;
         fecharModalExclusaoPerm_();
@@ -272,8 +290,15 @@
     wireModalExclusaoPerm_();
     document.getElementById("btnPermConsultaExportarCsv").addEventListener("click", function() {
       if (!lastQuery) return;
+      var btnCsv = document.getElementById("btnPermConsultaExportarCsv");
+      if (typeof window.sgcDefinirBotaoOcupado === "function") {
+        window.sgcDefinirBotaoOcupado(btnCsv, true);
+      }
       google.script.run
         .withSuccessHandler(function(data) {
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado(btnCsv, false, { habilitar: totalRecords > 0 && !!lastQuery });
+          }
           if (data && data.erro) {
             renderMsg(data.erro, "danger");
             return;
@@ -291,6 +316,9 @@
           a.click();
         })
         .withFailureHandler(function(err) {
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado(btnCsv, false, { habilitar: totalRecords > 0 && !!lastQuery });
+          }
           renderMsg("Erro na exportação: " + (err && err.message ? err.message : String(err)), "danger");
         })
         .obterPermissoesConsultaParaExportar(lastQuery, currentSort);

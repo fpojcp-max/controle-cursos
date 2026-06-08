@@ -171,10 +171,8 @@ window.ConsultaInit = function() {
   }
 
   function loadFilterOptions() {
-    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run
       .withSuccessHandler((config) => {
-        if (endBusy) endBusy();
         fillSelect("fCurso", config.CURSOS);
         fillSelect("fTurma", config.TURMAS);
         fillSelect("fStatus", config.STATUS);
@@ -182,7 +180,6 @@ window.ConsultaInit = function() {
         fillSelect("fOferta", config.OFERTAS);
       })
       .withFailureHandler((err) => {
-        if (endBusy) endBusy();
         if (
           typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
           window.tratarErroInfraestruturaSpaSeAplicavel(err)
@@ -219,11 +216,9 @@ window.ConsultaInit = function() {
     lastQuery = { filtros: filtros, sort: currentSort, page: { offset: offset, limit: PAGE_SIZE } };
 
     setSearching(true);
-    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
 
     google.script.run
       .withSuccessHandler(function(resp) {
-        if (endBusy) endBusy();
         setSearching(false);
         if (!resp || !resp.columns) {
           setConsultaResultadosBlockVisivel(false);
@@ -238,7 +233,6 @@ window.ConsultaInit = function() {
         updatePaginationUI(resp);
       })
       .withFailureHandler(function(err) {
-        if (endBusy) endBusy();
         setSearching(false);
         totalRecords = 0;
         setConsultaResultadosBlockVisivel(false);
@@ -284,8 +278,9 @@ window.ConsultaInit = function() {
   }
 
   function setSearching(isSearching) {
-    const btn = document.getElementById("btnPesquisar");
-    btn.setAttribute("aria-busy", isSearching ? "true" : "false");
+    if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+      window.sgcDefinirPesquisaOcupada("btnPesquisar", isSearching);
+    }
   }
 
   function renderMessage(text, type) {
@@ -314,12 +309,14 @@ window.ConsultaInit = function() {
   function exportarCsv() {
     if (!lastQuery || totalRecords === 0) return;
     var btn = document.getElementById("btnExportarCsv");
-    btn.disabled = true;
-    var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
+    if (typeof window.sgcDefinirBotaoOcupado === "function") {
+      window.sgcDefinirBotaoOcupado(btn, true);
+    }
     google.script.run
       .withSuccessHandler(function(data) {
-        if (endBusy) endBusy();
-        btn.disabled = totalRecords === 0;
+        if (typeof window.sgcDefinirBotaoOcupado === "function") {
+          window.sgcDefinirBotaoOcupado(btn, false, { habilitar: totalRecords > 0 && !!lastQuery });
+        }
         renderMessage("");
         if (!data || !data.columns) {
           renderMessage("Nenhum dado para exportar.", "danger");
@@ -347,8 +344,9 @@ window.ConsultaInit = function() {
         URL.revokeObjectURL(url);
       })
       .withFailureHandler(function(err) {
-        if (endBusy) endBusy();
-        btn.disabled = false;
+        if (typeof window.sgcDefinirBotaoOcupado === "function") {
+          window.sgcDefinirBotaoOcupado(btn, false, { habilitar: totalRecords > 0 && !!lastQuery });
+        }
         if (
           typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
           window.tratarErroInfraestruturaSpaSeAplicavel(err)

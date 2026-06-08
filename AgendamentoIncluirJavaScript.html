@@ -328,10 +328,14 @@
         }
       }
 
-      var endSalvar = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
+      if (typeof window.sgcDefinirBotaoOcupado === "function") {
+        window.sgcDefinirBotaoOcupado("agBtnSalvar", true);
+      }
       google.script.run
         .withSuccessHandler(function(resp) {
-          if (endSalvar) endSalvar();
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado("agBtnSalvar", false);
+          }
           if (!resp || !resp.success) {
             renderMsg((resp && resp.message) || "Falha ao salvar.", "danger");
             return;
@@ -340,7 +344,9 @@
           resetFormularioInclusaoAposSucesso();
         })
         .withFailureHandler(function(err) {
-          if (endSalvar) endSalvar();
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado("agBtnSalvar", false);
+          }
           renderMsg("Erro: " + err, "danger");
         })
         .criarAgendamentos(payload);

@@ -1,0 +1,41 @@
+<script>
+(function() {
+  function sgcResolverBotao_(btnOrId) {
+    if (!btnOrId) return null;
+    return typeof btnOrId === "string" ? document.getElementById(btnOrId) : btnOrId;
+  }
+
+  /**
+   * Marca botão ocupado: aria-busy + disabled, sem alterar o texto.
+   * Ao liberar, restaura o disabled que o botão tinha antes da operação,
+   * salvo se opts.habilitar for passado explicitamente.
+   */
+  window.sgcDefinirBotaoOcupado = function(btnOrId, ocupado, opts) {
+    opts = opts || {};
+    var btn = sgcResolverBotao_(btnOrId);
+    if (!btn) return;
+    if (ocupado) {
+      if (btn.dataset.sgcBusyAtivo !== "1") {
+        btn.dataset.sgcBusyWasDisabled = btn.disabled ? "1" : "0";
+        btn.dataset.sgcBusyAtivo = "1";
+      }
+      btn.setAttribute("aria-busy", "true");
+      btn.disabled = true;
+      return;
+    }
+    btn.setAttribute("aria-busy", "false");
+    if (typeof opts.habilitar === "boolean") {
+      btn.disabled = !opts.habilitar;
+    } else if (btn.dataset.sgcBusyAtivo === "1") {
+      btn.disabled = btn.dataset.sgcBusyWasDisabled === "1";
+    }
+    delete btn.dataset.sgcBusyAtivo;
+    delete btn.dataset.sgcBusyWasDisabled;
+  };
+
+  /** Atalho para botões de pesquisa (submit do filtro). */
+  window.sgcDefinirPesquisaOcupada = function(btnId, ocupada) {
+    window.sgcDefinirBotaoOcupado(btnId, ocupada);
+  };
+})();
+</script>

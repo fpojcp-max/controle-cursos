@@ -205,6 +205,12 @@
       setExportButtonState();
     }
 
+    function setSearching(isSearching) {
+      if (typeof window.sgcDefinirPesquisaOcupada === "function") {
+        window.sgcDefinirPesquisaOcupada("btnAgCoPesquisar", isSearching);
+      }
+    }
+
     function pesquisar() {
       var curso = String(document.getElementById("agCoCurso").value || "").trim();
       var turma = String(document.getElementById("agCoTurma").value || "").trim();
@@ -213,10 +219,10 @@
         return;
       }
       var offset = (currentPage - 1) * PAGE_SIZE;
-      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      setSearching(true);
       google.script.run
         .withSuccessHandler(function(resp) {
-          if (endBusy) endBusy();
+          setSearching(false);
           if (!resp || !resp.success) {
             renderMsg((resp && resp.message) || "Falha na pesquisa.", "danger");
             document.getElementById("agCoResultsBlock").style.display = "none";
@@ -227,7 +233,7 @@
           afterSearchSuccess(resp);
         })
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
+          setSearching(false);
           if (
             typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
             window.tratarErroInfraestruturaSpaSeAplicavel(err)
@@ -257,12 +263,14 @@
     function exportarCsv() {
       if (!lastExportQuery || totalRecords === 0) return;
       var btn = document.getElementById("btnAgCoExportarCsv");
-      btn.disabled = true;
-      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
+      if (typeof window.sgcDefinirBotaoOcupado === "function") {
+        window.sgcDefinirBotaoOcupado(btn, true);
+      }
       google.script.run
         .withSuccessHandler(function(data) {
-          if (endBusy) endBusy();
-          btn.disabled = totalRecords === 0 || !lastExportQuery;
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado(btn, false, { habilitar: totalRecords > 0 && !!lastExportQuery });
+          }
           renderMsg("");
           if (!data || !data.columns) {
             renderMsg("Nenhum dado para exportar.", "danger");
@@ -300,8 +308,9 @@
           URL.revokeObjectURL(url);
         })
         .withFailureHandler(function(err) {
-          if (endBusy) endBusy();
-          btn.disabled = false;
+          if (typeof window.sgcDefinirBotaoOcupado === "function") {
+            window.sgcDefinirBotaoOcupado(btn, false, { habilitar: totalRecords > 0 && !!lastExportQuery });
+          }
           if (
             typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
             window.tratarErroInfraestruturaSpaSeAplicavel(err)

@@ -123,6 +123,11 @@
   }
   .btn-custom:hover { opacity: 0.9; color: #fff; text-decoration: none; }
   .btn-custom:disabled { opacity: 0.6; cursor: not-allowed; }
+  .btn-custom[aria-busy="true"],
+  button[aria-busy="true"].btn-custom {
+    cursor: wait;
+    opacity: 0.72;
+  }
   .btn-secondary,
   .btn-sgc-muted {
     background: #e8f2f0;
