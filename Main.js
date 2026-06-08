@@ -236,3 +236,13 @@ function obterUrlWebApp(visualizacao) {
   if (!visualizacao || String(visualizacao) === "home") return base;
   return base + "?view=" + encodeURIComponent(String(visualizacao));
 }
+
+/**
+ * Dados de sessão para renderização do cabeçalho (conta ativa + URL de saída).
+ * @returns {{ email: string, logoutUrl: string }}
+ */
+function obterIdentidadeCabecalhoWebApp() {
+  const email = SessaoWebApp.obterEmailAtivoNormalizado();
+  const logoutUrl = String(Configuracoes.URL_LOGOUT_SSO || "").trim();
+  return { email: email, logoutUrl: logoutUrl };
+}

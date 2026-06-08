@@ -73,6 +73,12 @@ const Configuracoes = {
   /** Fuso para data do nome do ficheiro e “um backup por dia”. */
   BACKUP_TIMEZONE: "America/Sao_Paulo",
 
+  /**
+   * URL de saída institucional (SSO). O botão "Sair" no cabeçalho redireciona para este endereço.
+   * Pode apontar para a tela de autenticação central da Unicamp.
+   */
+  URL_LOGOUT_SSO: "https://accounts.google.com/Logout",
+
   CATALOGO_RECURSOS_SALA: [
     { rotulo: "(EDUCORP)-Auditório", identificadorCalendario: "c_188fsj4m0hnfii6qgjn69muavm51g@resource.calendar.google.com" },
     { rotulo: "(EDUCORP)-Idiomas", identificadorCalendario: "c_188akjbiofvveiatinhe5dd2oclmi@resource.calendar.google.com" },

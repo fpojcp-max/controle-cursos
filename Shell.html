@@ -393,5 +393,36 @@
   navigate(initialView, initialId);
 })();
     </script>
+    <script>
+(function() {
+  var emailEl = document.getElementById("headerUserEmail");
+  var logoutEl = document.getElementById("headerLogoutLink");
+  if (!emailEl || !logoutEl) return;
+
+  google.script.run
+    .withSuccessHandler(function(data) {
+      if (data && data.email) {
+        emailEl.innerHTML =
+          '<span class="header-session-label">Conta</span>: ' + String(data.email).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+      } else {
+        emailEl.innerHTML = '<span class="header-session-label">Conta</span>: não identificada';
+      }
+      var url = data && data.logoutUrl ? String(data.logoutUrl).trim() : "";
+      if (url) {
+        logoutEl.href = url;
+        logoutEl.removeAttribute("aria-disabled");
+      } else {
+        logoutEl.href = "#";
+        logoutEl.setAttribute("aria-disabled", "true");
+      }
+    })
+    .withFailureHandler(function() {
+      emailEl.innerHTML = '<span class="header-session-label">Conta</span>: não identificada';
+      logoutEl.href = "#";
+      logoutEl.setAttribute("aria-disabled", "true");
+    })
+    .obterIdentidadeCabecalhoWebApp();
+})();
+    </script>
   </body>
 </html>
