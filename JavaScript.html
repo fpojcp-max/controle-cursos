@@ -232,4 +232,34 @@
         .salvarRegistro(dados);
     }
   };
+
+  window.SgcCadastroResetarAoEntrar = function() {
+    var form = document.getElementById("ticketForm");
+    if (!form) return;
+    form.classList.remove("formulario-bloqueado");
+    CAMPOS_FORM.forEach(function(key) {
+      var el = document.getElementById(key);
+      if (!el) return;
+      if (el.tagName === "SELECT") el.disabled = false;
+      else el.readOnly = false;
+    });
+    var btnEnviar = document.getElementById("btnEnviar");
+    var btnLimpar = document.getElementById("btnLimpar");
+    if (btnEnviar) {
+      btnEnviar.disabled = false;
+      btnEnviar.textContent = "Salvar";
+      btnEnviar.setAttribute("aria-busy", "false");
+    }
+    if (btnLimpar) btnLimpar.disabled = false;
+    document.getElementById("registroId").value = "";
+    form.reset();
+    if (typeof window.sgcRenderMensagemTopo === "function") {
+      window.sgcRenderMensagemTopo("", "info");
+    }
+    resetVisualStyles();
+    google.script.run
+      .withSuccessHandler(function(c) { popularCampos(c); })
+      .withFailureHandler(function() {})
+      .obterConfiguracaoFormulario();
+  };
 </script>

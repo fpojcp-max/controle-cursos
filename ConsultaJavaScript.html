@@ -39,19 +39,28 @@ window.ConsultaInit = function() {
     if (tw) tw.style.display = "none";
   }
 
+  function resetarConsultaParaEntrada_(recarregarOpcoes) {
+    document.getElementById("searchForm").reset();
+    renderMessage("");
+    clearTable();
+    document.getElementById("resultsMeta").textContent = "";
+    document.getElementById("paginationBar").style.display = "none";
+    currentPage = 1;
+    totalRecords = 0;
+    lastQuery = null;
+    document.getElementById("btnExportarCsv").disabled = true;
+    setConsultaResultadosBlockVisivel(false);
+    currentSort = ordenacaoPadraoConsulta();
+    if (recarregarOpcoes !== false) loadFilterOptions();
+  }
+
+  window.SgcConsultaResetarAoEntrar = function() {
+    resetarConsultaParaEntrada_(true);
+  };
+
   function wireEvents() {
     document.getElementById("btnLimparFiltros").addEventListener("click", () => {
-      document.getElementById("searchForm").reset();
-      renderMessage("");
-      clearTable();
-      document.getElementById("resultsMeta").textContent = "";
-      document.getElementById("paginationBar").style.display = "none";
-      currentPage = 1;
-      totalRecords = 0;
-      lastQuery = null;
-      document.getElementById("btnExportarCsv").disabled = true;
-      setConsultaResultadosBlockVisivel(false);
-      currentSort = ordenacaoPadraoConsulta();
+      resetarConsultaParaEntrada_(false);
     });
 
     document.getElementById("btnExportarCsv").addEventListener("click", exportarCsv);

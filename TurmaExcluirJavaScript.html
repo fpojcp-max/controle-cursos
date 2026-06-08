@@ -430,7 +430,7 @@ window.TurmaExcluirInit = function() {
       carregarTurmasParaCurso(document.getElementById("tuExCurso").value);
     });
 
-    document.getElementById("btnTuExLimparTudo").addEventListener("click", function() {
+    function resetarTurmaExcluirParaEntrada_() {
       document.getElementById("tuExFormFiltro").reset();
       resetTurmaSelect();
       preencherResponsaveis(window._tuExResponsaveisCache || []);
@@ -443,6 +443,12 @@ window.TurmaExcluirInit = function() {
       currentSort = ordenacaoPadraoTurmaExcluir();
       syncMasterCheckbox();
       updateExcluirButton();
+    }
+
+    window.SgcTurmaExcluirResetarAoEntrar = resetarTurmaExcluirParaEntrada_;
+
+    document.getElementById("btnTuExLimparTudo").addEventListener("click", function() {
+      resetarTurmaExcluirParaEntrada_();
     });
 
     document.getElementById("tuExFormFiltro").addEventListener("submit", function(e) {

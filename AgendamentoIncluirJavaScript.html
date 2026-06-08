@@ -346,6 +346,14 @@
         .criarAgendamentos(payload);
     });
 
+    window.SgcAgendamentoIncluirResetarAoEntrar = function() {
+      try {
+        sessionStorage.removeItem(PREFILL_KEY);
+      } catch (e0) {}
+      renderMsg("");
+      resetFormularioInclusaoAposSucesso();
+    };
+
     var endInit = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run
       .withSuccessHandler(function(resp) {

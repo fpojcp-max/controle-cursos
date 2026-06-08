@@ -345,6 +345,54 @@
     }
   };
 
+  window.sgcViewAtual = "home";
+  window.sgcViewIdAtual = "";
+
+  var SGC_RESET_VIEW_HOOKS_ = {
+    consulta: "SgcConsultaResetarAoEntrar",
+    cadastro: "SgcCadastroResetarAoEntrar",
+    "turma-editar": "SgcTurmaEditarResetarAoEntrar",
+    "turma-excluir": "SgcTurmaExcluirResetarAoEntrar",
+    "agendamento-incluir": "SgcAgendamentoIncluirResetarAoEntrar",
+    "agendamento-consulta": "SgcAgendamentoConsultaResetarAoEntrar",
+    "agendamento-editar": "SgcAgendamentoEditarResetarAoEntrar",
+    "agendamento-excluir": "SgcAgendamentoExcluirResetarAoEntrar",
+    "permissoes-incluir": "SgcPermissoesIncluirResetarAoEntrar",
+    "permissoes-consultar": "SgcPermissoesConsultaResetarAoEntrar"
+  };
+
+  function sgcMenuViewEhMesmaTelaAtual_(view, id) {
+    view = view || "home";
+    id = (id && String(id).trim()) ? String(id).trim() : "";
+    return window.sgcViewAtual === view && window.sgcViewIdAtual === id;
+  }
+
+  function sgcScrollTopoSuave_() {
+    try {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch (e0) {
+      try {
+        window.scrollTo(0, 0);
+      } catch (e1) {}
+    }
+  }
+
+  function sgcResetarViewAoReclicarMenu_(view) {
+    if (view === "home") {
+      mostrarHomeLocal_(MSG_BEMVINDO);
+      return;
+    }
+    var hookName = SGC_RESET_VIEW_HOOKS_[view];
+    if (hookName && typeof window[hookName] === "function") {
+      window[hookName]();
+    }
+  }
+
+  function sgcRegistrarViewAtual_(view, id) {
+    window.sgcViewAtual = view || "home";
+    window.sgcViewIdAtual = (id && String(id).trim()) ? String(id).trim() : "";
+  }
+
   function navigate(view, id) {
     view = view || "home";
     id = (id && String(id).trim()) ? String(id).trim() : "";
@@ -352,11 +400,22 @@
       return;
     }
     view = resolverViewPermitida_(view);
+    if (sgcMenuViewEhMesmaTelaAtual_(view, id)) {
+      closeMenuDropdowns();
+      setMenuActive(view, id);
+      if (typeof window.sgcRenderMensagemTopo === "function") {
+        window.sgcRenderMensagemTopo("", "info");
+      }
+      sgcResetarViewAoReclicarMenu_(view);
+      sgcScrollTopoSuave_();
+      return;
+    }
     if (typeof window.sgcRenderMensagemTopo === "function") {
       window.sgcRenderMensagemTopo("", "info");
     }
     if (view === "home") {
       mostrarHomeLocal_(MSG_BEMVINDO);
+      sgcRegistrarViewAtual_("home", "");
     } else {
       mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
     }
@@ -448,6 +507,7 @@
             } else if (view === "permissoes-consultar" && typeof window.PermissoesConsultaInit === "function") {
               try { window.PermissoesConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar permissões: " + (err && err.message ? err.message : String(err))); }
             }
+            sgcRegistrarViewAtual_(view, id);
           } catch (err) {
             showError("Erro ao aplicar conteúdo: " + (err && err.message ? err.message : String(err)));
           }

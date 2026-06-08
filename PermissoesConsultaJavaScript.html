@@ -138,6 +138,35 @@
       .pesquisarPermissoesConsulta(lastQuery, currentSort, { offset: offset, limit: PAGE_SIZE });
   }
 
+  function resetarUiAoEntrar_(recarregarOpcoes) {
+    var form = document.getElementById("permConsultaSearchForm");
+    if (form) form.reset();
+    setResultadosVisivel(false);
+    limparSelecao();
+    renderMsg("");
+    currentPage = 1;
+    totalRecords = 0;
+    lastQuery = null;
+    currentSort = { key: "nome", dir: "asc" };
+    colunasAtuais = [];
+    sheetRowsPagina = [];
+    var head = document.getElementById("permConsultaResultsHead");
+    var body = document.getElementById("permConsultaResultsBody");
+    if (head) head.innerHTML = "";
+    if (body) body.innerHTML = "";
+    var bar = document.getElementById("permConsultaPaginationBar");
+    if (bar) bar.style.display = "none";
+    var meta = document.getElementById("permConsultaResultsMeta");
+    if (meta) meta.textContent = "";
+    var btnCsv = document.getElementById("btnPermConsultaExportarCsv");
+    if (btnCsv) btnCsv.disabled = true;
+    if (recarregarOpcoes !== false) carregarFiltros();
+  }
+
+  window.SgcPermissoesConsultaResetarAoEntrar = function() {
+    resetarUiAoEntrar_(true);
+  };
+
   function carregarFiltros() {
     google.script.run
       .withSuccessHandler(function(config) {
@@ -165,10 +194,7 @@
       pesquisar(false);
     });
     document.getElementById("btnPermConsultaLimpar").addEventListener("click", function() {
-      form.reset();
-      setResultadosVisivel(false);
-      limparSelecao();
-      renderMsg("");
+      resetarUiAoEntrar_(false);
     });
     document.getElementById("btnPermConsultaPagAnterior").addEventListener("click", function() {
       if (currentPage > 1) { currentPage--; executarPesquisa(); }

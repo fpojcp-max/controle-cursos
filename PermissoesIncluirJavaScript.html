@@ -105,5 +105,14 @@
     carregarOpcoes();
     atualizarEstadoUi();
   };
+
+  window.SgcPermissoesIncluirResetarAoEntrar = function() {
+    var form = document.getElementById("permissoesIncluirForm");
+    if (form) form.reset();
+    atualizarEstadoUi();
+    if (typeof window.sgcRenderMensagemTopo === "function") {
+      window.sgcRenderMensagemTopo("", "info");
+    }
+  };
 })();
 </script>
