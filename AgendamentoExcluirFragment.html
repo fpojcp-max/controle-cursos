@@ -62,12 +62,15 @@
   </div>
 </div>
 
-<div id="agExModal" aria-hidden="true">
-  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="agExModalMsg">
-    <p id="agExModalMsg" class="modal-mensagem">A exclusão não poderá ser revertida. Confirma a exclusão dos agendamentos?</p>
-    <div class="modal-botoes">
-      <button type="button" class="btn-custom" id="btnAgExModalSim">Sim</button>
-      <button type="button" class="btn-custom btn-modal-nao" id="btnAgExModalNao">Não</button>
+<div id="agExModal" class="sgc-modal-overlay" aria-hidden="true">
+  <div class="sgc-modal-panel" role="dialog" aria-modal="true" aria-labelledby="agExModalMsg">
+    <div class="sgc-modal-topbar">
+      <button type="button" class="sgc-modal-close-x" id="agExModalFecharX" aria-label="Fechar popup">×</button>
+    </div>
+    <p id="agExModalMsg" class="sgc-modal-mensagem sgc-modal-mensagem--compacta">A exclusão não poderá ser revertida. Confirma a exclusão dos agendamentos?</p>
+    <div class="sgc-modal-botoes">
+      <button type="button" class="btn-custom btn-secondary sgc-modal-btn-voltar" id="btnAgExModalVoltar">Voltar</button>
+      <button type="button" class="btn-custom" id="btnAgExModalConfirmar" data-sgc-modal-primario>Confirmar</button>
     </div>
   </div>
 </div>

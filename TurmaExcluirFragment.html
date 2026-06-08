@@ -68,12 +68,15 @@
   </div>
 </div>
 
-<div id="tuExModal" aria-hidden="true">
-  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="tuExModalMsg">
-    <p id="tuExModalMsg" class="modal-mensagem">A exclusão não poderá ser revertida. Confirma a exclusão das turmas?</p>
-    <div class="modal-botoes">
-      <button type="button" class="btn-custom" id="btnTuExModalSim">Sim</button>
-      <button type="button" class="btn-custom btn-modal-nao" id="btnTuExModalNao">Não</button>
+<div id="tuExModal" class="sgc-modal-overlay" aria-hidden="true">
+  <div class="sgc-modal-panel" role="dialog" aria-modal="true" aria-labelledby="tuExModalMsg">
+    <div class="sgc-modal-topbar">
+      <button type="button" class="sgc-modal-close-x" id="tuExModalFecharX" aria-label="Fechar popup">×</button>
+    </div>
+    <p id="tuExModalMsg" class="sgc-modal-mensagem sgc-modal-mensagem--compacta">A exclusão não poderá ser revertida. Confirma a exclusão das turmas?</p>
+    <div class="sgc-modal-botoes">
+      <button type="button" class="btn-custom btn-secondary sgc-modal-btn-voltar" id="btnTuExModalVoltar">Voltar</button>
+      <button type="button" class="btn-custom" id="btnTuExModalConfirmar" data-sgc-modal-primario>Confirmar</button>
     </div>
   </div>
 </div>

@@ -11,6 +11,7 @@
   var sheetRowsPagina = [];
   var linhaSelecionadaIndex = -1;
   var trSelecionado = null;
+  var permExclusaoEmProgresso = false;
 
   function renderMsg(text, type) {
     if (typeof window.sgcRenderMensagemTopo === "function") {
@@ -138,7 +139,68 @@
       .pesquisarPermissoesConsulta(lastQuery, currentSort, { offset: offset, limit: PAGE_SIZE });
   }
 
+  function fecharModalExclusaoPerm_() {
+    if (typeof window.sgcModalFechar === "function") {
+      window.sgcModalFechar("permConsultaExclusaoModal");
+    }
+  }
+
+  function abrirModalExclusaoPerm_() {
+    var msg = document.getElementById("permConsultaExclusaoModalMsg");
+    if (msg) msg.textContent = MSG_MODAL_EXCLUSAO;
+    if (typeof window.sgcModalAbrir === "function") {
+      window.sgcModalAbrir("permConsultaExclusaoModal", { btnPrimario: "btnPermConsultaExclusaoConfirmar" });
+    }
+  }
+
+  function confirmarExclusaoPerm_() {
+    if (linhaSelecionadaIndex < 0 || !sheetRowsPagina[linhaSelecionadaIndex]) return;
+    var sr = sheetRowsPagina[linhaSelecionadaIndex];
+    permExclusaoEmProgresso = true;
+    var btnConf = document.getElementById("btnPermConsultaExclusaoConfirmar");
+    var btnVolt = document.getElementById("btnPermConsultaExclusaoVoltar");
+    var btnX = document.getElementById("permConsultaExclusaoModalFecharX");
+    if (btnConf) btnConf.disabled = true;
+    if (btnVolt) btnVolt.disabled = true;
+    if (btnX) btnX.disabled = true;
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        permExclusaoEmProgresso = false;
+        if (btnConf) btnConf.disabled = false;
+        if (btnVolt) btnVolt.disabled = false;
+        if (btnX) btnX.disabled = false;
+        fecharModalExclusaoPerm_();
+        if (!resp || !resp.success) {
+          renderMsg((resp && resp.message) || "Não foi possível excluir.", "danger");
+          return;
+        }
+        renderMsg(resp.message || "Permissão excluída.", "success");
+        executarPesquisa();
+      })
+      .withFailureHandler(function(err) {
+        permExclusaoEmProgresso = false;
+        if (btnConf) btnConf.disabled = false;
+        if (btnVolt) btnVolt.disabled = false;
+        if (btnX) btnX.disabled = false;
+        fecharModalExclusaoPerm_();
+        renderMsg("Erro: " + (err && err.message ? err.message : String(err)), "danger");
+      })
+      .excluirPermissaoConsulta(sr);
+  }
+
+  function wireModalExclusaoPerm_() {
+    if (typeof window.sgcModalConfigurar !== "function") return;
+    window.sgcModalConfigurar("permConsultaExclusaoModal", {
+      btnVoltar: "btnPermConsultaExclusaoVoltar",
+      btnFecharX: "permConsultaExclusaoModalFecharX",
+      btnConfirmar: "btnPermConsultaExclusaoConfirmar",
+      onConfirmar: confirmarExclusaoPerm_,
+      podeFechar: function() { return !permExclusaoEmProgresso; }
+    });
+  }
+
   function resetarUiAoEntrar_(recarregarOpcoes) {
+    fecharModalExclusaoPerm_();
     var form = document.getElementById("permConsultaSearchForm");
     if (form) form.reset();
     setResultadosVisivel(false);
@@ -205,22 +267,9 @@
     });
     document.getElementById("btnPermConsultaExcluir").addEventListener("click", function() {
       if (linhaSelecionadaIndex < 0 || !sheetRowsPagina[linhaSelecionadaIndex]) return;
-      if (!window.confirm(MSG_MODAL_EXCLUSAO)) return;
-      var sr = sheetRowsPagina[linhaSelecionadaIndex];
-      google.script.run
-        .withSuccessHandler(function(resp) {
-          if (!resp || !resp.success) {
-            renderMsg((resp && resp.message) || "Não foi possível excluir.", "danger");
-            return;
-          }
-          renderMsg(resp.message || "Permissão excluída.", "success");
-          executarPesquisa();
-        })
-        .withFailureHandler(function(err) {
-          renderMsg("Erro: " + (err && err.message ? err.message : String(err)), "danger");
-        })
-        .excluirPermissaoConsulta(sr);
+      abrirModalExclusaoPerm_();
     });
+    wireModalExclusaoPerm_();
     document.getElementById("btnPermConsultaExportarCsv").addEventListener("click", function() {
       if (!lastQuery) return;
       google.script.run

@@ -273,14 +273,18 @@ window.TurmaExcluirInit = function() {
     document.getElementById("btnTuExProx").disabled = currentPage >= totalPages;
   }
 
+  var tuExExclusaoEmProgresso = false;
+
   function mostrarModal() {
-    document.getElementById("tuExModal").classList.add("visivel");
-    document.getElementById("tuExModal").setAttribute("aria-hidden", "false");
+    if (typeof window.sgcModalAbrir === "function") {
+      window.sgcModalAbrir("tuExModal", { btnPrimario: "btnTuExModalConfirmar" });
+    }
   }
 
   function esconderModal() {
-    document.getElementById("tuExModal").classList.remove("visivel");
-    document.getElementById("tuExModal").setAttribute("aria-hidden", "true");
+    if (typeof window.sgcModalFechar === "function") {
+      window.sgcModalFechar("tuExModal");
+    }
   }
 
   function estadoInicialAposSucessoTotal() {
@@ -388,10 +392,21 @@ window.TurmaExcluirInit = function() {
   function executarExclusaoLote() {
     var ids = idsSelecionadosLista();
     if (!ids.length) return;
+    tuExExclusaoEmProgresso = true;
+    var btnConf = document.getElementById("btnTuExModalConfirmar");
+    var btnVolt = document.getElementById("btnTuExModalVoltar");
+    var btnX = document.getElementById("tuExModalFecharX");
+    if (btnConf) btnConf.disabled = true;
+    if (btnVolt) btnVolt.disabled = true;
+    if (btnX) btnX.disabled = true;
     var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: true }) : null;
     google.script.run
       .withSuccessHandler(function(resp) {
         if (endBusy) endBusy();
+        tuExExclusaoEmProgresso = false;
+        if (btnConf) btnConf.disabled = false;
+        if (btnVolt) btnVolt.disabled = false;
+        if (btnX) btnX.disabled = false;
         esconderModal();
         if (!resp || !resp.success) {
           renderMsg((resp && resp.message) || "Falha na exclusão.", "danger");
@@ -419,6 +434,10 @@ window.TurmaExcluirInit = function() {
       })
       .withFailureHandler(function(err) {
         if (endBusy) endBusy();
+        tuExExclusaoEmProgresso = false;
+        if (btnConf) btnConf.disabled = false;
+        if (btnVolt) btnVolt.disabled = false;
+        if (btnX) btnX.disabled = false;
         esconderModal();
         renderMsg("Erro: " + err, "danger");
       })
@@ -431,6 +450,7 @@ window.TurmaExcluirInit = function() {
     });
 
     function resetarTurmaExcluirParaEntrada_() {
+      esconderModal();
       document.getElementById("tuExFormFiltro").reset();
       resetTurmaSelect();
       preencherResponsaveis(window._tuExResponsaveisCache || []);
@@ -497,13 +517,15 @@ window.TurmaExcluirInit = function() {
       if (contarSelecionados() === 0) return;
       mostrarModal();
     });
-    document.getElementById("btnTuExModalSim").addEventListener("click", function() {
-      executarExclusaoLote();
-    });
-    document.getElementById("btnTuExModalNao").addEventListener("click", esconderModal);
-    document.getElementById("tuExModal").addEventListener("click", function(e) {
-      if (e.target === this) esconderModal();
-    });
+    if (typeof window.sgcModalConfigurar === "function") {
+      window.sgcModalConfigurar("tuExModal", {
+        btnVoltar: "btnTuExModalVoltar",
+        btnFecharX: "tuExModalFecharX",
+        btnConfirmar: "btnTuExModalConfirmar",
+        onConfirmar: executarExclusaoLote,
+        podeFechar: function() { return !tuExExclusaoEmProgresso; }
+      });
+    }
   }
 
   function carregarOpcoesIniciais() {

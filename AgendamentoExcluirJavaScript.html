@@ -385,6 +385,7 @@
     }
 
     function limparTudo() {
+      esconderModal();
       limparSucessoPersistente();
       renderMsg("");
       document.getElementById("agExCurso").value = "";
@@ -465,13 +466,15 @@
     });
 
     function mostrarModal() {
-      document.getElementById("agExModal").classList.add("visivel");
-      document.getElementById("agExModal").setAttribute("aria-hidden", "false");
+      if (typeof window.sgcModalAbrir === "function") {
+        window.sgcModalAbrir("agExModal", { btnPrimario: "btnAgExModalConfirmar" });
+      }
     }
 
     function esconderModal() {
-      document.getElementById("agExModal").classList.remove("visivel");
-      document.getElementById("agExModal").setAttribute("aria-hidden", "true");
+      if (typeof window.sgcModalFechar === "function") {
+        window.sgcModalFechar("agExModal");
+      }
     }
 
     document.getElementById("btnAgExExcluir").addEventListener("click", function() {
@@ -485,12 +488,7 @@
       mostrarModal();
     });
 
-    document.getElementById("btnAgExModalNao").addEventListener("click", esconderModal);
-    document.getElementById("agExModal").addEventListener("click", function(e) {
-      if (e.target === this) esconderModal();
-    });
-
-    document.getElementById("btnAgExModalSim").addEventListener("click", function() {
+    function confirmarExclusaoAgendamentos_() {
       esconderModal();
       var sheetRows = numerosLinhaSelecionados();
       if (!sheetRows.length) return;
@@ -513,7 +511,16 @@
           renderMsg("Não foi possível concluir a exclusão. Tente novamente mais tarde.", "danger");
         })
         .excluirAgendamentosLote({ curso: curso, turma: turma, sheetRows: sheetRows });
-    });
+    }
+
+    if (typeof window.sgcModalConfigurar === "function") {
+      window.sgcModalConfigurar("agExModal", {
+        btnVoltar: "btnAgExModalVoltar",
+        btnFecharX: "agExModalFecharX",
+        btnConfirmar: "btnAgExModalConfirmar",
+        onConfirmar: confirmarExclusaoAgendamentos_
+      });
+    }
 
     var endInit = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run

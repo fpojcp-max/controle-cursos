@@ -15,6 +15,7 @@
       window.__sgcSessaoIdentificada = <?= sessaoIdentificada ? 'true' : 'false' ?>;
     </script>
     <?!= HtmlService.createHtmlOutputFromFile('AppOcupado').getContent(); ?>
+    <?!= HtmlService.createHtmlOutputFromFile('SgcModalA11y').getContent(); ?>
     <div class="form-container">
       <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
       <div id="sgcMensagemTopoApp" class="sgc-msg-topo-app" role="status" aria-live="polite"></div>
