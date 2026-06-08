@@ -19,10 +19,12 @@
     <?!= HtmlService.createHtmlOutputFromFile('SgcOperacaoUi').getContent(); ?>
     <div class="form-container">
       <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
-      <div id="sgcMensagemTopoApp" class="sgc-msg-topo-app" role="status" aria-live="polite"></div>
+      <div id="sgcMensagemTopoApp" class="sgc-msg-topo-app" role="status" aria-live="polite" aria-hidden="true"></div>
 
       <main class="layout-block content-block">
-        <?!= menuHtml ?>
+        <div class="sgc-menu-area">
+          <?!= menuHtml ?>
+        </div>
         <div id="main-content" class="spa-content"></div>
       </main>
 
@@ -74,8 +76,10 @@
     if (!el) return;
     if (!text) {
       el.innerHTML = "";
+      el.setAttribute("aria-hidden", "true");
       return;
     }
+    el.setAttribute("aria-hidden", "false");
     var t = String(type || "info").toLowerCase();
     var cls =
       t === "danger" ? "is-danger" :
@@ -310,7 +314,7 @@
     if (!aviso) return;
     var p = aviso.querySelector("p");
     if (p) p.textContent = mensagem || "";
-    aviso.style.display = mensagem ? "" : "none";
+    aviso.classList.toggle("sgc-aviso-oculto", !mensagem);
   }
 
   window.sgcAplicarIdentidadeCabecalho = function(data) {
