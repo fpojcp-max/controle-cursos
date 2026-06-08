@@ -73,6 +73,21 @@
         </li>
       </ul>
     </li>
+    <li class="app-menu-item app-menu-item-dropdown <?= menuCalendarioAtivo ? 'is-active' : '' ?>" data-dropdown="calendario">
+      <button type="button" class="app-menu-trigger" aria-expanded="false" aria-controls="submenu-calendario" id="menu-calendario">
+        <span>Calendário</span>
+        <span class="app-menu-chevron" aria-hidden="true"></span>
+      </button>
+      <ul class="app-menu-sub" id="submenu-calendario" role="menu" aria-labelledby="menu-calendario">
+        <li role="none">
+          <? if (spa) { ?>
+          <span class="app-menu-link app-menu-link-spa <?= view === 'calendario-consultar' ? 'is-active' : '' ?>" data-view="calendario-consultar" role="menuitem" tabindex="0">Consultar</span>
+          <? } else { ?>
+          <a class="app-menu-link <?= view === 'calendario-consultar' ? 'is-active' : '' ?>" href="<?= urlCalendarioConsultar ?>" role="menuitem" target="_top" rel="noopener">Consultar</a>
+          <? } ?>
+        </li>
+      </ul>
+    </li>
     <? if (exibirMenuPermissoes) { ?>
     <li class="app-menu-item app-menu-item-dropdown <?= menuPermissoesAtivo ? 'is-active' : '' ?>" data-dropdown="permissoes" id="sgcMenuPermissoes">
       <button type="button" class="app-menu-trigger" aria-expanded="false" aria-controls="submenu-permissoes" id="menu-permissoes">

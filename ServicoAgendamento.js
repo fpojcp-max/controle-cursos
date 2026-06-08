@@ -443,6 +443,65 @@ const AgendamentoService = (() => {
   }
 
   const LIMITE_EXPORT_AGENDAMENTOS = 10000;
+  const LIMITE_EVENTOS_CALENDARIO = 5000;
+
+  function listarAgendamentosCalendario_(inicioYmd, fimYmd, curso, turma, salaNome) {
+    const ini = String(inicioYmd || "").trim();
+    const fim = String(fimYmd || "").trim();
+    parseYmd_(ini);
+    parseYmd_(fim);
+    if (fim < ini) throw new Error("A data final deve ser igual ou posterior à data inicial.");
+    const cursoF = String(curso || "").trim();
+    const turmaF = String(turma || "").trim();
+    const salaF = String(salaNome || "").trim();
+    if (!salaF) throw new Error("Selecione uma sala.");
+    const C = AgendamentoRepo.COL_AG;
+    const todas = AgendamentoRepo.listarTodasLinhasAgendamento();
+    const eventos = [];
+    for (let i = 0; i < todas.length; i++) {
+      const item = todas[i];
+      const cells = item.cells || [];
+      const dataYmd = String(cells[C.DATA] || "").trim();
+      if (!dataYmd || dataYmd < ini || dataYmd > fim) continue;
+      const c = String(cells[C.CURSO] || "").trim();
+      const t = String(cells[C.TURMA] || "").trim();
+      const sala = String(cells[C.NOME_SALA] || "").trim();
+      if (sala !== salaF) continue;
+      if (cursoF && c !== cursoF) continue;
+      if (turmaF && t !== turmaF) continue;
+      const hi = String(cells[C.HORA_INI] || "").trim();
+      const hf = String(cells[C.HORA_FIM] || "").trim();
+      if (!hi || !hf) continue;
+      eventos.push({
+        eventId: item.eventId,
+        sheetRow: item.sheetRow,
+        title: montarTitulo_(t, c),
+        start: dataYmd + "T" + hi + ":00",
+        end: dataYmd + "T" + hf + ":00",
+        curso: c,
+        turma: t,
+        sala: sala,
+        idTurma: String(cells[C.ID_REGISTRO_TURMA] || "").trim()
+      });
+      if (eventos.length > LIMITE_EVENTOS_CALENDARIO) {
+        throw new Error(
+          "Há mais de " + LIMITE_EVENTOS_CALENDARIO +
+            " agendamentos no período. Refine o filtro ou reduza o intervalo exibido."
+        );
+      }
+    }
+    eventos.sort(function (a, b) {
+      if (a.start !== b.start) return a.start < b.start ? -1 : 1;
+      return String(a.title).localeCompare(String(b.title));
+    });
+    return {
+      success: true,
+      eventos: eventos,
+      total: eventos.length,
+      sala: salaF,
+      timezone: tz_()
+    };
+  }
 
   function obterAgendamentosConsultaParaExportar_(curso, turma, sortCol, sortDir) {
     const c = String(curso || "").trim();
@@ -717,7 +776,8 @@ const AgendamentoService = (() => {
     excluirAgendamentosLote: excluirAgendamentosLote_,
     excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro: excluirTodosAgendamentosPorIdTurmaAoExcluirRegistro_,
     obterAgendamentoParaEditar: obterAgendamentoParaEditar_,
-    atualizarAgendamento: atualizarAgendamento_
+    atualizarAgendamento: atualizarAgendamento_,
+    listarAgendamentosCalendario: listarAgendamentosCalendario_
   };
 })();
 

@@ -4,6 +4,7 @@
     <base target="_top">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
     <?!= HtmlService.createHtmlOutputFromFile('LayoutGlobal').getContent(); ?>
     <?!= HtmlService.createHtmlOutputFromFile('ShellViewStyles').getContent(); ?>
   </head>
@@ -20,6 +21,8 @@
     <?!= HtmlService.createHtmlOutputFromFile('SgcOperacaoUi').getContent(); ?>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
     <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.15/locales/pt-br.global.min.js"></script>
     <?!= HtmlService.createHtmlOutputFromFile('SgcFlatpickr').getContent(); ?>
     <div class="form-container">
       <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
@@ -192,6 +195,7 @@
       view === "agendamento-excluir"
     )
       group = "agendamento";
+    else if (view === "calendario-consultar") group = "calendario";
     else if (view === "permissoes-incluir" || view === "permissoes-consultar")
       group = "permissoes";
     if (group) {
@@ -368,7 +372,8 @@
     "agendamento-editar": "SgcAgendamentoEditarResetarAoEntrar",
     "agendamento-excluir": "SgcAgendamentoExcluirResetarAoEntrar",
     "permissoes-incluir": "SgcPermissoesIncluirResetarAoEntrar",
-    "permissoes-consultar": "SgcPermissoesConsultaResetarAoEntrar"
+    "permissoes-consultar": "SgcPermissoesConsultaResetarAoEntrar",
+    "calendario-consultar": "SgcCalendarioConsultaResetarAoEntrar"
   };
 
   function sgcMenuViewEhMesmaTelaAtual_(view, id) {
@@ -516,6 +521,8 @@
               try { window.PermissoesIncluirInit(); } catch (err) { showError("Erro ao iniciar Incluir permissões: " + (err && err.message ? err.message : String(err))); }
             } else if (view === "permissoes-consultar" && typeof window.PermissoesConsultaInit === "function") {
               try { window.PermissoesConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar permissões: " + (err && err.message ? err.message : String(err))); }
+            } else if (view === "calendario-consultar" && typeof window.CalendarioConsultaInit === "function") {
+              try { window.CalendarioConsultaInit(); } catch (err) { showError("Erro ao iniciar Calendário: " + (err && err.message ? err.message : String(err))); }
             }
             sgcRegistrarViewAtual_(view, id);
           } catch (err) {

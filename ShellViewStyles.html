@@ -370,6 +370,122 @@
   #btnExportarCsv { gap: 6px; }
   tr.consulta-tr-selecionada { background-color: rgba(0, 191, 165, 0.15) !important; }
 
+  .sgc-obrigatorio {
+    color: #c62828;
+    font-weight: 700;
+  }
+  .sgc-cal-aguardando-sala {
+    margin-top: 20px;
+    padding: 28px 20px;
+    text-align: center;
+    color: #5a6f6b;
+    background: rgba(0, 191, 165, 0.05);
+    border: 1px dashed #b0c9c5;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+  .sgc-cal-area-wrap {
+    margin-top: 18px;
+  }
+  .sgc-cal-sala-titulo {
+    margin-top: 0;
+  }
+  .sgc-calendario-view .sgc-cal-toolbar-meta {
+    margin: 8px 0 12px;
+  }
+  .sgc-calendario-host {
+    margin-top: 8px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    min-height: 520px;
+  }
+  .sgc-calendario-host .fc {
+    font-family: inherit;
+    font-size: 0.9rem;
+  }
+  .sgc-calendario-host .fc-toolbar-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #1b3330;
+  }
+  .sgc-calendario-host .fc-button {
+    background-color: var(--brand);
+    border-color: var(--brand);
+    font-weight: 600;
+    text-transform: none;
+    box-shadow: none;
+  }
+  .sgc-calendario-host .fc-button:hover,
+  .sgc-calendario-host .fc-button:focus {
+    background-color: #00a892;
+    border-color: #00a892;
+  }
+  .sgc-calendario-host .fc-button-primary:not(:disabled).fc-button-active,
+  .sgc-calendario-host .fc-button-primary:not(:disabled):active {
+    background-color: #008f7d;
+    border-color: #008f7d;
+  }
+  .sgc-calendario-host .fc-event {
+    border-radius: 4px;
+    padding: 1px 3px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .sgc-calendario-host .fc-event .fc-event-title {
+    font-weight: 600;
+  }
+  .sgc-cal-legenda {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 14px;
+    margin-top: 14px;
+    padding: 10px 12px;
+    background: rgba(0, 191, 165, 0.06);
+    border-radius: 6px;
+    border: 1px solid var(--border);
+  }
+  .sgc-cal-legenda-titulo {
+    font-weight: 600;
+    color: #334441;
+    margin-right: 4px;
+  }
+  .sgc-cal-legenda-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.82rem;
+    color: #2d3e3b;
+  }
+  .sgc-cal-legenda-swatch {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+  .sgc-cal-event-detail {
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--brand);
+    border-radius: 6px;
+    background: #fafcfc;
+  }
+  .sgc-cal-detail-titulo {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #1b3330;
+    margin-bottom: 6px;
+  }
+  .sgc-cal-detail-linha {
+    font-size: 0.9rem;
+    color: #334441;
+    margin: 0 0 4px;
+  }
+
   @media (max-width: 520px) {
     .form-container > .sgc-msg-topo-app:not(:empty) {
       padding-top: 10px;

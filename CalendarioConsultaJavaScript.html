@@ -1,0 +1,433 @@
+<script>
+  window.CalendarioConsultaInit = function() {
+    var root = document.getElementById("calendarioConsultaRoot");
+    var calEl = document.getElementById("sgcCalendarioEl");
+    var areaWrap = document.getElementById("calAreaWrap");
+    var aguardando = document.getElementById("calAguardandoSala");
+    if (!root || !calEl || !areaWrap || !aguardando) return;
+
+    function attrOuPadrao(el, nome, padrao) {
+      if (!el) return padrao;
+      var v = el.getAttribute(nome);
+      v = v != null ? String(v).trim() : "";
+      return v || padrao;
+    }
+
+    var PLACEHOLDER = attrOuPadrao(root, "data-placeholder-curso-turma", "Todos");
+    var PLACEHOLDER_SALA = attrOuPadrao(root, "data-placeholder-sala", "Selecione");
+
+    var CORES_CURSO_ = [
+      "#7986cb", "#33b679", "#8e24aa", "#e67c73", "#f6bf26",
+      "#f4511e", "#039be5", "#616161", "#3f51b5", "#0b8043",
+      "#d50000", "#e52592", "#7cb342", "#c0ca33", "#6d4c41"
+    ];
+
+    var mapaCorCurso_ = {};
+    var calendar_ = null;
+    var salaCalendarioAtiva_ = "";
+
+    function renderMsg(text, kind) {
+      if (typeof window.sgcRenderMensagemTopo === "function") {
+        window.sgcRenderMensagemTopo(text, kind);
+      }
+    }
+
+    function salaSelecionada_() {
+      return String(document.getElementById("calSala").value || "").trim();
+    }
+
+    function corParaCurso_(curso) {
+      var chave = String(curso || "").trim() || "(sem curso)";
+      if (mapaCorCurso_[chave]) return mapaCorCurso_[chave];
+      var h = 0;
+      for (var i = 0; i < chave.length; i++) {
+        h = (h * 31 + chave.charCodeAt(i)) >>> 0;
+      }
+      var cor = CORES_CURSO_[h % CORES_CURSO_.length];
+      mapaCorCurso_[chave] = cor;
+      return cor;
+    }
+
+    function ymdFromDate_(d) {
+      return (
+        d.getFullYear() +
+        "-" +
+        String(d.getMonth() + 1).padStart(2, "0") +
+        "-" +
+        String(d.getDate()).padStart(2, "0")
+      );
+    }
+
+    function formatarDataBr_(ymd) {
+      var p = String(ymd || "").split("-");
+      if (p.length !== 3) return ymd;
+      return p[2] + "/" + p[1] + "/" + p[0];
+    }
+
+    function formatarHoraCurta_(iso) {
+      var m = /T(\d{2}):(\d{2})/.exec(String(iso || ""));
+      return m ? m[1] + ":" + m[2] : "";
+    }
+
+    function preencherCursos(cursos) {
+      var sel = document.getElementById("calCurso");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      (cursos || []).forEach(function(c) {
+        sel.appendChild(new Option(c, c));
+      });
+    }
+
+    function resetTurmaSelect() {
+      var sel = document.getElementById("calTurma");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      sel.disabled = true;
+    }
+
+    function preencherTurmas(turmas) {
+      var sel = document.getElementById("calTurma");
+      sel.innerHTML = "";
+      sel.appendChild(new Option(PLACEHOLDER, ""));
+      (turmas || []).forEach(function(t) {
+        sel.appendChild(new Option(t, t));
+      });
+      sel.disabled = !(turmas && turmas.length);
+    }
+
+    function preencherSalas(salas) {
+      var sel = document.getElementById("calSala");
+      sel.innerHTML = "";
+      var ph = new Option(PLACEHOLDER_SALA, "");
+      ph.disabled = true;
+      ph.selected = true;
+      sel.appendChild(ph);
+      (salas || []).forEach(function(s) {
+        var nome = s && s.nome != null ? String(s.nome) : String(s || "");
+        if (!nome) return;
+        sel.appendChild(new Option(nome, nome));
+      });
+    }
+
+    function carregarTurmasParaCurso(curso) {
+      curso = String(curso || "").trim();
+      resetTurmaSelect();
+      if (!curso) return;
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Não foi possível carregar as turmas.", "danger");
+            return;
+          }
+          preencherTurmas(resp.turmas);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          if (
+            typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
+            window.tratarErroInfraestruturaSpaSeAplicavel(err)
+          ) {
+            return;
+          }
+          renderMsg("Erro ao carregar turmas: " + err, "danger");
+        })
+        .obterTurmasAgendamentoPorCurso(curso);
+    }
+
+    function coletarFiltros_() {
+      return {
+        curso: String(document.getElementById("calCurso").value || "").trim(),
+        turma: String(document.getElementById("calTurma").value || "").trim(),
+        sala: salaSelecionada_()
+      };
+    }
+
+    function ocultarCalendario_() {
+      salaCalendarioAtiva_ = "";
+      areaWrap.style.display = "none";
+      aguardando.style.display = "";
+      ocultarDetalheEvento_();
+      mapaCorCurso_ = {};
+      if (calendar_) {
+        calendar_.destroy();
+        calendar_ = null;
+      }
+      calEl.innerHTML = "";
+      var meta = document.getElementById("calMeta");
+      if (meta) meta.textContent = "";
+      var leg = document.getElementById("calLegenda");
+      if (leg) {
+        leg.innerHTML = "";
+        leg.style.display = "none";
+      }
+    }
+
+    function atualizarTituloSala_(sala) {
+      var tit = document.getElementById("calSalaTitulo");
+      if (tit) tit.textContent = "Calendário — " + sala;
+    }
+
+    function atualizarLegenda_(eventos) {
+      var leg = document.getElementById("calLegenda");
+      if (!leg) return;
+      var vistos = {};
+      var itens = [];
+      (eventos || []).forEach(function(ev) {
+        var c = String(ev.curso || "").trim() || "(sem curso)";
+        if (vistos[c]) return;
+        vistos[c] = true;
+        itens.push({ curso: c, cor: corParaCurso_(c) });
+      });
+      itens.sort(function(a, b) {
+        return a.curso.localeCompare(b.curso, "pt-BR");
+      });
+      if (!itens.length) {
+        leg.innerHTML = "";
+        leg.style.display = "none";
+        return;
+      }
+      leg.style.display = "";
+      leg.innerHTML =
+        '<span class="sgc-cal-legenda-titulo">Cores por curso:</span>' +
+        itens
+          .map(function(it) {
+            return (
+              '<span class="sgc-cal-legenda-item">' +
+              '<span class="sgc-cal-legenda-swatch" style="background:' +
+              it.cor +
+              '"></span>' +
+              '<span class="sgc-cal-legenda-texto">' +
+              it.curso.replace(/</g, "&lt;") +
+              "</span></span>"
+            );
+          })
+          .join("");
+    }
+
+    function mostrarDetalheEvento_(fcEvent) {
+      var box = document.getElementById("calEventDetail");
+      if (!box || !fcEvent) return;
+      document.getElementById("calDetailTitulo").textContent = fcEvent.title || "";
+      var ini = formatarHoraCurta_(fcEvent.startStr || fcEvent.start);
+      var fim = formatarHoraCurta_(fcEvent.endStr || fcEvent.end);
+      var dataTxt = "";
+      if (fcEvent.start) {
+        dataTxt = formatarDataBr_(ymdFromDate_(fcEvent.start));
+      }
+      document.getElementById("calDetailHorario").textContent =
+        "Data: " + dataTxt + " · Horário: " + ini + " – " + fim;
+      box.style.display = "";
+    }
+
+    function ocultarDetalheEvento_() {
+      var box = document.getElementById("calEventDetail");
+      if (box) box.style.display = "none";
+    }
+
+    function buscarEventosCalendario_(info, successCallback, failureCallback) {
+      var sala = salaSelecionada_();
+      if (!sala) {
+        successCallback([]);
+        return;
+      }
+      var fimExclusive = new Date(info.end);
+      fimExclusive.setDate(fimExclusive.getDate() - 1);
+      var payload = coletarFiltros_();
+      payload.inicioYmd = ymdFromDate_(info.start);
+      payload.fimYmd = ymdFromDate_(fimExclusive);
+      var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+      google.script.run
+        .withSuccessHandler(function(resp) {
+          if (endBusy) endBusy();
+          if (!resp || !resp.success) {
+            renderMsg((resp && resp.message) || "Não foi possível carregar o calendário.", "danger");
+            if (failureCallback) failureCallback(new Error((resp && resp.message) || "erro"));
+            return;
+          }
+          renderMsg("");
+          var meta = document.getElementById("calMeta");
+          if (meta) {
+            meta.textContent =
+              (resp.total != null ? resp.total : 0) +
+              " agendamento(s) nesta sala no período exibido.";
+          }
+          var eventos = (resp.eventos || []).map(function(ev) {
+            var cor = corParaCurso_(ev.curso);
+            return {
+              id: String(ev.eventId || ev.sheetRow),
+              title: ev.title,
+              start: ev.start,
+              end: ev.end,
+              backgroundColor: cor,
+              borderColor: cor,
+              extendedProps: {
+                curso: ev.curso,
+                turma: ev.turma,
+                sala: ev.sala,
+                sheetRow: ev.sheetRow,
+                eventId: ev.eventId,
+                idTurma: ev.idTurma
+              }
+            };
+          });
+          atualizarLegenda_(resp.eventos || []);
+          successCallback(eventos);
+        })
+        .withFailureHandler(function(err) {
+          if (endBusy) endBusy();
+          if (
+            typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
+            window.tratarErroInfraestruturaSpaSeAplicavel(err)
+          ) {
+            if (failureCallback) failureCallback(err);
+            return;
+          }
+          renderMsg("Erro ao carregar calendário: " + err, "danger");
+          if (failureCallback) failureCallback(err);
+        })
+        .listarAgendamentosCalendario(payload);
+    }
+
+    function montarCalendario_() {
+      if (typeof FullCalendar === "undefined") {
+        renderMsg("Biblioteca de calendário não carregada.", "danger");
+        return;
+      }
+      if (calendar_) {
+        calendar_.destroy();
+        calendar_ = null;
+      }
+      calEl.innerHTML = "";
+      calendar_ = new FullCalendar.Calendar(calEl, {
+        locale: "pt-br",
+        initialView: "timeGridWeek",
+        firstDay: 0,
+        height: "auto",
+        contentHeight: 680,
+        expandRows: true,
+        nowIndicator: true,
+        slotMinTime: "07:00:00",
+        slotMaxTime: "22:00:00",
+        allDaySlot: false,
+        weekends: true,
+        headerToolbar: {
+          left: "prev,next today",
+          center: "title",
+          right: "dayGridMonth,timeGridWeek,timeGridDay,listWeek"
+        },
+        buttonText: {
+          today: "Hoje",
+          month: "Mês",
+          week: "Semana",
+          day: "Dia",
+          list: "Lista"
+        },
+        eventTimeFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
+        slotLabelFormat: { hour: "2-digit", minute: "2-digit", hour12: false },
+        events: buscarEventosCalendario_,
+        eventClick: function(arg) {
+          arg.jsEvent.preventDefault();
+          mostrarDetalheEvento_(arg.event);
+        },
+        datesSet: function() {
+          ocultarDetalheEvento_();
+        }
+      });
+      calendar_.render();
+    }
+
+    function exibirCalendarioDaSala_() {
+      var sala = salaSelecionada_();
+      if (!sala) {
+        renderMsg("Selecione uma sala.", "warning");
+        ocultarCalendario_();
+        return;
+      }
+      var trocouSala = salaCalendarioAtiva_ !== sala;
+      salaCalendarioAtiva_ = sala;
+      aguardando.style.display = "none";
+      areaWrap.style.display = "";
+      atualizarTituloSala_(sala);
+      mapaCorCurso_ = {};
+      ocultarDetalheEvento_();
+      if (trocouSala || !calendar_) {
+        montarCalendario_();
+      } else if (calendar_) {
+        calendar_.refetchEvents();
+      }
+      var btn = document.getElementById("btnCalAplicar");
+      if (btn) btn.textContent = "Atualizar calendário";
+    }
+
+    document.getElementById("calCurso").addEventListener("change", function() {
+      carregarTurmasParaCurso(this.value);
+      if (calendar_) exibirCalendarioDaSala_();
+    });
+    document.getElementById("calTurma").addEventListener("change", function() {
+      if (calendar_) exibirCalendarioDaSala_();
+    });
+    document.getElementById("calSala").addEventListener("change", function() {
+      var btn = document.getElementById("btnCalAplicar");
+      if (btn) btn.textContent = "Exibir calendário";
+      if (!salaSelecionada_()) ocultarCalendario_();
+    });
+
+    document.getElementById("calFormFiltro").addEventListener("submit", function(e) {
+      e.preventDefault();
+      exibirCalendarioDaSala_();
+    });
+
+    document.getElementById("btnCalLimpar").addEventListener("click", function() {
+      document.getElementById("calCurso").selectedIndex = 0;
+      resetTurmaSelect();
+      document.getElementById("calSala").selectedIndex = 0;
+      var btn = document.getElementById("btnCalAplicar");
+      if (btn) btn.textContent = "Exibir calendário";
+      renderMsg("");
+      ocultarCalendario_();
+    });
+
+    document.getElementById("btnCalFecharDetalhe").addEventListener("click", ocultarDetalheEvento_);
+
+    window.SgcCalendarioConsultaResetarAoEntrar = function() {
+      document.getElementById("calCurso").selectedIndex = 0;
+      resetTurmaSelect();
+      document.getElementById("calSala").selectedIndex = 0;
+      var btn = document.getElementById("btnCalAplicar");
+      if (btn) btn.textContent = "Exibir calendário";
+      renderMsg("");
+      ocultarCalendario_();
+    };
+
+    var endInit = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
+    google.script.run
+      .withSuccessHandler(function(resp) {
+        if (endInit) endInit();
+        if (!resp || !resp.success) {
+          renderMsg((resp && resp.message) || "Não foi possível carregar a tela.", "danger");
+          return;
+        }
+        preencherCursos(resp.cursos);
+        preencherSalas(resp.salas);
+        resetTurmaSelect();
+        var hint = document.getElementById("calTzHint");
+        if (hint && resp.timezone) {
+          hint.textContent = "(fuso: " + resp.timezone + ")";
+        }
+        ocultarCalendario_();
+      })
+      .withFailureHandler(function(err) {
+        if (endInit) endInit();
+        if (
+          typeof window.tratarErroInfraestruturaSpaSeAplicavel === "function" &&
+          window.tratarErroInfraestruturaSpaSeAplicavel(err)
+        ) {
+          return;
+        }
+        renderMsg("Erro: " + err, "danger");
+      })
+      .obterDadosTelaAgendamentoIncluir();
+  };
+</script>

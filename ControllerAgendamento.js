@@ -97,6 +97,29 @@ function criarAgendamentos(payload) {
  * @param {{ curso: string, turma: string, offset?: number, limit?: number, sortCol?: number, sortDir?: string }} payload
  * sortCol -1 = data + hora início (padrão); 0..n-1 = índice da coluna no cabeçalho da planilha.
  */
+/**
+ * Lista agendamentos para exibição no calendário (intervalo visível + filtros opcionais).
+ * @param {{ inicioYmd: string, fimYmd: string, curso?: string, turma?: string, sala?: string }} payload
+ */
+function listarAgendamentosCalendario(payload) {
+  SessaoWebApp.exigirParaGoogleScriptRun();
+  try {
+    const p = payload && typeof payload === "object" ? payload : {};
+    return AgendamentoService.listarAgendamentosCalendario(
+      p.inicioYmd,
+      p.fimYmd,
+      p.curso,
+      p.turma,
+      p.sala
+    );
+  } catch (e) {
+    return {
+      success: false,
+      message: e && e.message ? e.message : String(e)
+    };
+  }
+}
+
 function pesquisarAgendamentosExcluir(payload) {
   SessaoWebApp.exigirParaGoogleScriptRun();
   try {

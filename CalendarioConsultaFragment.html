@@ -1,0 +1,59 @@
+<div
+  class="form-content sgc-calendario-view"
+  id="calendarioConsultaRoot"
+  data-placeholder-curso-turma="Todos"
+  data-placeholder-sala="Selecione"
+>
+  <div id="msgCal" class="sgc-msg-view-slot" aria-hidden="true"></div>
+  <div class="actions-row">
+    <div class="is-size-6 muted">
+      Tela: <span class="pill"><?= parentItem ?> >> <?= subItem ?></span>
+      <span class="is-size-7 ml-2" id="calTzHint"></span>
+    </div>
+  </div>
+
+  <h2 class="section-title">Sala</h2>
+  <p class="help mb-3">Cada sala possui seu próprio calendário. Selecione a sala para exibir os agendamentos daquele recurso.</p>
+  <form id="calFormFiltro">
+    <div class="columns is-multiline">
+      <div class="column is-12">
+        <label class="label" for="calSala">Sala <span class="sgc-obrigatorio" aria-hidden="true">*</span></label>
+        <div class="select is-fullwidth">
+          <select id="calSala" required></select>
+        </div>
+      </div>
+      <div class="column is-6">
+        <label class="label">Curso <span class="is-size-7 has-text-grey">(opcional)</span></label>
+        <div class="select is-fullwidth">
+          <select id="calCurso"></select>
+        </div>
+      </div>
+      <div class="column is-6">
+        <label class="label">Turma <span class="is-size-7 has-text-grey">(opcional)</span></label>
+        <div class="select is-fullwidth">
+          <select id="calTurma" disabled></select>
+        </div>
+      </div>
+    </div>
+    <div class="consulta-form-actions">
+      <button type="button" class="btn-custom btn-secondary" id="btnCalLimpar">Limpar</button>
+      <button type="submit" class="btn-custom" id="btnCalAplicar">Exibir calendário</button>
+    </div>
+  </form>
+
+  <div id="calAguardandoSala" class="sgc-cal-aguardando-sala" role="status">
+    Selecione uma sala e clique em <strong>Exibir calendário</strong>.
+  </div>
+
+  <div id="calAreaWrap" class="sgc-cal-area-wrap" style="display: none;">
+    <h2 class="section-title sgc-cal-sala-titulo" id="calSalaTitulo"></h2>
+    <div class="sgc-cal-toolbar-meta muted is-size-7" id="calMeta" aria-live="polite"></div>
+    <div id="sgcCalendarioEl" class="sgc-calendario-host" aria-label="Calendário de agendamentos da sala"></div>
+    <div id="calLegenda" class="sgc-cal-legenda" aria-label="Legenda por curso"></div>
+    <div id="calEventDetail" class="sgc-cal-event-detail" style="display: none;" role="region" aria-label="Detalhes do agendamento">
+      <h3 class="sgc-cal-detail-titulo" id="calDetailTitulo"></h3>
+      <p class="sgc-cal-detail-linha" id="calDetailHorario"></p>
+      <button type="button" class="btn-custom btn-secondary is-small mt-2" id="btnCalFecharDetalhe">Fechar</button>
+    </div>
+  </div>
+</div>

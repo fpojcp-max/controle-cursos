@@ -180,6 +180,7 @@ function getMenuHtml(view, spa, cadastroId, sessaoWebAppOk, acessoSistemaOk) {
   t.urlAgendamentoConsulta = spa ? "#" : obterUrlWebApp("agendamento-consulta");
   t.urlAgendamentoEditar = spa ? "#" : obterUrlWebApp("agendamento-editar");
   t.urlAgendamentoExcluir = spa ? "#" : obterUrlWebApp("agendamento-excluir");
+  t.urlCalendarioConsultar = spa ? "#" : obterUrlWebApp("calendario-consultar");
   t.urlTurmaExcluir = spa ? "#" : obterUrlWebApp("turma-excluir");
   t.urlTurmaEditar = spa ? "#" : obterUrlWebApp("turma-editar");
   t.menuTurmaGrupoAtivo =
@@ -189,6 +190,7 @@ function getMenuHtml(view, spa, cadastroId, sessaoWebAppOk, acessoSistemaOk) {
     v === "agendamento-consulta" ||
     v === "agendamento-editar" ||
     v === "agendamento-excluir";
+  t.menuCalendarioAtivo = v === "calendario-consultar";
   t.menuPermissoesAtivo = v === "permissoes-incluir" || v === "permissoes-consultar";
   t.spa = spa === true;
   return t.evaluate().getContent();
@@ -320,6 +322,16 @@ function getPageContent(view, id) {
     return {
       html: t.evaluate().getContent(),
       script: HtmlService.createHtmlOutputFromFile("PermissoesConsultaJavaScript").getContent()
+    };
+  }
+  if (view === "calendario-consultar") {
+    const t = HtmlService.createTemplateFromFile("CalendarioConsultaFragment");
+    t.spa = true;
+    t.parentItem = "Calendário";
+    t.subItem = "Consultar";
+    return {
+      html: t.evaluate().getContent(),
+      script: HtmlService.createHtmlOutputFromFile("CalendarioConsultaJavaScript").getContent()
     };
   }
   return { html: "", script: "" };
