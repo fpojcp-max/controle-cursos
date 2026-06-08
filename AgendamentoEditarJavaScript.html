@@ -115,8 +115,12 @@
       var inp = document.getElementById("agEdFormData");
       if (!inp || !hojeYmd || !vigIni || !vigFim) return;
       var min = ymdMaiorOuIgual(hojeYmd, vigIni) ? hojeYmd : vigIni;
-      inp.setAttribute("min", min);
-      inp.setAttribute("max", vigFim);
+      if (typeof window.sgcFlatpickrAgendamentoEditarData_ === "function") {
+        window.sgcFlatpickrAgendamentoEditarData_(inp, min, vigFim);
+      } else {
+        inp.setAttribute("min", min);
+        inp.setAttribute("max", vigFim);
+      }
     }
 
     function setFormEdicaoLocked(lock) {

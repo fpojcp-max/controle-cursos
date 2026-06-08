@@ -3,6 +3,7 @@
   <head>
     <base target="_top">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bulma@0.9.4/css/bulma.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
     <?!= HtmlService.createHtmlOutputFromFile('LayoutGlobal').getContent(); ?>
     <?!= HtmlService.createHtmlOutputFromFile('ShellViewStyles').getContent(); ?>
   </head>
@@ -17,6 +18,9 @@
     <?!= HtmlService.createHtmlOutputFromFile('AppOcupado').getContent(); ?>
     <?!= HtmlService.createHtmlOutputFromFile('SgcModalA11y').getContent(); ?>
     <?!= HtmlService.createHtmlOutputFromFile('SgcOperacaoUi').getContent(); ?>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+    <?!= HtmlService.createHtmlOutputFromFile('SgcFlatpickr').getContent(); ?>
     <div class="form-container">
       <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
       <div id="sgcMensagemTopoApp" class="sgc-msg-topo-app" role="status" aria-live="polite" aria-hidden="true"></div>

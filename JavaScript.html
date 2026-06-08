@@ -6,12 +6,25 @@
     "codVerificacao", "qrAvaliacao", "avaliacaoReacao", "prepDivulgacao", "divulgacao", "linkPagina"
   ];
 
+  function configurarFlatpickrCadastro_() {
+    var registroId = (document.getElementById("registroId").value || "").trim();
+    if (typeof window.sgcFlatpickrCadastroTurma_ !== "function") return;
+    window.sgcFlatpickrCadastroTurma_(
+      document.getElementById("inicio"),
+      document.getElementById("fim"),
+      document.getElementById("fimInscricoes"),
+      { ehEdicao: !!registroId }
+    );
+  }
+
   window.CadastroInit = function() {
     var endCfg = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
     google.script.run
       .withSuccessHandler(function(config) {
         if (endCfg) endCfg();
         popularCampos(config);
+        var id = (document.getElementById("registroId").value || "").trim();
+        if (!id) configurarFlatpickrCadastro_();
         inicializarEdicaoSeNecessario();
       })
       .withFailureHandler(function(err) {
@@ -37,6 +50,7 @@
         if (endLoad) endLoad();
         if (dados) {
           preencherFormularioEdicao(dados);
+          configurarFlatpickrCadastro_();
         } else if (typeof window.sgcRenderMensagemTopo === "function") {
           window.sgcRenderMensagemTopo("Registro não encontrado.", "warning");
         } else {
@@ -101,7 +115,7 @@
   }
 
   function resetVisualStyles() {
-    const fields = document.querySelectorAll('select, input[type="date"]');
+    const fields = document.querySelectorAll('select, .sgc-input-data');
     fields.forEach(f => f.classList.add('is-placeholder'));
   }
 
@@ -119,6 +133,7 @@
         .withSuccessHandler(function(c) {
           if (endLimpar) endLimpar();
           popularCampos(c);
+          configurarFlatpickrCadastro_();
         })
         .withFailureHandler(function() {
           if (endLimpar) endLimpar();
@@ -191,7 +206,12 @@
       document.getElementById('ticketForm').reset();
       document.getElementById('registroId').value = '';
       resetVisualStyles();
-      google.script.run.withSuccessHandler(c => popularCampos(c)).obterConfiguracaoFormulario();
+      google.script.run
+        .withSuccessHandler(function(c) {
+          popularCampos(c);
+          configurarFlatpickrCadastro_();
+        })
+        .obterConfiguracaoFormulario();
     }
 
     function sucessoEdicao(resp) {
@@ -262,7 +282,10 @@
     }
     resetVisualStyles();
     google.script.run
-      .withSuccessHandler(function(c) { popularCampos(c); })
+      .withSuccessHandler(function(c) {
+        popularCampos(c);
+        configurarFlatpickrCadastro_();
+      })
       .withFailureHandler(function() {})
       .obterConfiguracaoFormulario();
   };

@@ -1,0 +1,217 @@
+<script>
+(function() {
+  var FP_BASE_ = {
+    dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "d/m/Y",
+    locale: "pt",
+    allowInput: false,
+    clickOpens: true,
+    disableMobile: true
+  };
+
+  window.sgcFlatpickrHojeLocal_ = function() {
+    var d = new Date();
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
+  };
+
+  window.sgcFlatpickrDisponivel_ = function() {
+    return typeof flatpickr === "function";
+  };
+
+  window.sgcFlatpickrDestruir_ = function(el) {
+    if (!el) return;
+    if (el._flatpickr) {
+      try {
+        el._flatpickr.destroy();
+      } catch (e0) {}
+    }
+  };
+
+  window.sgcFlatpickrLimpar_ = function(el) {
+    if (!el) return;
+    if (el._flatpickr) {
+      try {
+        el._flatpickr.clear();
+      } catch (e1) {}
+    } else {
+      el.value = "";
+    }
+  };
+
+  window.sgcFlatpickrBloquearDigitacao_ = function(el) {
+    if (!el || el.dataset.sgcFpNoKb === "1") return;
+    el.dataset.sgcFpNoKb = "1";
+    el.addEventListener("keydown", function(e) {
+      if (e.key === "Tab" || e.key === "Escape" || e.key === "Enter") return;
+      e.preventDefault();
+    });
+    el.addEventListener("paste", function(e) {
+      e.preventDefault();
+    });
+  };
+
+  window.sgcFlatpickrPrepararInput_ = function(el) {
+    if (!el) return;
+    el.type = "text";
+    el.readOnly = true;
+    el.setAttribute("autocomplete", "off");
+    el.setAttribute("inputmode", "none");
+    el.classList.add("sgc-input-data");
+    el.removeAttribute("min");
+    el.removeAttribute("max");
+  };
+
+  window.sgcFlatpickrConfigurar_ = function(el, opts) {
+    opts = opts || {};
+    if (!el) return null;
+    if (!window.sgcFlatpickrDisponivel_()) return null;
+    window.sgcFlatpickrPrepararInput_(el);
+    window.sgcFlatpickrBloquearDigitacao_(el);
+    window.sgcFlatpickrDestruir_(el);
+    var cfg = {};
+    var k;
+    for (k in FP_BASE_) {
+      if (Object.prototype.hasOwnProperty.call(FP_BASE_, k)) cfg[k] = FP_BASE_[k];
+    }
+    for (k in opts) {
+      if (Object.prototype.hasOwnProperty.call(opts, k) && k !== "minHoje" && k !== "minHojeYmd") {
+        cfg[k] = opts[k];
+      }
+    }
+    if (opts.minDate == null && opts.minHoje) {
+      cfg.minDate = opts.minHojeYmd || window.sgcFlatpickrHojeLocal_();
+    }
+    if (opts.defaultDate == null) {
+      var valorAtual = String(el.value || "").trim();
+      if (valorAtual) cfg.defaultDate = valorAtual;
+    }
+    return flatpickr(el, cfg);
+  };
+
+  function sgcFlatpickrNotificarIntervalo_(msg) {
+    if (typeof window.sgcRenderMensagemTopo === "function") {
+      window.sgcRenderMensagemTopo(msg, "danger");
+    }
+  }
+
+  window.sgcFlatpickrParIntervalo_ = function(inicioEl, fimEl, opts) {
+    opts = opts || {};
+    if (!inicioEl || !fimEl || !window.sgcFlatpickrDisponivel_()) return null;
+    var usarMinHoje = opts.minHoje !== false;
+    var hoje = opts.minHojeYmd || window.sgcFlatpickrHojeLocal_();
+    var minInicio = opts.minDateInicio != null ? opts.minDateInicio : usarMinHoje ? hoje : null;
+    var fpInicio = null;
+    var fpFim = null;
+    var msgFim =
+      opts.mensagemFimAntesInicio || "A data fim não pode ser anterior à data início.";
+
+    function syncFimMin() {
+      var ini = String(inicioEl.value || "").trim();
+      var minFim = ini || minInicio || null;
+      if (minInicio && minFim && minFim < minInicio) minFim = minInicio;
+      if (fpFim) {
+        if (minFim) fpFim.set("minDate", minFim);
+        else if (minInicio) fpFim.set("minDate", minInicio);
+      }
+      var fimVal = String(fimEl.value || "").trim();
+      if (fimVal && minFim && fimVal < minFim) {
+        if (ini && fimVal < ini) sgcFlatpickrNotificarIntervalo_(msgFim);
+        fimEl.value = "";
+        if (fpFim) fpFim.clear();
+      }
+      if (typeof opts.onSync === "function") opts.onSync();
+    }
+
+    fpInicio = window.sgcFlatpickrConfigurar_(inicioEl, {
+      minDate: minInicio || undefined,
+      onChange: function() {
+        syncFimMin();
+        if (typeof opts.onChangeInicio === "function") opts.onChangeInicio();
+      }
+    });
+    fpFim = window.sgcFlatpickrConfigurar_(fimEl, {
+      minDate: minInicio || undefined,
+      onChange: function() {
+        syncFimMin();
+        if (typeof opts.onChangeFim === "function") opts.onChangeFim();
+      }
+    });
+    syncFimMin();
+    return { inicio: fpInicio, fim: fpFim, sync: syncFimMin };
+  };
+
+  window.sgcFlatpickrConsultaFiltro_ = function(deEl, ateEl) {
+    return window.sgcFlatpickrParIntervalo_(deEl, ateEl, {
+      minHoje: false,
+      mensagemFimAntesInicio: "A data final não pode ser anterior à data inicial."
+    });
+  };
+
+  window.sgcFlatpickrCadastroTurma_ = function(inicioEl, fimEl, fimInscEl, opts) {
+    opts = opts || {};
+    var ehEdicao = !!opts.ehEdicao;
+    var onStyle = function(el) {
+      if (el && typeof window.updateStyle === "function") window.updateStyle(el);
+    };
+    var par = window.sgcFlatpickrParIntervalo_(inicioEl, fimEl, {
+      minHoje: !ehEdicao,
+      minHojeYmd: opts.minHojeYmd,
+      onChangeInicio: function() {
+        onStyle(inicioEl);
+      },
+      onChangeFim: function() {
+        onStyle(fimEl);
+      }
+    });
+    if (fimInscEl) {
+      window.sgcFlatpickrConfigurar_(fimInscEl, {
+        minHoje: !ehEdicao,
+        minDate: ehEdicao ? undefined : opts.minHojeYmd || window.sgcFlatpickrHojeLocal_(),
+        onChange: function() {
+          onStyle(fimInscEl);
+        }
+      });
+    }
+    return par;
+  };
+
+  window.sgcFlatpickrAgendamentoIncluir_ = function(hojeYmd) {
+    hojeYmd = hojeYmd || window.sgcFlatpickrHojeLocal_();
+    var elSimples = document.getElementById("agDataSimples");
+    var elIni = document.getElementById("agDataInicio");
+    var elFim = document.getElementById("agDataFim");
+    var elEx = document.getElementById("agExdate");
+    var elR = document.getElementById("agRdate");
+    var par = null;
+    if (elIni && elFim) {
+      par = window.sgcFlatpickrParIntervalo_(elIni, elFim, {
+        minHoje: true,
+        minHojeYmd: hojeYmd
+      });
+    }
+    [elSimples, elEx, elR].forEach(function(el) {
+      if (!el) return;
+      window.sgcFlatpickrConfigurar_(el, { minDate: hojeYmd });
+    });
+    return { par: par, hojeYmd: hojeYmd };
+  };
+
+  window.sgcFlatpickrAgendamentoEditarData_ = function(el, minYmd, maxYmd) {
+    if (!el) return null;
+    var valor = String(el.value || "").trim();
+    window.sgcFlatpickrDestruir_(el);
+    return window.sgcFlatpickrConfigurar_(el, {
+      minDate: minYmd || undefined,
+      maxDate: maxYmd || undefined,
+      defaultDate: valor || undefined
+    });
+  };
+})();
+</script>

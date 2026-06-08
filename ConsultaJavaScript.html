@@ -39,8 +39,20 @@ window.ConsultaInit = function() {
     if (tw) tw.style.display = "none";
   }
 
+  function limparDatasFiltroConsulta_() {
+    ["fInicioDe", "fInicioAte"].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el && typeof window.sgcFlatpickrLimpar_ === "function") {
+        window.sgcFlatpickrLimpar_(el);
+      } else if (el) {
+        el.value = "";
+      }
+    });
+  }
+
   function resetarConsultaParaEntrada_(recarregarOpcoes) {
     document.getElementById("searchForm").reset();
+    limparDatasFiltroConsulta_();
     renderMessage("");
     clearTable();
     document.getElementById("resultsMeta").textContent = "";
@@ -456,6 +468,12 @@ window.ConsultaInit = function() {
 
   wireEvents();
   loadFilterOptions();
+  if (typeof window.sgcFlatpickrConsultaFiltro_ === "function") {
+    window.sgcFlatpickrConsultaFiltro_(
+      document.getElementById("fInicioDe"),
+      document.getElementById("fInicioAte")
+    );
+  }
 };
 </script>
 

@@ -17,11 +17,20 @@
     /** Data civil yyyy-MM-dd no fuso de agendamento (servidor); validação espelhada antes do envio. */
     var agHojeYmd = "";
 
-    function aplicarMinDatasAgendamento_(ymd) {
-      if (!ymd || !/^\d{4}-\d{2}-\d{2}$/.test(ymd) || !root) return;
-      root.querySelectorAll('input[type="date"]').forEach(function(inp) {
-        inp.setAttribute("min", ymd);
+    function limparDatasAgendamentoIncluir_() {
+      ["agDataSimples", "agDataInicio", "agDataFim", "agExdate", "agRdate"].forEach(function(id) {
+        var el = document.getElementById(id);
+        if (el && typeof window.sgcFlatpickrLimpar_ === "function") {
+          window.sgcFlatpickrLimpar_(el);
+        } else if (el) {
+          el.value = "";
+        }
       });
+    }
+
+    function configurarFlatpickrAgendamentoIncluir_() {
+      if (typeof window.sgcFlatpickrAgendamentoIncluir_ !== "function") return;
+      window.sgcFlatpickrAgendamentoIncluir_(agHojeYmd);
     }
 
     function dowLocalYmd_(ymd) {
@@ -183,7 +192,8 @@
         r.checked = r.value === "simples";
       });
       toggleTipo();
-      ["agDataSimples", "agDataInicio", "agDataFim", "agExdate", "agRdate", "agHoraInicio", "agHoraFim"].forEach(function(id) {
+      limparDatasAgendamentoIncluir_();
+      ["agHoraInicio", "agHoraFim"].forEach(function(id) {
         var el = document.getElementById(id);
         if (el) el.value = "";
       });
@@ -195,7 +205,6 @@
       if (selSala) selSala.selectedIndex = 0;
       var help = document.getElementById("agSalaHelp");
       if (help) help.textContent = "";
-      aplicarMinDatasAgendamento_(agHojeYmd);
     }
 
     function toggleTipo() {
@@ -374,7 +383,7 @@
         preencherCursos(resp.cursos);
         preencherSelectSalas(resp.salas);
         agHojeYmd = String(resp.hojeYmd || "").trim();
-        aplicarMinDatasAgendamento_(agHojeYmd);
+        configurarFlatpickrAgendamentoIncluir_();
         aplicarPrefillSeHouver();
       })
       .withFailureHandler(function(err) {
