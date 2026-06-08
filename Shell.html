@@ -94,6 +94,7 @@
     </script>
     <script>
 (function() {
+  var MSG_BEMVINDO = "Seja bem-vindo ao Sistema de Gestão de Cursos e Turmas!";
   var mainContent = document.getElementById("main-content");
   if (!mainContent) return;
 
@@ -230,6 +231,16 @@
     if (p) p.textContent = texto;
   }
 
+  /** Home estática no cliente (como no Sistema de Apoio) — sem RPC. */
+  function mostrarHomeLocal_(mensagem) {
+    var msg = mensagem != null ? String(mensagem) : MSG_BEMVINDO;
+    mainContent.innerHTML =
+      '<div class="main-placeholder sgc-home-placeholder" role="region" aria-label="Tela inicial">' +
+      '<p class="sgc-home-mensagem" id="sgcHomeMensagemPrincipal" role="status" aria-live="polite">' +
+      escHtmlSpa_(msg) +
+      "</p></div>";
+  }
+
   function definirMenuVisivelArranque_(mostrar) {
     var menu = document.querySelector(".app-menu");
     if (!menu) return;
@@ -290,7 +301,11 @@
       return;
     }
     view = resolverViewPermitida_(view);
-    mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
+    if (view === "home") {
+      mostrarHomeLocal_(MSG_BEMVINDO);
+    } else {
+      mainContent.innerHTML = "<div class=\"main-placeholder\"></div>";
+    }
     var MS_POR_TENTATIVA = 55000;
     var MAX_TENTATIVAS = 2;
     var endBusy = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
@@ -334,6 +349,10 @@
     }
 
     function pedirPagina() {
+      if (view === "home") {
+        encerrarOcupadoNavegacao();
+        return;
+      }
       armarTimeoutPedido();
       google.script.run
         .withSuccessHandler(function(data) {
@@ -354,9 +373,6 @@
             }
             mainContent.innerHTML = html;
             if (data.script && data.script.trim()) runScript(data.script);
-            if (view === "home") {
-              definirTextoHome_("Seja bem-vindo ao Sistema de Gestão de Cursos e Turmas!");
-            }
             if (view === "consulta" && typeof window.ConsultaInit === "function") {
               try { window.ConsultaInit(); } catch (err) { showError("Erro ao iniciar Consultar (turmas): " + (err && err.message ? err.message : String(err))); }
             } else if (view === "cadastro" && typeof window.CadastroInit === "function") {
@@ -448,6 +464,10 @@
           }
           window.__spaAcessoPlanilhaOk = true;
           window.__spaAcessoPlanilhaMsg = "";
+          if (view === "home") {
+            encerrarOcupadoNavegacao();
+            return;
+          }
           pedirPagina();
         })
         .withFailureHandler(function(err) {
@@ -520,9 +540,6 @@
   }
 
   function sgcGatePronto_(data) {
-    if (typeof window.sgcAplicarIdentidadeCabecalho === "function") {
-      window.sgcAplicarIdentidadeCabecalho(data);
-    }
     if (!data || data.acessoSistemaOk !== true) {
       var msgSem =
         (data && data.mensagemSemAcesso) ||
@@ -536,14 +553,21 @@
       showBloqueioCentral(msgSem);
       return;
     }
+    if (typeof window.sgcAplicarIdentidadeCabecalho === "function") {
+      window.sgcAplicarIdentidadeCabecalho(data);
+    }
     window.__sgcGateSessaoOk = true;
     window.__spaAcessoPlanilhaOk = null;
     window.__spaAcessoPlanilhaMsg = "";
-    definirMenuVisivelArranque_(true);
     sgcMostrarAvisoSemAcesso_("");
     var initialView = document.body.getAttribute("data-initial-view") || "home";
     var initialId = document.body.getAttribute("data-initial-id") || "";
     initialView = resolverViewPermitida_(initialView);
+    /* Como no Apoio: boas-vindas na área central antes de revelar o menu. */
+    if (initialView === "home") {
+      mostrarHomeLocal_(MSG_BEMVINDO);
+    }
+    definirMenuVisivelArranque_(true);
     navigate(initialView, initialId);
   }
 

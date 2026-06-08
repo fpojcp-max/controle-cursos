@@ -1,6 +1,8 @@
 <style>
   :root {
     --brand: #00bfa5;
+    --brand-faint: rgba(0, 191, 165, 0.08);
+    --focus-ring: 0 0 0 0.125em rgba(0, 191, 165, 0.22);
     --ink: #1b3330;
     --muted: #6b8b86;
     --card: rgba(255, 255, 255, 0.98);
@@ -10,6 +12,11 @@
     --shadow: 0 15px 35px rgba(0,0,0,0.10);
     --shadow-soft: 0 10px 24px rgba(0,0,0,0.08);
     --radius: 12px;
+    --btn-radius: 12px;
+  }
+
+  button {
+    border-radius: var(--btn-radius);
   }
 
   body {
@@ -178,51 +185,68 @@
     border: 1px solid var(--border-strong);
   }
 
-  /* Menu principal: barra um pouco menor; fundo mais destacado; subitens em retângulo flutuante */
+  /* Menu principal — faixa segmentada (mesma estética do Sistema de Apoio; paleta esverdeada) */
   .app-menu {
-    background: #e8f2f1;
+    background: #d0ebe6;
     border: 1px solid var(--border);
     border-radius: var(--radius);
     margin: 0;
     overflow: visible;
+    padding: 4px;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 2px rgba(27, 51, 48, 0.06);
   }
-  .app-menu-list { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0; align-items: stretch; }
+  .app-menu-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: inline-flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    align-items: center;
+  }
   .app-menu-item {
     margin: 0;
     padding: 0;
-    border-right: 1px solid var(--border);
+    flex: 0 0 auto;
   }
-  .app-menu-item:last-child { border-right: none; }
-  .app-menu-item-dropdown { position: relative; }
+  .app-menu-item-dropdown {
+    position: relative;
+  }
   .app-menu-trigger {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 6px;
-    padding: 9px 16px;
-    font-size: 0.95rem;
+    justify-content: center;
+    gap: 5px;
+    min-width: 7.25rem;
+    padding: 7px 10px;
+    font-size: 0.9rem;
     font-weight: 600;
-    color: #000;
+    letter-spacing: 0.02em;
+    color: var(--ink);
     background: transparent;
     border: none;
+    border-radius: calc(var(--radius) - 2px);
     cursor: pointer;
-    text-align: left;
+    text-align: center;
     text-decoration: none;
     font-family: inherit;
-    transition: background 0.2s, font-weight 0.15s ease;
-    width: 100%;
+    transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
     box-sizing: border-box;
+    box-shadow: none;
   }
-  .app-menu-item:not(.app-menu-item-disabled) .app-menu-trigger:hover { background: rgba(0, 191, 165, 0.12); color: #000; }
+  .app-menu-item:not(.app-menu-item-disabled) .app-menu-trigger:hover,
+  .app-menu-item-dropdown.is-open > .app-menu-trigger,
   .app-menu-item-dropdown.is-active > .app-menu-trigger {
-    color: #000;
-    font-weight: 800;
-    border-bottom: 2px solid var(--brand);
-    margin-bottom: -2px;
+    color: var(--ink);
+    font-weight: 700;
+    background: #9fd4c8;
+    box-shadow: 0 1px 2px rgba(27, 51, 48, 0.14);
   }
   .app-menu-chevron {
     display: inline-block;
-    width: 0; height: 0;
+    width: 0;
+    height: 0;
     border-left: 4px solid transparent;
     border-right: 4px solid transparent;
     border-top: 5px solid currentColor;
@@ -230,44 +254,59 @@
     transition: transform 0.2s;
   }
   .app-menu-item-dropdown.is-open .app-menu-chevron { transform: rotate(180deg); }
-  /* Submenu: retângulo flutuante, solto da barra */
   .app-menu-sub {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 4px;
     display: none;
     position: absolute;
     top: 100%;
     left: 0;
-    margin-top: 5px;
+    margin-top: 6px;
     min-width: 168px;
     background: var(--card);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     z-index: 50;
+    box-sizing: border-box;
   }
   .app-menu-item-dropdown.is-open .app-menu-sub { display: block; }
-  .app-menu-sub li { margin: 0; }
+  .app-menu-sub li { margin: 0 0 4px 0; }
+  .app-menu-sub li:last-child { margin-bottom: 0; }
   .app-menu-link {
     display: block;
-    padding: 8px 14px;
+    padding: 6px 10px;
     font-size: 0.9rem;
     font-weight: 600;
+    letter-spacing: 0.03em;
     color: #000;
     text-decoration: none;
-    transition: background 0.2s, font-weight 0.15s ease;
-    border-bottom: 1px solid var(--border);
+    transition: border-color 0.2s, color 0.2s, font-weight 0.15s ease;
+    border: 1px solid var(--border);
+    border-radius: var(--btn-radius);
+    background: #f8fcfb;
+    cursor: pointer;
+    box-sizing: border-box;
   }
-  .app-menu-sub li:last-child .app-menu-link { border-bottom: none; }
-  .app-menu-link:hover { background: rgba(0, 191, 165, 0.1); color: #000; }
+  .app-menu-link:hover {
+    border-color: var(--brand);
+    color: var(--brand);
+  }
   .app-menu-link.is-active {
     color: #000;
     font-weight: 800;
-    background: rgba(0, 0, 0, 0.04);
-    box-shadow: inset 3px 0 0 var(--brand);
+    border-color: var(--brand);
+    border-width: 2px;
+    padding: 5px 9px;
+    background: #f8fcfb;
+    box-shadow: none;
   }
-  .app-menu-item-disabled .app-menu-trigger { color: var(--muted); cursor: not-allowed; opacity: 0.7; }
+  .app-menu-item-disabled .app-menu-trigger {
+    color: var(--muted);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
   .app-menu-item-disabled .app-menu-chevron { display: none; }
 
   /* Responsividade: título quebra e alinha bem */
