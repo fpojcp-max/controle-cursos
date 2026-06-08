@@ -16,12 +16,8 @@
       })
       .withFailureHandler(function(err) {
         if (endCfg) endCfg();
-        var msg = document.getElementById("msg");
-        if (msg) {
-          msg.innerHTML = "<div class=\"notification is-danger is-light has-text-right\">Erro ao carregar opções: " + String(err).replace(/</g, "&lt;") + "</div>";
-          if (typeof window.rolarParaVerMensagemNoTopo === "function") {
-            window.rolarParaVerMensagemNoTopo(msg);
-          }
+        if (typeof window.sgcRenderMensagemTopo === "function") {
+          window.sgcRenderMensagemTopo("Erro ao carregar opções: " + String(err), "danger");
         }
       })
       .obterConfiguracaoFormulario();
@@ -41,28 +37,21 @@
         if (endLoad) endLoad();
         if (dados) {
           preencherFormularioEdicao(dados);
+        } else if (typeof window.sgcRenderMensagemTopo === "function") {
+          window.sgcRenderMensagemTopo("Registro não encontrado.", "warning");
         } else {
-          var msg = document.getElementById("msg");
-          if (msg) {
-            msg.innerHTML = '<div class="notification is-warning is-light has-text-right">Registro não encontrado.</div>';
-            if (typeof window.rolarParaVerMensagemNoTopo === "function") {
-              window.rolarParaVerMensagemNoTopo(msg);
-            } else {
-              scrollParaTopo();
-            }
-          }
+          scrollParaTopo();
         }
       })
       .withFailureHandler(function(err) {
         if (endLoad) endLoad();
-        var msg = document.getElementById("msg");
-        if (msg) {
-          msg.innerHTML = '<div class="notification is-danger is-light has-text-right">Erro ao carregar registro: ' + (err && err.message ? err.message : String(err)) + '</div>';
-          if (typeof window.rolarParaVerMensagemNoTopo === "function") {
-            window.rolarParaVerMensagemNoTopo(msg);
-          } else {
-            scrollParaTopo();
-          }
+        if (typeof window.sgcRenderMensagemTopo === "function") {
+          window.sgcRenderMensagemTopo(
+            "Erro ao carregar registro: " + (err && err.message ? err.message : String(err)),
+            "danger"
+          );
+        } else {
+          scrollParaTopo();
         }
       })
       .obterRegistroPorId(id);
@@ -121,7 +110,9 @@
     if(confirm("Deseja limpar todos os dados do formulário?")) {
       document.getElementById('ticketForm').reset();
       document.getElementById('registroId').value = '';
-      document.getElementById('msg').innerHTML = '';
+      if (typeof window.sgcRenderMensagemTopo === "function") {
+        window.sgcRenderMensagemTopo("", "info");
+      }
       resetVisualStyles();
       var endLimpar = typeof window.appOcupadoIniciar === "function" ? window.appOcupadoIniciar({ blocking: false }) : null;
       google.script.run
@@ -151,17 +142,10 @@
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
-  /** Evita depender de firstChild após innerHTML (robusto em SPA / parsing do DOM). */
   function notificarNoElementoMsg(el, texto, tipo) {
-    if (!el) return;
-    el.innerHTML = "";
-    var div = document.createElement("div");
-    div.className =
-      tipo === "danger"
-        ? "notification is-danger is-light has-text-left"
-        : "notification is-success is-light has-text-left";
-    div.textContent = texto != null ? String(texto) : "";
-    el.appendChild(div);
+    if (typeof window.sgcRenderMensagemTopo === "function") {
+      window.sgcRenderMensagemTopo(texto != null ? String(texto) : "", tipo || "info");
+    }
   }
 
   function bloquearFormularioAposEdicao() {
@@ -198,11 +182,6 @@
       document.getElementById('ticketForm').reset();
       document.getElementById('registroId').value = '';
       resetVisualStyles();
-      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
-        window.rolarParaVerMensagemNoTopo(msg);
-      } else {
-        scrollParaTopo();
-      }
       google.script.run.withSuccessHandler(c => popularCampos(c)).obterConfiguracaoFormulario();
     }
 
@@ -212,11 +191,6 @@
       btn.disabled = false;
       btn.setAttribute("aria-busy", "false");
       bloquearFormularioAposEdicao();
-      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
-        window.rolarParaVerMensagemNoTopo(msg);
-      } else {
-        scrollParaTopo();
-      }
     }
 
     function falhaMsg(err) {
@@ -228,11 +202,6 @@
       btn.textContent = "Salvar";
       btn.disabled = false;
       btn.setAttribute("aria-busy", "false");
-      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
-        window.rolarParaVerMensagemNoTopo(msg);
-      } else {
-        scrollParaTopo();
-      }
     }
 
     function onResult(resp) {

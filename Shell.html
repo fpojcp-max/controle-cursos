@@ -17,6 +17,7 @@
     <?!= HtmlService.createHtmlOutputFromFile('AppOcupado').getContent(); ?>
     <div class="form-container">
       <?!= HtmlService.createHtmlOutputFromFile('Header').getContent(); ?>
+      <div id="sgcMensagemTopoApp" class="sgc-msg-topo-app" role="status" aria-live="polite"></div>
 
       <main class="layout-block content-block">
         <?!= menuHtml ?>
@@ -27,17 +28,73 @@
     </div>
 
     <script>
-  /** Disponível em todas as views: rola a janela para o topo e leva a área da mensagem à vista. */
-  window.rolarParaVerMensagemNoTopo = function(optAnchor) {
+  function sgcEscapeHtmlMensagem_(str) {
+    return String(str != null ? str : "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function sgcRolarParaMensagemTopo_() {
     setTimeout(function() {
-      var anchor =
-        optAnchor ||
-        document.getElementById("msgAgendamento") ||
-        document.getElementById("msgAgEx") ||
-        document.getElementById("msgAgEd") ||
-        document.getElementById("msgAgCo") ||
-        document.getElementById("msgTuEd") ||
-        document.getElementById("msg");
+      var topo = document.getElementById("sgcMensagemTopoApp");
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch (e0) {
+        try {
+          window.scrollTo(0, 0);
+        } catch (e1) {}
+      }
+      try {
+        if (document.documentElement) document.documentElement.scrollTop = 0;
+        if (document.body) document.body.scrollTop = 0;
+      } catch (eDoc) {}
+      if (topo && topo.innerHTML && topo.scrollIntoView) {
+        try {
+          topo.scrollIntoView({ behavior: "smooth", block: "start" });
+        } catch (e2) {
+          try {
+            topo.scrollIntoView(true);
+          } catch (e3) {}
+        }
+      }
+    }, 0);
+  }
+
+  /**
+   * Barra global de feedback (sucesso / erro / info) — acima do menu e do conteúdo.
+   * @param {string} text
+   * @param {string} [type] - danger | success | info | warning
+   */
+  window.sgcRenderMensagemTopo = function(text, type) {
+    var el = document.getElementById("sgcMensagemTopoApp");
+    if (!el) return;
+    if (!text) {
+      el.innerHTML = "";
+      return;
+    }
+    var t = String(type || "info").toLowerCase();
+    var cls =
+      t === "danger" ? "is-danger" :
+      t === "success" ? "is-success" :
+      t === "warning" ? "is-warning" :
+      "is-info";
+    el.innerHTML =
+      '<div class="notification ' + cls + ' is-light">' + sgcEscapeHtmlMensagem_(text) + "</div>";
+    sgcRolarParaMensagemTopo_();
+  };
+
+  window.sgcRolarParaMensagemTopo = sgcRolarParaMensagemTopo_;
+
+  /** Compatível com views que ainda chamam rolarParaVerMensagemNoTopo. */
+  window.rolarParaVerMensagemNoTopo = function(optAnchor) {
+    if (document.getElementById("sgcMensagemTopoApp") && document.getElementById("sgcMensagemTopoApp").innerHTML) {
+      sgcRolarParaMensagemTopo_();
+      return;
+    }
+    setTimeout(function() {
+      var anchor = optAnchor;
       if (anchor && anchor.scrollIntoView) {
         try {
           anchor.scrollIntoView({ behavior: "smooth", block: "start" });
@@ -48,13 +105,7 @@
         }
         return;
       }
-      try {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch (e6) {
-        try {
-          window.scrollTo(0, 0);
-        } catch (e7) {}
-      }
+      sgcRolarParaMensagemTopo_();
     }, 0);
   };
 
@@ -301,6 +352,9 @@
       return;
     }
     view = resolverViewPermitida_(view);
+    if (typeof window.sgcRenderMensagemTopo === "function") {
+      window.sgcRenderMensagemTopo("", "info");
+    }
     if (view === "home") {
       mostrarHomeLocal_(MSG_BEMVINDO);
     } else {

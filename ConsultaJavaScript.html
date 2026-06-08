@@ -280,17 +280,8 @@ window.ConsultaInit = function() {
   }
 
   function renderMessage(text, type) {
-    const el = document.getElementById("msg");
-    if (!text) {
-      el.innerHTML = "";
-      return;
-    }
-    const cls = type === "danger" ? "is-danger"
-      : type === "info" ? "is-info"
-      : "is-success";
-    el.innerHTML = `<div class="notification ${cls} is-light">${escapeHtml(text)}</div>`;
-    if (typeof window.rolarParaVerMensagemNoTopo === "function") {
-      window.rolarParaVerMensagemNoTopo(el);
+    if (typeof window.sgcRenderMensagemTopo === "function") {
+      window.sgcRenderMensagemTopo(text, type);
     }
   }
 

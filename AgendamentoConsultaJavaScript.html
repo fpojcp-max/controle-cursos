@@ -23,22 +23,8 @@
     var lastExportQuery = null;
 
     function renderMsg(text, kind) {
-      if (!text) {
-        msgEl.innerHTML = "";
-        return;
-      }
-      msgEl.innerHTML = "";
-      var cls = "notification is-light";
-      if (kind === "success") cls = "notification is-success is-light";
-      else if (kind === "danger") cls = "notification is-danger is-light";
-      else if (kind === "info") cls = "notification is-info is-light";
-      var div = document.createElement("div");
-      div.className = cls;
-      div.style.whiteSpace = "pre-line";
-      div.textContent = text;
-      msgEl.appendChild(div);
-      if (typeof window.rolarParaVerMensagemNoTopo === "function") {
-        window.rolarParaVerMensagemNoTopo(msgEl);
+      if (typeof window.sgcRenderMensagemTopo === "function") {
+        window.sgcRenderMensagemTopo(text, kind);
       }
     }
 

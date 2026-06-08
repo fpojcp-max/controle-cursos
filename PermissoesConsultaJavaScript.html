@@ -13,12 +13,9 @@
   var trSelecionado = null;
 
   function renderMsg(text, type) {
-    var el = document.getElementById("msgPermConsulta");
-    if (!el) return;
-    if (!text) { el.innerHTML = ""; return; }
-    var cls = type === "danger" ? "is-danger" : type === "success" ? "is-success" : "is-info";
-    el.innerHTML = '<div class="notification ' + cls + ' is-light">' + String(text).replace(/&/g,"&amp;").replace(/</g,"&lt;") + "</div>";
-    if (typeof window.rolarParaVerMensagemNoTopo === "function") window.rolarParaVerMensagemNoTopo(el);
+    if (typeof window.sgcRenderMensagemTopo === "function") {
+      window.sgcRenderMensagemTopo(text, type);
+    }
   }
 
   function fillSelect(id, items) {

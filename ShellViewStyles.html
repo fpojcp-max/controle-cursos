@@ -64,6 +64,26 @@
   .content-block > .sgc-aviso-sem-acesso {
     flex-shrink: 0;
   }
+  .sgc-msg-topo-app {
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  .form-container > .sgc-msg-topo-app:empty {
+    display: none;
+  }
+  .form-container > .sgc-msg-topo-app:not(:empty) {
+    padding-top: 12px;
+  }
+  .sgc-msg-topo-app .notification {
+    margin-bottom: 0;
+    white-space: pre-line;
+  }
+  /* Mensagens por view passam a usar a barra global */
+  #main-content [id^="msg"] {
+    display: none !important;
+  }
   .title.is-4 { font-size: 1.75rem; color: #2d4a46; font-weight: 600; }
   .label { font-size: 0.95rem; color: #334441; font-weight: 600; margin-bottom: 0.35rem; }
   .section-title { border-left: 5px solid #00bfa5; padding: 6px 12px; margin: 18px 0 10px 0; color: #1b3330; font-weight: 700; letter-spacing: 0.4px; background: rgba(0, 191, 165, 0.07); font-size: 1.02rem; line-height: 1.3; }
