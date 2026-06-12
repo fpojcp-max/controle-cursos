@@ -56,27 +56,21 @@
     letter-spacing: 0.02em;
   }
   /*
-   * Menu invisível até o gate: visibility mantém a altura na página para a home
-   * não saltar quando o menu passa a visível (mesmo padrão do Sistema de Apoio).
+   * Menu invisível até o gate: visibility mantém a altura natural na página
+   * (mesmo padrão do Sistema de Apoio — sem min-height artificial na faixa).
    */
-  .sgc-menu-area {
-    flex-shrink: 0;
-    min-height: 3.125rem;
-    box-sizing: border-box;
-  }
-  .sgc-menu-area > .app-menu,
-  .sgc-menu-area > .sgc-aviso-sem-acesso {
-    min-height: inherit;
-  }
   .app-menu.sgc-menu-aguardando-gate {
     visibility: hidden;
     pointer-events: none;
     user-select: none;
-    min-height: 3.125rem;
-    box-sizing: border-box;
   }
   .content-block > .sgc-menu-area {
     flex-shrink: 0;
+  }
+  .sgc-menu-area > .app-menu,
+  .sgc-menu-area > .sgc-aviso-sem-acesso {
+    width: 100%;
+    box-sizing: border-box;
   }
   .sgc-msg-topo-app {
     width: 100%;

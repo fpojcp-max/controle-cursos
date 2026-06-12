@@ -13,6 +13,9 @@
     --shadow-soft: 0 10px 24px rgba(0,0,0,0.08);
     --radius: 12px;
     --btn-radius: 12px;
+    --menu-bar: #9ec9c0;
+    --menu-bar-border: #7eb5aa;
+    --menu-bar-active: #c8ebe4;
   }
 
   button {
@@ -185,16 +188,16 @@
     border: 1px solid var(--border-strong);
   }
 
-  /* Menu principal — faixa segmentada (mesma estética do Sistema de Apoio; paleta esverdeada) */
+  /* Menu principal — faixa segmentada; tom mais marcado que o fundo da página (#e0f2f1) e do header (--surface) */
   .app-menu {
-    background: #d0ebe6;
-    border: 1px solid var(--border);
+    background: var(--menu-bar);
+    border: 1px solid var(--menu-bar-border);
     border-radius: var(--radius);
     margin: 0;
     overflow: visible;
     padding: 4px;
     box-sizing: border-box;
-    box-shadow: inset 0 1px 2px rgba(27, 51, 48, 0.06);
+    box-shadow: inset 0 1px 2px rgba(27, 51, 48, 0.1);
   }
   .app-menu-list {
     list-style: none;
@@ -240,7 +243,7 @@
   .app-menu-item-dropdown.is-active > .app-menu-trigger {
     color: var(--ink);
     font-weight: 700;
-    background: #9fd4c8;
+    background: var(--menu-bar-active);
     box-shadow: 0 1px 2px rgba(27, 51, 48, 0.14);
   }
   .app-menu-chevron {
