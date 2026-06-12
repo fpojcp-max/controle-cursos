@@ -43,12 +43,12 @@ const Configuracoes = {
    * Catálogo de salas: `rotulo` = texto em selects e coluna Sala da planilha.
    */
   CATALOGO_RECURSOS_SALA: [
-    { rotulo: "(EDUCORP)-Auditório" },
-    { rotulo: "(EDUCORP)-Idiomas" },
-    { rotulo: "(EDUCORP)-Lab. 01" },
-    { rotulo: "(EDUCORP)-Lab. 02" },
-    { rotulo: "(EDUCORP)-M1" },
-    { rotulo: "(EDUCORP)-M2" },
+    { rotulo: "[EDUCORP] - Auditório" },
+    { rotulo: "[EDUCORP] - Idiomas" },
+    { rotulo: "[EDUCORP] - Laboratório 01" },
+    { rotulo: "[EDUCORP] - Laboratório 02" },
+    { rotulo: "[EDUCORP] - Multiuso 01" },
+    { rotulo: "[EDUCORP] - Multiuso 02" },
     { rotulo: "Externo" }
   ],
 

@@ -93,8 +93,9 @@
       t === "success" ? "is-success" :
       t === "warning" ? "is-warning" :
       "is-info";
+    var preLine = String(text).indexOf("\n") >= 0 ? ' style="white-space:pre-line"' : "";
     el.innerHTML =
-      '<div class="notification ' + cls + ' is-light">' + sgcEscapeHtmlMensagem_(text) + "</div>";
+      '<div class="notification ' + cls + ' is-light"' + preLine + ">" + sgcEscapeHtmlMensagem_(text) + "</div>";
     sgcRolarParaMensagemTopo_();
   };
 
